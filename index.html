@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Law & Order: Fantasy Football Elimination</title>
+  <title>Law & Order: Special Victory Unit</title>
 
-  <!-- Fonts (L&O-esque headers + clean sans body) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Source+Sans+3:wght@400;700;800;900&display=swap" rel="stylesheet"/>
@@ -13,138 +13,170 @@
   <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-  <style>
-    :root{
-      --lo-red:#cc0000;
-      --lo-red-dark:#990000;
-      --lo-blue:#000066;
-      --lo-blue-mid:#003399;
-      --ink:#111;
-      --ink-2:#333;
-      --ink-3:#666;
-      --bg:#fff;
-      --panel:#f8f8f8;
-      --panel-2:#eee;
-      --chip:#ddd;
-      --rule:#ccc;
-    }
+<style>
+:root{
+  --lo-red:#cc0000;
+  --lo-red-dark:#990000;
+  --lo-blue:#000066;
+  --lo-blue-mid:#003399;
+  --ink:#111;
+  --ink-2:#333;
+  --ink-3:#666;
+  --bg:#fff;
+  --panel:#f8f8f8;
+  --panel-2:#eee;
+  --chip:#ddd;
+  --rule:#ccc;
+}
 
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{
-      font-family:'Source Sans 3',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--ink);
-      line-height:1.6;
-      min-height:100vh;
-    }
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Source Sans 3',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.6;
+  min-height:100vh;
+}
 
-    /* Header */
-    .header{
-      background:var(--lo-red);
-      padding:20px 0;
-      text-align:center;
-      border-bottom:8px solid var(--lo-blue);
-    }
-    .header h1{
-      font-family:'Cinzel',serif;
-      font-weight:900;
-      font-size:2.4rem;
-      color:#fff;
-      letter-spacing:.5px;
-    }
-    .tagline{
-      font:italic 400 1rem 'Source Sans 3',sans-serif;
-      color:#f2f2f2;
-      margin-top:6px;
-    }
+/* Header */
+.header{
+  background:var(--lo-red);
+  padding:20px 0;
+  text-align:center;
+  border-bottom:8px solid var(--lo-blue);
+}
+.header h1{
+  font-family:'Cinzel',serif;
+  font-weight:900;
+  font-size:2.4rem;
+  color:#fff;
+  letter-spacing:.5px;
+}
+.tagline{
+  font:italic 400 1rem 'Source Sans 3',sans-serif;
+  color:#f2f2f2;
+  margin-top:6px;
+}
 
-    .container{max-width:1100px;margin:0 auto;padding:20px}
+.container{max-width:1100px;margin:0 auto;padding:20px}
 
-    /* Auth bar + username gate */
-    #authBar{
-      display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0;flex-wrap:wrap
-    }
-    #authBar input{
-      padding:6px 8px;border:1px solid var(--lo-blue)
-    }
-    .btn{
-      padding:10px 18px;border:none;border-radius:3px;font-weight:800;text-transform:uppercase;cursor:pointer
-    }
-    .btn-primary{background:var(--lo-red);color:#fff}
-    .btn-primary:hover{background:var(--lo-red-dark)}
-    .btn-secondary{background:var(--lo-blue);color:#fff}
-    .btn-secondary:hover{background:var(--lo-blue-mid)}
-    .btn:disabled{opacity:.4;cursor:not-allowed}
+/* Auth bar + username gate */
+#authBar{
+  display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0;flex-wrap:wrap
+}
+#authBar input{
+  padding:6px 8px;border:1px solid var(--lo-blue)
+}
+.btn{
+  padding:10px 18px;border:none;border-radius:3px;font-weight:800;text-transform:uppercase;cursor:pointer
+}
+.btn-primary{background:var(--lo-red);color:#fff}
+.btn-primary:hover{background:var(--lo-red-dark)}
+.btn-secondary{background:var(--lo-blue);color:#fff}
+.btn-secondary:hover{background:var(--lo-blue-mid)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 
-    #usernameGate{
-      display:none;max-width:520px;margin:10px auto;border:2px solid var(--lo-blue);
-      padding:16px;background:#fff
-    }
-    #usernameGate h3{
-      font-family:'Cinzel',serif;font-weight:700;color:var(--lo-blue);margin-bottom:8px
-    }
+#usernameGate{
+  display:none;max-width:520px;margin:10px auto;border:2px solid var(--lo-blue);
+  padding:16px;background:#fff
+}
+#usernameGate h3{
+  font-family:'Cinzel',serif;font-weight:700;color:var(--lo-blue);margin-bottom:8px
+}
 
-    /* Cards/blocks */
-    .game-info,.team-selection,.game-over{
-      background:var(--panel);
-      border:2px solid var(--lo-blue);
-      border-radius:4px;
-      padding:22px;
-      margin:18px 0;
-    }
-    .game-info{border-color:var(--lo-red)}
-    .game-info h2,.team-selection h2,.game-over h2,.used-teams h3,.status-card h3{
-      font-family:'Cinzel',serif;font-weight:700;letter-spacing:.3px;color:var(--lo-blue)
-    }
-    .game-info h2{color:var(--lo-blue)}
-    .verdict{
-      background:#fff;border-left:5px solid var(--lo-blue);padding:16px;margin:16px 0;
-      font-style:italic;border-radius:0 4px 4px 0
-    }
+/* Cards/blocks */
+.game-info,.team-selection,.game-over{
+  background:var(--panel);
+  border:2px solid var(--lo-blue);
+  border-radius:4px;
+  padding:22px;
+  margin:18px 0;
+}
+.game-info{border-color:var(--lo-red)}
+.game-info h2,.team-selection h2,.game-over h2,.used-teams h3,.status-card h3{
+  font-family:'Cinzel',serif;font-weight:700;letter-spacing:.3px;color:var(--lo-blue)
+}
+.verdict{
+  background:#fff;border-left:5px solid var(--lo-blue);padding:16px;margin:16px 0;
+  font-style:italic;border-radius:0 4px 4px 0
+}
 
-    /* Status bar */
-    .status-bar{
-      display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:18px 0
-    }
-    .status-card{
-      background:var(--panel-2);padding:18px;text-align:center;border:2px solid var(--lo-blue);border-radius:4px
-    }
-    .status-card .value{
-      font-size:1.4rem;font-weight:900;color:var(--lo-red)
-    }
+/* Status bar */
+.status-bar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:18px 0
+}
+.status-card{
+  background:var(--panel-2);padding:18px;text-align:center;border:2px solid var(--lo-blue);border-radius:4px
+}
+.status-card .value{
+  font-size:1.4rem;font-weight:900;color:var(--lo-red);
+  line-height:1.2;
+}
+/* shrinkable name */
+#playerName{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:block;
+}
 
-    /* Team grid */
-    .team-grid{
-      display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px
-    }
-    .team-card{
-      border-radius:4px;padding:18px;text-align:center;border:2px solid var(--rule);
-      background:#fff;transition:background .15s ease,transform .15s ease
-    }
-    .team-card:hover{background:#f3f3f3;transform:translateY(-2px)}
-    .team-card.disabled{opacity:.5;cursor:not-allowed}
-    .team-name{font-weight:900}
+/* Team grid — exactly 4 per row on desktop */
+.team-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+  margin-top:16px;
+}
 
-    /* Used teams */
-    .used-teams{
-      background:#f2f2f2;border:2px solid #999;border-radius:4px;padding:18px;margin:18px 0
-    }
-    .used-list{display:flex;flex-wrap:wrap;gap:8px}
-    .used-team{background:var(--chip);padding:6px 10px;border-radius:16px;font-size:.85rem;font-weight:700}
+/* Team cards — thicker border, fixed height (~3 lines) */
+.team-card{
+  border-radius:4px;
+  padding:12px 16px;
+  text-align:center;
+  border:4px solid transparent; /* JS sets borderColor per team */
+  background:#fff;              /* JS sets background to team secondary */
+  transition:transform .15s ease, filter .15s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:96px;                  /* ~3 lines at ~1.2 line-height */
+  line-height:1.2;
+}
+.team-card:hover{transform:translateY(-2px); filter:brightness(0.95);}
+.team-card.disabled{opacity:.5;cursor:not-allowed}
+.team-name{font-weight:900}
 
-    .action-buttons{display:flex;gap:12px;justify-content:center;margin:24px 0}
-    .footer{border-top:2px solid var(--rule);text-align:center;color:var(--ink-3);padding:16px;margin-top:30px;font-size:.9rem}
+/* Used teams */
+.used-teams{
+  background:#f2f2f2;border:2px solid #999;border-radius:4px;padding:18px;margin:18px 0
+}
+.used-list{display:flex;flex-wrap:wrap;gap:8px}
+.used-team{background:var(--chip);padding:6px 10px;border-radius:16px;font-size:.85rem;font-weight:700}
 
-    @media (max-width:768px){
-      .header h1{font-size:1.9rem}
-      .action-buttons{flex-direction:column}
-    }
-  </style>
-</head>
+/* League tables */
+table{font-size:0.95rem}
+th,td{vertical-align:top}
+th{font-weight:800}
+td,th{padding:8px;border-bottom:1px solid #eee}
+
+.action-buttons{display:flex;gap:12px;justify-content:center;margin:24px 0}
+.footer{border-top:2px solid var(--rule);text-align:center;color:var(--ink-3);padding:16px;margin-top:30px;font-size:.9rem}
+
+/* Responsive columns for team grid */
+@media (max-width:1024px){
+  .team-grid{grid-template-columns:repeat(2, 1fr)}
+}
+@media (max-width:600px){
+  .team-grid{grid-template-columns:1fr}
+  table{font-size:0.9rem}
+  .header h1{font-size:1.9rem}
+  .action-buttons{flex-direction:column}
+}
+</style></head>
 <body>
   <div class="header">
-    <h1>LAW & ORDER: FANTASY FOOTBALL ELIMINATION</h1>
-    <p class="tagline">“In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories.”</p>
+    <h1>LAW & ORDER: SPECIAL VICTORY UNIT</h1>
+    <p class="tagline">“In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories. Dun Dun.”</p>
   </div>
 
   <div class="container">
@@ -205,7 +237,7 @@
       <h2>⚖️ Select Your Weekly Defendant</h2>
       <p>Choose the team you believe will lose this week:</p>
       <div class="team-grid" id="teamGrid"></div>
-      <div id="alreadyPickedMsg" style="margin-top:10px;color:var(--lo-blue);font-weight:700;display:none;"></div>
+      <div id="alreadyPickedMsg" style="margin-top:10px;color:#000066;font-weight:800;display:none;"></div>
     </div>
 
     <div class="action-buttons">
@@ -224,57 +256,92 @@
       <p id="gameOverMessage"></p>
       <div class="verdict" id="finalVerdict"></div>
     </div>
-  </div>
+
+    <!-- === League Stats (All Users, All Weeks) === -->
+    <div class="game-info" id="leagueStats">
+      <h2>📊 League Stats</h2>
+      <div id="statsSummary" style="margin:10px 0 16px;color:#000066;font-weight:800"></div>
+
+      <div style="overflow:auto;border:2px solid #000066;background:#fff">
+        <table id="userSummaryTable" style="width:100%;border-collapse:collapse">
+          <thead style="background:#f2f2f2">
+            <tr>
+              <th style="text-align:left;">User</th>
+              <th style="text-align:left;">Weeks Picked</th>
+              <th style="text-align:left;">Teams Used</th>
+              <th style="text-align:left;">Last Pick (Week)</th>
+            </tr>
+          </thead>
+          <tbody id="userSummaryBody"></tbody>
+        </table>
+      </div>
+
+      <h3 style="margin:16px 0 8px">All Picks (Newest First)</h3>
+      <div style="overflow:auto;border:2px solid #000066;background:#fff">
+        <table id="allPicksTable" style="width:100%;border-collapse:collapse">
+          <thead style="background:#f2f2f2">
+            <tr>
+              <th style="text-align:left;">Week</th>
+              <th style="text-align:left;">User</th>
+              <th style="text-align:left;">Team</th>
+              <th style="text-align:left;">Picked At</th>
+            </tr>
+          </thead>
+          <tbody id="allPicksBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /.container -->
 
   <div class="footer">
     <p>Executive Producer: Dick Wolf · “These stories are fictional. Any resemblance to actual fantasy football leagues is purely coincidental.”</p>
   </div>
 
   <script>
-/* =======================
-   0) CONFIG: Supabase 
-   ======================= */
-const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWp5emFrY2ZtdndkZmd6enl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyNjAxNDQsImV4cCI6MjA3MTgzNjE0NH0.8gQ5Xg0HhZBI61i6XS-kK9Ui-3DxRywXT40OB9YNIbI';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    /* =======================
+       0) CONFIG: Supabase
+       ======================= */
+    const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWp5emFrY2ZtdndkZmd6enl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyNjAxNDQsImV4cCI6MjA3MTgzNjE0NH0.8gQ5Xg0HhZBI61i6XS-kK9Ui-3DxRywXT40OB9YNIbI';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     /* =======================
-       1) NFL Teams (flat UI)
+       1) NFL Teams (with secondary colors)
        ======================= */
     const nflTeams = [
-      { name: "Arizona Cardinals",    primary: "#97233F" },
-      { name: "Atlanta Falcons",      primary: "#A71930" },
-      { name: "Baltimore Ravens",     primary: "#241773" },
-      { name: "Buffalo Bills",        primary: "#00338D" },
-      { name: "Carolina Panthers",    primary: "#0085CA" },
-      { name: "Chicago Bears",        primary: "#0B162A" },
-      { name: "Cincinnati Bengals",   primary: "#FB4F14" },
-      { name: "Cleveland Browns",     primary: "#311D00" },
-      { name: "Dallas Cowboys",       primary: "#003594" },
-      { name: "Denver Broncos",       primary: "#FB4F14" },
-      { name: "Detroit Lions",        primary: "#0076B6" },
-      { name: "Green Bay Packers",    primary: "#203731" },
-      { name: "Houston Texans",       primary: "#03202F" },
-      { name: "Indianapolis Colts",   primary: "#002C5F" },
-      { name: "Jacksonville Jaguars", primary: "#101820" },
-      { name: "Kansas City Chiefs",   primary: "#E31837" },
-      { name: "Las Vegas Raiders",    primary: "#000000" },
-      { name: "Los Angeles Chargers", primary: "#0080C6" },
-      { name: "Los Angeles Rams",     primary: "#003594" },
-      { name: "Miami Dolphins",       primary: "#008E97" },
-      { name: "Minnesota Vikings",    primary: "#4F2683" },
-      { name: "New England Patriots", primary: "#002244" },
-      { name: "New Orleans Saints",   primary: "#101820" },
-      { name: "New York Giants",      primary: "#0B2265" },
-      { name: "New York Jets",        primary: "#125740" },
-      { name: "Philadelphia Eagles",  primary: "#004C54" },
-      { name: "Pittsburgh Steelers",  primary: "#FFB612" },
-      { name: "San Francisco 49ers",  primary: "#AA0000" },
-      { name: "Seattle Seahawks",     primary: "#002244" },
-      { name: "Tampa Bay Buccaneers", primary: "#D50A0A" },
-      { name: "Tennessee Titans",     primary: "#0C2340" },
-      { name: "Washington Commanders",primary: "#5A1414" }
+      { name: "Arizona Cardinals",    primary: "#97233F", secondary: "#000000" },
+      { name: "Atlanta Falcons",      primary: "#A71930", secondary: "#000000" },
+      { name: "Baltimore Ravens",     primary: "#241773", secondary: "#000000" },
+      { name: "Buffalo Bills",        primary: "#00338D", secondary: "#C60C30" },
+      { name: "Carolina Panthers",    primary: "#0085CA", secondary: "#101820" },
+      { name: "Chicago Bears",        primary: "#0B162A", secondary: "#C83803" },
+      { name: "Cincinnati Bengals",   primary: "#FB4F14", secondary: "#000000" },
+      { name: "Cleveland Browns",     primary: "#311D00", secondary: "#FF3C00" },
+      { name: "Dallas Cowboys",       primary: "#003594", secondary: "#041E42" },
+      { name: "Denver Broncos",       primary: "#FB4F14", secondary: "#002244" },
+      { name: "Detroit Lions",        primary: "#0076B6", secondary: "#B0B7BC" },
+      { name: "Green Bay Packers",    primary: "#203731", secondary: "#FFB612" },
+      { name: "Houston Texans",       primary: "#03202F", secondary: "#A71930" },
+      { name: "Indianapolis Colts",   primary: "#002C5F", secondary: "#A2AAAD" },
+      { name: "Jacksonville Jaguars", primary: "#101820", secondary: "#D7A22A" },
+      { name: "Kansas City Chiefs",   primary: "#E31837", secondary: "#FFB81C" },
+      { name: "Las Vegas Raiders",    primary: "#000000", secondary: "#A5ACAF" },
+      { name: "Los Angeles Chargers", primary: "#0080C6", secondary: "#FFC20E" },
+      { name: "Los Angeles Rams",     primary: "#003594", secondary: "#FFA300" },
+      { name: "Miami Dolphins",       primary: "#008E97", secondary: "#FC4C02" },
+      { name: "Minnesota Vikings",    primary: "#4F2683", secondary: "#FFC62F" },
+      { name: "New England Patriots", primary: "#002244", secondary: "#C60C30" },
+      { name: "New Orleans Saints",   primary: "#101820", secondary: "#D3BC8D" },
+      { name: "New York Giants",      primary: "#0B2265", secondary: "#A71930" },
+      { name: "New York Jets",        primary: "#125740", secondary: "#000000" },
+      { name: "Philadelphia Eagles",  primary: "#004C54", secondary: "#A5ACAF" },
+      { name: "Pittsburgh Steelers",  primary: "#FFB612", secondary: "#101820" },
+      { name: "San Francisco 49ers",  primary: "#AA0000", secondary: "#B3995D" },
+      { name: "Seattle Seahawks",     primary: "#002244", secondary: "#69BE28" },
+      { name: "Tampa Bay Buccaneers", primary: "#D50A0A", secondary: "#FF7900" },
+      { name: "Tennessee Titans",     primary: "#0C2340", secondary: "#4B92DB" },
+      { name: "Washington Commanders",primary: "#5A1414", secondary: "#FFB612" }
     ];
 
     /* =======================
@@ -295,10 +362,23 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     /* =======================
-       3) AUTH + PROFILE
+       3) AUTH + PROFILE (store email)
        ======================= */
     let currentUser = null;
     let currentProfile = null;
+
+    // Auto-fit helper for player name
+    function autoFitPlayerName(minPx=12,maxPx=28,padPx=8){
+      const el=document.getElementById('playerName');
+      if(!el) return;
+      const container=el.parentElement; // .status-card
+      el.style.fontSize=maxPx+'px';
+      let size=maxPx, loops=40;
+      while(size>minPx && el.scrollWidth>(container.clientWidth-padPx)){
+        size--; el.style.fontSize=size+'px';
+        if(--loops<=0) break;
+      }
+    }
 
     async function refreshAuthUI(){
       const { data: { user } } = await supabase.auth.getUser();
@@ -317,6 +397,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         document.getElementById('submitPick').disabled = true;
         document.getElementById('simulateWeek').disabled = true;
         document.getElementById('playerName').textContent = 'Detective';
+        autoFitPlayerName();
         return;
       }
 
@@ -329,11 +410,14 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         gate.style.display='block';
         currentProfile = null;
         nameEl.textContent = '(set username)';
+        document.getElementById('playerName').textContent = 'Detective';
+        autoFitPlayerName();
       }else{
         gate.style.display='none';
         currentProfile = profile;
         nameEl.textContent = '@' + profile.username;
         document.getElementById('playerName').textContent = '@' + profile.username;
+        autoFitPlayerName();
         await loadUserPicksAndDisableTeams();
       }
     }
@@ -342,7 +426,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPass').value;
       const { error } = await supabase.auth.signUp({ email, password });
-      if(error) alert(error.message); else alert('Check your email to confirm signup.');
+      if(error) alert(error.message); else alert('Check your email to confirm signup (or disable confirmations while testing).');
     });
 
     document.getElementById('btnSignIn').addEventListener('click', async ()=>{
@@ -360,6 +444,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       renderTeams(); updateStatus(); updateUsedTeams();
     });
 
+    // Save username (and email) once per account
     document.getElementById('btnSaveUsername').addEventListener('click', async ()=>{
       const u = document.getElementById('usernameInput').value.trim();
       const errEl = document.getElementById('usernameError');
@@ -367,7 +452,8 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if(!u || !/^[a-zA-Z0-9_]{3,20}$/.test(u)){
         errEl.textContent = 'Username must be 3–20 chars, letters/numbers/underscore only.'; return;
       }
-      const { error } = await supabase.from('profiles').insert({ id: currentUser.id, username: u });
+      const email = (currentUser && currentUser.email) ? currentUser.email : null;
+      const { error } = await supabase.from('profiles').insert({ id: currentUser.id, username: u, email });
       if(error){
         errEl.textContent = (error.code === '23505') ? 'That username is taken.' : error.message; return;
       }
@@ -441,6 +527,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       setTimeout(()=>verdict.remove(), 4500);
 
       await loadUserPicksAndDisableTeams();
+      await refreshLeagueStats();   // update league tables
     }
 
     function renderUsedPicks(picks){
@@ -452,33 +539,59 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     /* =======================
-       5) UI rendering
+       5) UI rendering (team cards use secondary color)
        ======================= */
-    function renderTeams(){
-      const teamGrid = document.getElementById('teamGrid');
-      teamGrid.innerHTML = '';
-      nflTeams.forEach((team)=>{
-        const isUsed = gameState.usedTeams.includes(team.name);
-        const card = document.createElement('div');
-        card.className = 'team-card';
-        card.style.borderColor = isUsed ? '#999' : team.primary;
-        card.innerHTML = `
-          <div class="team-name">${team.name}</div>
-          ${isUsed ? '<div style="color:#777;font-size:.85rem">CASE CLOSED</div>' : ''}
-        `;
-        if(isUsed || !gameState.isActive){
-          card.classList.add('disabled');
-        }else{
-          card.addEventListener('click', ()=>selectTeam(team.name));
-        }
-        // selected outline
-        if(gameState.selectedTeam === team.name && !isUsed){
-          card.style.outline = `3px solid ${team.primary}`;
-          card.style.outlineOffset = '2px';
-        }
-        teamGrid.appendChild(card);
-      });
+
+    // Utility: decide light/dark text for contrast
+    function isHexLight(hex){
+      try{
+        const h = hex.replace('#','');
+        const r = parseInt(h.substring(0,2),16);
+        const g = parseInt(h.substring(2,4),16);
+        const b = parseInt(h.substring(4,6),16);
+        // relative luminance
+        const L = 0.2126*(r/255) + 0.7152*(g/255) + 0.0722*(b/255);
+        return L > 0.6; // threshold tweakable
+      }catch(_e){ return false; }
     }
+
+function renderTeams(){
+  const teamGrid = document.getElementById('teamGrid');
+  teamGrid.innerHTML = '';
+  nflTeams.forEach((team)=>{
+    const isUsed = gameState.usedTeams.includes(team.name);
+    const card = document.createElement('div');
+    card.className = 'team-card';
+
+    // Background = secondary, Border = primary
+    const bg = team.secondary || '#fff';
+    const border = team.primary || '#000';
+    const textColor = isHexLight(bg) ? '#111' : '#fff';
+
+    card.style.background = bg;
+    card.style.borderColor = border;
+    card.style.color = textColor;
+
+    card.innerHTML = `
+      <div class="team-name">${team.name}</div>
+      ${isUsed ? '<div style="font-size:.85rem;opacity:.9">CASE CLOSED</div>' : ''}
+    `;
+
+    if(isUsed || !gameState.isActive){
+      card.classList.add('disabled');
+    }else{
+      card.addEventListener('click', ()=>selectTeam(team.name));
+    }
+
+    // Selected outline: keep using primary for emphasis
+    if(gameState.selectedTeam === team.name && !isUsed){
+      card.style.outline = `3px solid ${border}`;
+      card.style.outlineOffset = '2px';
+    }
+
+    teamGrid.appendChild(card);
+  });
+}
 
     function selectTeam(teamName){
       if(gameState.usedTeams.includes(teamName) || !gameState.isActive) return;
@@ -514,6 +627,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if(!currentProfile){
         document.getElementById('playerName').textContent = 'Detective';
       }
+      autoFitPlayerName();
     }
 
     // Optional local simulate (for testing only)
@@ -585,15 +699,96 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       loadUserPicksAndDisableTeams();
     }
 
+    /* =======================
+       6) League Stats (public read)
+       ======================= */
+    async function fetchAllPicksPublic() {
+      const { data, error } = await supabase
+        .from('picks')
+        .select('week, team, username, created_at')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('fetchAllPicksPublic error', error);
+        return [];
+      }
+      return data || [];
+    }
+
+    function renderLeagueStats(picks) {
+      const users = new Map();  // username -> {weeks:Set, teams:Set, lastWeek:number}
+      const teamCounts = new Map(); // team -> count
+
+      for (const p of picks) {
+        const u = p.username || '(unknown)';
+        if (!users.has(u)) users.set(u, { weeks: new Set(), teams: new Set(), lastWeek: 0 });
+        const rec = users.get(u);
+        rec.weeks.add(p.week);
+        rec.teams.add(p.team);
+        if (p.week > rec.lastWeek) rec.lastWeek = p.week;
+
+        teamCounts.set(p.team, (teamCounts.get(p.team) || 0) + 1);
+      }
+
+      const totalPicks = picks.length;
+      const totalPlayers = users.size;
+
+      const topTeams = [...teamCounts.entries()]
+        .sort((a,b)=>b[1]-a[1])
+        .slice(0,5)
+        .map(([team,count]) => `${team} (${count})`)
+        .join(' · ');
+
+      const summaryEl = document.getElementById('statsSummary');
+      summaryEl.textContent = `Players: ${totalPlayers} · Total Picks: ${totalPicks}` + (topTeams ? ` · Most Picked: ${topTeams}` : '');
+
+      // User summary
+      const tbody = document.getElementById('userSummaryBody');
+      tbody.innerHTML = '';
+      const rows = [...users.entries()]
+        .sort((a,b)=> a[0].localeCompare(b[0]))
+        .map(([username,rec]) => {
+          const weeksPicked = rec.weeks.size;
+          const teamsUsed = rec.teams.size;
+          const last = rec.lastWeek || '-';
+          return `<tr>
+            <td>@${username}</td>
+            <td>${weeksPicked}</td>
+            <td>${teamsUsed}</td>
+            <td>${last}</td>
+          </tr>`;
+        }).join('');
+      tbody.innerHTML = rows || `<tr><td colspan="4" style="color:#666">No picks yet.</td></tr>`;
+
+      // All picks table
+      const picksBody = document.getElementById('allPicksBody');
+      picksBody.innerHTML = picks.map(p => {
+        const dt = new Date(p.created_at);
+        const ts = isNaN(dt.getTime()) ? '' : dt.toLocaleString();
+        return `<tr>
+          <td>Week ${p.week}</td>
+          <td>@${p.username || '(unknown)'}</td>
+          <td>${p.team}</td>
+          <td>${ts}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="4" style="color:#666">No picks yet.</td></tr>`;
+    }
+
+    async function refreshLeagueStats() {
+      const picks = await fetchAllPicksPublic();
+      renderLeagueStats(picks);
+    }
+
     // Listeners
     document.getElementById('submitPick').addEventListener('click', submitPick);
     document.getElementById('simulateWeek').addEventListener('click', simulateWeek);
     document.getElementById('newGame').addEventListener('click', newGame);
+    window.addEventListener('resize', autoFitPlayerName);
 
     // Init
     (async function init(){
       renderTeams(); updateStatus(); updateUsedTeams();
       await refreshAuthUI();
+      await refreshLeagueStats();   // load league stats on page load
       setInterval(checkWeekAdvancement, 60000);
     })();
   </script>
