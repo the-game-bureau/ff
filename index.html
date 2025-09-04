@@ -71,7 +71,6 @@ html{
 }
 
 body{
-  /* Regular system font for all body text */
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 18px;
   line-height: 1.6;
@@ -101,7 +100,7 @@ body{
 }
 
 .header-logo-text{
-  font-family: 'FrizQuadrataRegular', serif; /* Header uses local Friz Quadrata */
+  font-family: 'FrizQuadrataRegular', serif;
   font-weight: 900;
   margin-bottom: 16px;
   line-height: 1.0;
@@ -388,7 +387,7 @@ body{
   font-weight: 700;
   color: var(--primary-red);
   line-height: 1.1;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; /* generic mono */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 #playerName{
@@ -410,7 +409,7 @@ body{
 .team-card{
   background: var(--bg-primary);
   color: var(--text-primary);
-  border: 2px solid var(--bg-accent);
+  border: 2px solid var(--team-secondary, var(--bg-accent));
   border-left: 6px solid transparent;
   border-radius: 12px;
   padding: 20px 16px;
@@ -426,16 +425,17 @@ body{
 
 .team-card:hover{
   background: var(--bg-hover);
-  border-color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+  border-left: 6px solid var(--team-primary, #4B5563);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .team-card.selected{
   background: rgba(30, 64, 175, 0.05);
-  border-color: var(--primary-blue);
-  border-right-width: 4px;
-  border-right-color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+  border-right: 4px solid var(--primary-blue);
+  border-left: 6px solid var(--team-primary, #4B5563);
 }
 
 .team-card.disabled{
@@ -448,7 +448,8 @@ body{
 .team-card.disabled:hover{
   transform: none;
   background: var(--bg-secondary);
-  border-color: var(--bg-accent);
+  border: 2px solid var(--team-secondary, var(--bg-accent));
+  border-left: 6px solid var(--team-primary, #4B5563);
 }
 
 .team-name{
@@ -583,7 +584,6 @@ th, td{
 
 <body>
   <header class="header" role="banner">
-    <img src="src/lawandorder.jpg" alt="Law & Order Logo" class="header-logo"/>
     <div class="header-logo-text">
       <div class="law-text">LAW<span class="ampersand">&</span></div>
       <div class="order-text">ORDER</div>
@@ -600,8 +600,9 @@ th, td{
         <input id="authPass" type="password" placeholder="Password" aria-label="Password" />
         <button id="btnSignUp" class="btn btn-secondary" type="button">Sign Up</button>
         <button id="btnSignIn" class="btn btn-secondary" type="button">Sign In</button>
+        <p style="width:100%;text-align:center;">Text KK if you forgot your password.</p>
       </div>
-      
+
       <div id="authWhenLoggedIn" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;">
         <span id="displayUser" style="font-weight:600;color:var(--primary-blue)" aria-label="Current user"></span>
         <button id="btnSignOut" class="btn btn-secondary" type="button">Sign Out</button>
@@ -618,14 +619,14 @@ th, td{
 
     <section class="game-info" aria-labelledby="gameInfoTitle">
       <h2 id="gameInfoTitle">🏛️ The Case File</h2>
-      <p><strong>The Rules:</strong> Each week, you must select one NFL team that you believe will <em>lose</em> their game. If your selected team loses, you advance. If they win or tie, you're out. You can use each team only once per season.</p>
-      
+      <p><strong>The Rules:</strong> Each week, you must select one NFL team that you believe will <em>lose</em> their game. If your selected team loses, you advance. If they win or tie, you're out. You can use each team only once per season. No draft, no grand jury necessary.</p>
+
       <div class="verdict" role="note">
         <strong>Detective Briscoe:</strong> "We're betting on losers? Easy! I pick losers at the track every weekend."
       </div>
     </section>
 
-    <section class="status-bar" aria-label="Game status dashboard">
+    <section class="status-bar" aria-label="Game status overview">
       <div class="status-card">
         <h3>Player</h3>
         <div class="value" id="playerName" aria-live="polite">Detective</div>
@@ -649,10 +650,10 @@ th, td{
     </section>
 
     <section class="team-selection" id="teamSelection" aria-labelledby="teamSelectionTitle">
-      <h2 id="teamSelectionTitle">🏈 Select Your Victim of the Week</h2>
+      <h2 id="teamSelectionTitle">🏈 Select Your Defendant of the Week</h2>
       <p>(A team you believe will lose this week):</p>
       
-      <div class="team-grid" id="teamGrid" role="group" aria-label="NFL teams selection"></div>
+      <div class="team-grid" id="teamGrid" role="group" aria-label="NFL teams pick"></div>
       
       <div id="alreadyPickedMsg" 
            role="alert" 
@@ -661,26 +662,26 @@ th, td{
     </section>
 
     <section class="action-buttons" role="group" aria-label="Game actions">
-      <button class="btn btn-primary" id="submitPick" disabled aria-describedby="submitPickHelp">
-        Submit Your Loser
+      <button class="btn btn-secondary" id="viewSchedule" aria-describedby="viewScheduleHelp">
+        View NFL Schedule
       </button>
-      <button class="btn btn-secondary" id="simulateWeek" disabled aria-describedby="simulateWeekHelp">
-        Simulate Week Results
+      <button class="btn btn-primary" id="submitPick" disabled aria-describedby="submitPickHelp">
+        Submit Your Defendant
       </button>
       <button class="btn btn-secondary" id="newGame" aria-describedby="newGameHelp">
         Reset Pick
       </button>
       
       <div class="sr-only">
-        <div id="submitPickHelp">Submit your team selection for this week</div>
-        <div id="simulateWeekHelp">Test simulate the week's results</div>
+        <div id="submitPickHelp">Submit your team pick for this week</div>
+        <div id="viewScheduleHelp">View the 2025 NFL schedule in a new tab</div>
         <div id="newGameHelp">Reset the game interface</div>
       </div>
     </section>
 
     <section class="used-teams" id="usedTeamsSection" style="display:none;" aria-labelledby="usedTeamsTitle">
       <h3 id="usedTeamsTitle">🗂️ Case Files Closed (Your Picks)</h3>
-      <div class="used-list" id="usedTeamsList" role="list" aria-label="Teams you have already selected"></div>
+      <div class="used-list" id="usedTeamsList" role="list" aria-label="Teams you have already picked"></div>
     </section>
 
     <section class="game-over" id="gameOverSection" style="display:none;" aria-labelledby="gameOverTitle">
@@ -818,6 +819,7 @@ th, td{
         const loggedInEl = document.getElementById('authWhenLoggedIn');
         const usernameGateEl = document.getElementById('usernameGate');
         const displayUserEl = document.getElementById('displayUser');
+        const submitPickEl = document.getElementById('submitPick');
 
         if(!currentUser){
           loggedOutEl.style.display = 'flex';
@@ -825,8 +827,11 @@ th, td{
           usernameGateEl.style.display = 'none';
           displayUserEl.textContent = '';
           
-          document.getElementById('submitPick').disabled = true;
-          document.getElementById('simulateWeek').disabled = true;
+          if (submitPickEl) {
+            submitPickEl.disabled = true;
+          } else {
+            console.warn('Element with ID "submitPick" not found in DOM');
+          }
           document.getElementById('playerName').textContent = 'Detective';
           autoFitPlayerName();
           return;
@@ -868,110 +873,200 @@ th, td{
       }
     }
 
-    document.getElementById('btnSignUp').addEventListener('click', async () => {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPass').value;
-      
-      if(!email || !password) {
-        alert('Please enter both email and password.');
-        return;
-      }
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnSignUpEl = document.getElementById('btnSignUp');
+      const btnSignInEl = document.getElementById('btnSignIn');
+      const btnSignOutEl = document.getElementById('btnSignOut');
+      const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
+      const submitPickEl = document.getElementById('submitPick');
+      const newGameEl = document.getElementById('newGame');
+      const viewScheduleEl = document.getElementById('viewSchedule');
 
-      try {
-        const { data, error } = await supabase.auth.signUp({ 
-          email, 
-          password 
-        });
-        
-        if(error) {
-          alert('Sign up error: ' + error.message);
-        } else {
-          alert('Check your email to confirm signup!');
-        }
-      } catch(error) {
-        console.error('Signup error:', error);
-        alert('An unexpected error occurred during signup.');
-      }
-    });
-
-    document.getElementById('btnSignIn').addEventListener('click', async () => {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPass').value;
-      
-      if(!email || !password) {
-        alert('Please enter both email and password.');
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ 
-          email, 
-          password 
-        });
-        
-        if(error) {
-          alert('Sign in error: ' + error.message);
-        } else {
-          await refreshAuthUI();
-        }
-      } catch(error) {
-        console.error('Signin error:', error);
-        alert('An unexpected error occurred during sign in.');
-      }
-    });
-
-    document.getElementById('btnSignOut').addEventListener('click', async () => {
-      try {
-        await supabase.auth.signOut();
-        gameState.selectedTeam = null;
-        await refreshAuthUI();
-        renderTeams();
-        updateStatus();
-        updateUsedTeams();
-      } catch(error) {
-        console.error('Signout error:', error);
-      }
-    });
-
-    document.getElementById('btnSaveUsername').addEventListener('click', async () => {
-      const username = document.getElementById('usernameInput').value.trim();
-      const errorEl = document.getElementById('usernameError');
-      
-      errorEl.textContent = '';
-
-      if(!username || !/^[a-zA-Z0-9_]{3,20}$/.test(username)){
-        errorEl.textContent = 'Username must be 3–20 characters, letters/numbers/underscore only.';
-        return;
-      }
-
-      const email = currentUser?.email || null;
-
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .insert({ 
-            id: currentUser.id, 
-            username: username, 
-            email: email 
-          });
-
-        if(error){
-          if(error.code === '23505') {
-            errorEl.textContent = 'That username is already taken.';
-          } else {
-            errorEl.textContent = 'Error creating profile: ' + error.message;
+      if (btnSignUpEl) {
+        btnSignUpEl.addEventListener('click', async () => {
+          const email = document.getElementById('authEmail').value.trim();
+          const password = document.getElementById('authPass').value;
+          
+          if(!email || !password) {
+            alert('Please enter both email and password.');
+            return;
           }
-          return;
-        }
 
-        document.getElementById('usernameGate').style.display = 'none';
-        document.getElementById('usernameGate').setAttribute('aria-hidden', 'true');
-        await refreshAuthUI();
-        
-      } catch(error) {
-        console.error('Username save error:', error);
-        errorEl.textContent = 'An unexpected error occurred.';
+          try {
+            const { data, error } = await supabase.auth.signUp({ 
+              email, 
+              password 
+            });
+            
+            if(error) {
+              alert('Sign up error: ' + error.message);
+            } else {
+              alert('You are signed up! Choose a username below to get started.');
+            }
+          } catch(error) {
+            console.error('Signup error:', error);
+            alert('An unexpected error occurred during signup.');
+          }
+        });
+      } else {
+        console.warn('Element with ID "btnSignUp" not found in DOM');
       }
+
+      if (btnSignInEl) {
+        btnSignInEl.addEventListener('click', async () => {
+          const email = document.getElementById('authEmail').value.trim();
+          const password = document.getElementById('authPass').value;
+          
+          if(!email || !password) {
+            alert('Please enter both email and password.');
+            return;
+          }
+
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({ 
+              email, 
+              password 
+            });
+            
+            if(error) {
+              alert('Sign in error: ' + error.message);
+            } else {
+              await refreshAuthUI();
+            }
+          } catch(error) {
+            console.error('Signin error:', error);
+            alert('An unexpected error occurred during sign in.');
+          }
+        });
+      } else {
+        console.warn('Element with ID "btnSignIn" not found in DOM');
+      }
+
+      if (btnSignOutEl) {
+        btnSignOutEl.addEventListener('click', async () => {
+          try {
+            await supabase.auth.signOut();
+            gameState.selectedTeam = null;
+            await refreshAuthUI();
+            renderTeams();
+            updateStatus();
+            updateUsedTeams();
+          } catch(error) {
+            console.error('Signout error:', error);
+          }
+        });
+      } else {
+        console.warn('Element with ID "btnSignOut" not found in DOM');
+      }
+
+      if (btnSaveUsernameEl) {
+        btnSaveUsernameEl.addEventListener('click', async () => {
+          const username = document.getElementById('usernameInput').value.trim();
+          const errorEl = document.getElementById('usernameError');
+          
+          errorEl.textContent = '';
+
+          if(!username || !/^[a-zA-Z0-9_]{3,20}$/.test(username)){
+            errorEl.textContent = 'Your publicly visible username must be 3–20 characters, letters/numbers/underscore only.';
+            return;
+          }
+
+          const email = currentUser?.email || null;
+
+          try {
+            const { error } = await supabase
+              .from('profiles')
+              .insert({ 
+                id: currentUser.id, 
+                username: username, 
+                email: email 
+              });
+
+            if(error){
+              if(error.code === '23505') {
+                errorEl.textContent = 'That username is already taken.';
+              } else {
+                errorEl.textContent = 'Error creating profile: ' + error.message;
+              }
+              return;
+            }
+
+            document.getElementById('usernameGate').style.display = 'none';
+            document.getElementById('usernameGate').setAttribute('aria-hidden', 'true');
+            await refreshAuthUI();
+            
+          } catch(error) {
+            console.error('Username save error:', error);
+            errorEl.textContent = 'An unexpected error occurred.';
+          }
+        });
+      } else {
+        console.warn('Element with ID "btnSaveUsername" not found in DOM');
+      }
+
+      if (submitPickEl) {
+        submitPickEl.addEventListener('click', submitPick);
+      } else {
+        console.warn('Element with ID "submitPick" not found in DOM');
+      }
+
+      if (newGameEl) {
+        newGameEl.addEventListener('click', newGame);
+      } else {
+        console.warn('Element with ID "newGame" not found in DOM');
+      }
+
+      if (viewScheduleEl) {
+        viewScheduleEl.addEventListener('click', () => {
+          window.open('https://plaintextsports.com/nfl/2025/schedule', '_blank');
+        });
+      } else {
+        console.warn('Element with ID "viewSchedule" not found in DOM');
+      }
+
+      window.addEventListener('resize', autoFitPlayerName);
+
+      document.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape') {
+          const usernameGate = document.getElementById('usernameGate');
+          if(usernameGate.style.display === 'block') {
+            usernameGate.style.display = 'none';
+            usernameGate.setAttribute('aria-hidden', 'true');
+          }
+        }
+        
+        if(e.target.id === 'usernameInput' && e.key === 'Enter') {
+          if (btnSaveUsernameEl) {
+            btnSaveUsernameEl.click();
+          }
+        }
+        
+        if((e.target.id === 'authEmail' || e.target.id === 'authPass') && e.key === 'Enter') {
+          if (btnSignInEl) {
+            btnSignInEl.click();
+          }
+        }
+      });
+
+      (async function initializeApplication(){
+        console.log('Law & Order: Special Victory Unit - Mobile-First Version Initializing...');
+        
+        try {
+          renderTeams();
+          updateStatus();
+          updateUsedTeams();
+          
+          await refreshAuthUI();
+          await refreshLeagueStats();
+          
+          setInterval(checkWeekAdvancement, 60000);
+          
+          console.log('Mobile-first application initialized successfully');
+          
+        } catch(error) {
+          console.error('Application initialization failed:', error);
+        }
+      })();
     });
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -999,14 +1094,16 @@ th, td{
 
         const currentWeekPick = picks.find(p => p.week === gameState.currentWeek);
         const alreadyPickedEl = document.getElementById('alreadyPickedMsg');
+        const submitPickEl = document.getElementById('submitPick');
 
-        if(currentWeekPick) {
-          document.getElementById('submitPick').disabled = true;
-          document.getElementById('simulateWeek').disabled = true;
+        if(currentWeekPick && alreadyPickedEl && submitPickEl) {
+          submitPickEl.disabled = true;
           alreadyPickedEl.style.display = 'block';
-          alreadyPickedEl.textContent = `You already picked Week ${currentWeekPick.week}: ${currentWeekPick.team}.`;
+          alreadyPickedEl.textContent = `Week ${currentWeekPick.week} you picked: ${currentWeekPick.team}.`;
         } else {
-          alreadyPickedEl.style.display = 'none';
+          if (alreadyPickedEl) alreadyPickedEl.style.display = 'none';
+          if (!alreadyPickedEl) console.warn('Element with ID "alreadyPickedMsg" not found in DOM');
+          if (!submitPickEl) console.warn('Element with ID "submitPick" not found in DOM');
         }
 
         renderTeams();
@@ -1020,12 +1117,12 @@ th, td{
 
     async function submitPick(){
       if(!currentUser) {
-        alert('Please sign in first.');
+        alert('Please sign in first, detective.');
         return;
       }
       
       if(!currentProfile) {
-        alert('Please set a username to play.');
+        alert('Please choose a username to play.');
         return;
       }
       
@@ -1042,12 +1139,13 @@ th, td{
           .insert({
             user_id: currentUser.id,
             week: week,
-            team: team
+            team: team,
+            username: currentProfile.username
           });
 
         if(error) {
           if(error.code === '23505') {
-            alert('Rule violation: Either you already picked this week, or you already used that team.');
+            alert('Freeze!: Either you already picked this week, or you already picked that team. Contact KK to change your pick');
           } else {
             alert('Error submitting pick: ' + error.message);
           }
@@ -1055,8 +1153,10 @@ th, td{
         }
 
         gameState.weeklyPicks.push({ week, team });
-        document.getElementById('submitPick').disabled = true;
-        document.getElementById('simulateWeek').disabled = true;
+        const submitPickEl = document.getElementById('submitPick');
+        if (submitPickEl) {
+          submitPickEl.disabled = true;
+        }
 
         const verdictEl = document.createElement('div');
         verdictEl.className = 'verdict slide-in';
@@ -1107,17 +1207,20 @@ th, td{
         cardEl.setAttribute('role', 'button');
         cardEl.setAttribute('tabindex', isUsed || !gameState.isActive ? '-1' : '0');
         cardEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-        cardEl.setAttribute('aria-label', `Select ${team.name}${isUsed ? ' (already used)' : ''}`);
+        cardEl.setAttribute('aria-label', `Pick ${team.name}${isUsed ? ' (already used)' : ''}`);
 
-        const teamColor = team.primary || '#4B5563';
+        const teamPrimary = team.primary || '#4B5563';
+        const teamSecondary = team.secondary || '#E5E7EB';
         
         cardEl.style.background = 'var(--bg-primary)';
         cardEl.style.color = 'var(--text-primary)';
-        cardEl.style.borderLeftColor = teamColor;
+        cardEl.style.borderLeftColor = teamPrimary;
+        cardEl.style.setProperty('--team-primary', teamPrimary);
+        cardEl.style.setProperty('--team-secondary', teamSecondary);
 
         cardEl.innerHTML = `
           <div class="team-name">${team.name}</div>
-          ${isUsed ? '<div style="font-size:0.8rem;margin-top:4px;opacity:0.8">CASE CLOSED</div>' : ''}
+          ${isUsed ? '<div style="font-size:0.8rem;margin-top:4px;opacity:0.8">PICKED</div>' : ''}
         `;
 
         if(isUsed || !gameState.isActive) {
@@ -1148,9 +1251,12 @@ th, td{
 
       gameState.selectedTeam = teamName;
       renderTeams();
-      document.getElementById('submitPick').disabled = false;
+      const submitPickEl = document.getElementById('submitPick');
+      if (submitPickEl) {
+        submitPickEl.disabled = false;
+      }
       
-      const announcement = `Selected ${teamName}`;
+      const announcement = `Picked ${teamName}`;
       const ariaLiveEl = document.createElement('div');
       ariaLiveEl.setAttribute('aria-live', 'polite');
       ariaLiveEl.className = 'sr-only';
@@ -1213,44 +1319,6 @@ th, td{
       gameOverEl.focus();
     }
 
-    function simulateWeek(){
-      if(!gameState.selectedTeam || !gameState.isActive) {
-        return;
-      }
-
-      const teamLoses = Math.random() < 0.7;
-
-      if(teamLoses) {
-        gameState.usedTeams.push(gameState.selectedTeam);
-        gameState.currentWeek++;
-        gameState.selectedTeam = null;
-
-        const verdictEl = document.createElement('div');
-        verdictEl.className = 'verdict slide-in';
-        verdictEl.style.borderLeftColor = 'var(--success)';
-        verdictEl.innerHTML = 
-          `<strong>Judge:</strong> "The defendant has been found GUILTY of losing. Proceed to Week ${gameState.currentWeek}."`;
-        document.getElementById('teamSelection').appendChild(verdictEl);
-        
-        setTimeout(() => {
-          if(verdictEl.parentNode) {
-            verdictEl.remove();
-          }
-        }, 4500);
-
-      } else {
-        gameState.isActive = false;
-        showGameOver(false);
-      }
-
-      renderTeams();
-      updateStatus();
-      updateUsedTeams();
-      
-      document.getElementById('submitPick').disabled = true;
-      document.getElementById('simulateWeek').disabled = true;
-    }
-
     function checkWeekAdvancement(){
       const centralTime = getCentralNow();
       
@@ -1264,8 +1332,10 @@ th, td{
           gameState.selectedTeam = null;
           gameState.lastWeekAdvancement = Date.now();
           
-          document.getElementById('submitPick').disabled = true;
-          document.getElementById('simulateWeek').disabled = true;
+          const submitPickEl = document.getElementById('submitPick');
+          if (submitPickEl) {
+            submitPickEl.disabled = true;
+          }
 
           const verdictEl = document.createElement('div');
           verdictEl.className = 'verdict slide-in';
@@ -1291,8 +1361,10 @@ th, td{
       
       document.getElementById('gameOverSection').style.display = 'none';
       document.getElementById('teamSelection').style.display = 'block';
-      document.getElementById('submitPick').disabled = true;
-      document.getElementById('simulateWeek').disabled = true;
+      const submitPickEl = document.getElementById('submitPick');
+      if (submitPickEl) {
+        submitPickEl.disabled = true;
+      }
       
       renderTeams();
       updateStatus();
@@ -1409,50 +1481,6 @@ th, td{
       const picks = await fetchAllPicksPublic();
       renderLeagueStats(picks);
     }
-
-    document.getElementById('submitPick').addEventListener('click', submitPick);
-    document.getElementById('simulateWeek').addEventListener('click', simulateWeek);
-    document.getElementById('newGame').addEventListener('click', newGame);
-    window.addEventListener('resize', autoFitPlayerName);
-
-    document.addEventListener('keydown', (e) => {
-      if(e.key === 'Escape') {
-        const usernameGate = document.getElementById('usernameGate');
-        if(usernameGate.style.display === 'block') {
-          usernameGate.style.display = 'none';
-          usernameGate.setAttribute('aria-hidden', 'true');
-        }
-      }
-      
-      if(e.target.id === 'usernameInput' && e.key === 'Enter') {
-        document.getElementById('btnSaveUsername').click();
-      }
-      
-      if((e.target.id === 'authEmail' || e.target.id === 'authPass') && e.key === 'Enter') {
-        document.getElementById('btnSignIn').click();
-      }
-    });
-
-    (async function initializeApplication(){
-      console.log('Law & Order: Special Victory Unit - Mobile-First Version Initializing...');
-      
-      try {
-        renderTeams();
-        updateStatus();
-        updateUsedTeams();
-        
-        await refreshAuthUI();
-        await refreshLeagueStats();
-        
-        setInterval(checkWeekAdvancement, 60000);
-        
-        console.log('Mobile-first application initialized successfully');
-        
-      } catch(error) {
-        console.error('Application initialization failed:', error);
-      }
-    })();
-
   </script>
 </body>
 </html>
