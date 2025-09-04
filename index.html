@@ -4,51 +4,62 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Law & Order: Special Victory Unit</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="src/lawandorder.jpg"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="src/lawandorder.jpg"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="src/lawandorder.jpg"/>
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lawandorder-svu.app/"/>
+  <meta property="og:title" content="Law & Order: Special Victory Unit"/>
+  <meta property="og:description" content="In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories."/>
+  <meta property="og:image" content="src/lawandorder.jpg"/>
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image"/>
+  <meta property="twitter:url" content="https://lawandorder-svu.app/"/>
+  <meta property="twitter:title" content="Law & Order: Special Victory Unit"/>
+  <meta property="twitter:description" content="In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories."/>
+  <meta property="twitter:image" content="src/lawandorder.jpg"/>
 
-  <!-- 
-    TYPOGRAPHY STRATEGY:
-    - Using IBM Plex Sans for Swiss modernist feel
-    - System font stack as fallback ensures consistency
-    - Limited weight variations (400, 600, 700) for hierarchy
-  -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-
-  <!-- Supabase for real-time data persistence -->
+  <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-/* ===== SWISS DESIGN SYSTEM: COLOR VARIABLES ===== */
-:root{
-  /* MONOCHROMATIC PALETTE - No gradients, pure Swiss approach */
-  --primary-red: #E53E3E;      /* Sharp red, high contrast */
-  --primary-red-dark: #C53030;  /* Darker red for interactions */
-  --primary-blue: #1A365D;     /* Deep navy, professional */
-  --primary-blue-mid: #2D3748; /* Mid-tone for hover states */
-  
-  /* NEUTRAL GRAYS - Swiss typography tradition */
-  --text-primary: #1A202C;     /* Near-black for maximum readability */
-  --text-secondary: #4A5568;   /* Medium gray for secondary info */
-  --text-tertiary: #718096;    /* Light gray for meta information */
-  
-  /* BACKGROUNDS - Warm eggshell palette for comfortable viewing */
-  --bg-primary: #FAF9F7;       /* Warm eggshell background */
-  --bg-secondary: #FAF9F7;     /* Same eggshell for panels */
-  --bg-tertiary: #F5F4F2;      /* Slightly darker warm gray for cards */
-  --bg-accent: #E8E6E3;        /* Warm gray for borders and dividers */
-  
-  /* SYSTEM COLORS */
-  --success: #38A169;          /* Green for positive actions */
-  --warning: #D69E2E;          /* Orange for warnings */
-  --error: #E53E3E;            /* Red for errors (matches primary) */
+/* ===== SINGLE LOCAL HEADER FONT ===== */
+@font-face {
+  font-family: 'FrizQuadrataRegular';
+  src: url('./fonts/FrizQuadrataRegular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* ===== RESET & BASE STYLES ===== */
-/* 
-  Swiss design principle: Start with zero
-  Remove all browser defaults to build intentionally
-*/
+/* ===== COLOR SYSTEM ===== */
+:root{
+  --primary-red: #DC2626;
+  --primary-red-dark: #B91C1C;
+  --primary-blue: #1E40AF;
+  --primary-blue-mid: #1D4ED8;
+  
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6B7280;
+  
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary: #F3F4F6;
+  --bg-accent: #E5E7EB;
+  --bg-hover: #F9FAFB;
+  
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
+}
+
 *{
   margin: 0;
   padding: 0;
@@ -56,505 +67,499 @@
 }
 
 html{
-  background: #FAF9F7; /* Warm eggshell background on html element */
+  background: var(--bg-primary);
 }
 
-/* 
-  TYPOGRAPHY SCALE:
-  Based on 16px base with mathematical progression
-  Each size has a specific purpose in the hierarchy
-*/
 body{
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5; /* Swiss standard for optimal readability */
+  /* Regular system font for all body text */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
   color: var(--text-primary);
-  background: #FAF9F7 !important; /* Warm eggshell background with !important */
+  background: var(--bg-primary);
   min-height: 100vh;
-  
-  /* SWISS PRINCIPLE: Generous whitespace */
-  letter-spacing: -0.01em; /* Tight letter spacing for clean look */
+  letter-spacing: 0;
 }
 
-/* ===== HEADER: Bold, Geometric Swiss Style ===== */
+/* ===== HEADER WITH LAW & ORDER LOGO ===== */
 .header{
-  background: var(--primary-red);
-  padding: 32px 0; /* Generous padding, mathematical progression */
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  padding: 24px 16px;
   text-align: center;
-  
-  /* SWISS DETAIL: Sharp geometric border */
-  border-bottom: 8px solid var(--primary-blue);
-  
-  /* Remove any rounded corners - pure geometry */
+  border-bottom: 4px solid var(--primary-blue);
   border-radius: 0;
 }
 
-/* MAIN TITLE: Swiss typography principles */
-.header h1{
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 700;
-  font-size: 2.5rem; /* Increased for better impact and readability */
-  color: var(--bg-primary); /* Pure white */
+.header-logo{
+  max-width: 100%;
+  height: auto;
+  max-height: 80px;
+  margin-bottom: 16px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.header-logo-text{
+  font-family: 'FrizQuadrataRegular', serif; /* Header uses local Friz Quadrata */
+  font-weight: 900;
+  margin-bottom: 16px;
+  line-height: 1.0;
   text-transform: uppercase;
-  letter-spacing: 0.05em; /* Expanded for impact */
-  margin-bottom: 8px;
-  line-height: 1.1; /* Tighter line height for multi-line titles */
 }
 
-/* SUBTITLE: Contrasts with bold title */
+.law-text{
+  font-size: 2.5rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #4169E1, 
+    0 0 10px #4169E1, 
+    0 0 20px #4169E1,
+    0 0 30px #4169E1,
+    2px 2px 4px rgba(0,0,0,0.8);
+  display: block;
+  letter-spacing: 0.15em;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.ampersand{
+  font-size: 2rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #4169E1, 
+    0 0 10px #4169E1,
+    2px 2px 4px rgba(0,0,0,0.8);
+  margin: 0 0.3em;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.order-text{
+  font-size: 2.5rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #DC143C, 
+    0 0 10px #DC143C, 
+    0 0 20px #DC143C,
+    0 0 30px #DC143C,
+    2px 2px 4px rgba(0,0,0,0.8);
+  display: block;
+  letter-spacing: 0.15em;
+  margin-top: 8px;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.svu-subtitle{
+  font-size: 1.2rem;
+  color: #FFFFFF; 
+  text-shadow: 
+    0 0 3px #FFFFFF,
+    0 0 8px #FFD700,
+    0 0 15px #FFD700,
+    0 0 25px #FFA500,
+    0 0 35px #FF8C00,
+    2px 2px 4px rgba(0,0,0,0.8);
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+  font-family: 'FrizQuadrataRegular', serif;
+  text-transform: uppercase;
+}
+
+.header h1{
+  display: none;
+}
+
 .tagline{
-  font-size: 1rem; /* Increased for better readability */
+  font-size: 0.9rem;
   font-weight: 400;
-  color: var(--bg-secondary); /* Subtle contrast */
-  font-style: normal; /* Remove italic for Swiss cleanliness */
-  max-width: 600px;
+  color: rgba(255, 255, 255, 0.95);
+  font-style: italic;
+  max-width: 100%;
   margin: 0 auto;
-  line-height: 1.5; /* Improved line height for readability */
+  line-height: 1.5;
+  padding: 0 8px;
 }
 
-/* ===== CONTAINER: Swiss Grid System ===== */
-/* 
-  LAYOUT PRINCIPLE:
-  - Centered content with generous margins
-  - Mathematical progression for spacing
-  - Responsive without breakpoints where possible
-*/
 .container{
-  max-width: 1200px; /* Wider for modern screens */
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px; /* 1.5rem equivalent */
+  padding: 16px;
 }
 
-/* ===== AUTHENTICATION BAR ===== */
-/* Swiss principle: Function follows form */
+/* ===== AUTHENTICATION ===== */
 #authBar{
   display: flex;
-  gap: 12px; /* Consistent spacing unit */
-  align-items: center;
+  gap: 12px;
+  align-items: stretch;
   justify-content: center;
-  margin: 24px 0;
-  flex-wrap: wrap; /* Responsive behavior */
+  margin: 20px 0;
+  flex-wrap: wrap;
 }
 
-/* INPUT FIELDS: Clean, geometric */
 #authBar input{
-  padding: 12px 16px; /* Generous click targets */
-  border: 2px solid var(--bg-accent); /* Thick borders - Swiss style */
-  border-radius: 0; /* No rounded corners */
-  font-size: 14px;
+  padding: 16px;
+  border: 2px solid var(--bg-accent);
+  border-radius: 8px;
+  font-size: 16px;
   font-family: inherit;
   background: var(--bg-primary);
-  transition: border-color 0.2s ease; /* Subtle interaction feedback */
+  color: var(--text-primary);
+  min-height: 44px;
+  min-width: 200px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 #authBar input:focus{
   outline: none;
   border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
-/* ===== BUTTON SYSTEM ===== */
-/* 
-  SWISS BUTTON PRINCIPLES:
-  - Geometric shapes (no rounded corners)
-  - High contrast colors
-  - Consistent sizing and spacing
-  - Clear hierarchy through color
-*/
+#authBar input::placeholder{
+  color: var(--text-tertiary);
+}
+
+/* ===== BUTTONS ===== */
 .btn{
-  padding: 12px 24px; /* Mathematical progression */
+  padding: 16px 24px;
   border: none;
-  border-radius: 0; /* Pure geometry */
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.025em;
   cursor: pointer;
   font-family: inherit;
-  
-  /* INTERACTION: Subtle but noticeable */
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  min-height: 44px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* PRIMARY BUTTONS: Red for main actions */
 .btn-primary{
   background: var(--primary-red);
-  color: var(--bg-primary);
+  color: white;
+  border: 2px solid var(--primary-red);
 }
 
-.btn-primary:hover{
+.btn-primary:hover, .btn-primary:focus{
   background: var(--primary-red-dark);
-  transform: translateY(-1px); /* Subtle lift effect */
-}
-
-/* SECONDARY BUTTONS: Blue for alternative actions */
-.btn-secondary{
-  background: var(--primary-blue);
-  color: var(--bg-primary);
-}
-
-.btn-secondary:hover{
-  background: var(--primary-blue-mid);
+  border-color: var(--primary-red-dark);
   transform: translateY(-1px);
 }
 
-/* DISABLED STATE: Clear visual feedback */
-.btn:disabled{
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none; /* Disable hover effects */
+.btn-secondary{
+  background: var(--primary-blue);
+  color: white;
+  border: 2px solid var(--primary-blue);
 }
 
-/* ===== USERNAME GATE: Modal-style Component ===== */
+.btn-secondary:hover, .btn-secondary:focus{
+  background: var(--primary-blue-mid);
+  border-color: var(--primary-blue-mid);
+  transform: translateY(-1px);
+}
+
+.btn:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: var(--bg-accent);
+  color: var(--text-tertiary);
+  border-color: var(--bg-accent);
+}
+
+/* ===== USERNAME GATE ===== */
 #usernameGate{
   display: none;
-  max-width: 480px;
-  margin: 24px auto;
-  border: 3px solid var(--primary-blue); /* Thick Swiss border */
-  padding: 32px;
+  max-width: 400px;
+  margin: 20px auto;
+  border: 3px solid var(--primary-blue);
+  border-radius: 12px;
+  padding: 24px;
   background: var(--bg-primary);
-  
-  /* SWISS SHADOW: Subtle, geometric */
-  box-shadow: 0 8px 32px rgba(26, 54, 93, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 #usernameGate h3{
   font-weight: 700;
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem;
   color: var(--primary-blue);
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
-/* ===== CARD SYSTEM ===== */
-/* 
-  SWISS CARD PRINCIPLES:
-  - Clean geometric shapes
-  - Consistent spacing system
-  - Clear visual hierarchy
-  - Functional color coding
-*/
+#usernameGate input{
+  padding: 16px;
+  border: 2px solid var(--bg-accent);
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+  font-family: inherit;
+  font-size: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+#usernameGate input:focus{
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+/* ===== CARDS ===== */
 .game-info,
 .team-selection,
 .game-over,
 .used-teams{
-  background: var(--bg-secondary);
-  border: 3px solid var(--primary-blue); /* Consistent thick borders */
-  border-radius: 0; /* Pure geometry */
-  padding: 32px;
-  margin: 24px 0;
+  background: var(--bg-primary);
+  border: 3px solid var(--primary-blue);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* SPECIAL CARD VARIANTS */
 .game-info{
-  border-color: var(--primary-red); /* Red for important information */
+  border-color: var(--primary-red);
 }
 
 .used-teams{
-  border-color: var(--text-tertiary); /* Muted for completed items */
-  background: var(--bg-tertiary);
+  border-color: var(--text-tertiary);
+  background: var(--bg-secondary);
 }
 
-/* CARD HEADERS: Consistent typography hierarchy */
 .game-info h2,
 .team-selection h2,
 .game-over h2,
 .used-teams h3{
   font-weight: 700;
-  font-size: 1.375rem; /* Increased from 1.25rem for better hierarchy */
+  font-size: 1.25rem;
   color: var(--primary-blue);
   margin-bottom: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.025em; /* Slightly tighter for readability */
-  line-height: 1.2;
+  letter-spacing: 0.025em;
+  line-height: 1.3;
 }
 
-/* ===== VERDICT COMPONENT ===== */
-/* 
-  DESIGN NOTE: Represents judicial decisions
-  Uses geometric left border as design element
-*/
+/* ===== VERDICT ===== */
 .verdict{
-  background: var(--bg-primary);
-  border-left: 6px solid var(--primary-blue); /* Thick geometric accent */
-  padding: 20px;
-  margin: 20px 0;
-  font-style: normal; /* Remove italic for Swiss cleanliness */
-  
-  /* SWISS SHADOW: Subtle depth */
-  box-shadow: 0 2px 8px rgba(26, 54, 93, 0.05);
+  background: var(--bg-secondary);
+  border-left: 4px solid var(--primary-blue);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  font-style: normal;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== STATUS BAR: Information Dashboard ===== */
-/* 
-  LAYOUT STRATEGY:
-  - CSS Grid for responsive layout
-  - Auto-fit columns scale naturally
-  - Consistent card sizing
-*/
+/* ===== STATUS BAR ===== */
 .status-bar{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin: 24px 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 20px 0;
 }
 
-/* STATUS CARDS: Information display units */
 .status-card{
-  background: var(--bg-tertiary);
-  padding: 24px;
+  background: var(--bg-primary);
+  padding: 16px;
   text-align: center;
   border: 2px solid var(--bg-accent);
-  border-radius: 0; /* Pure geometry */
-  
-  /* INTERACTION: Subtle hover state */
-  transition: border-color 0.2s ease;
-}
-
-.status-card:hover{
-  border-color: var(--primary-blue);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .status-card h3{
   font-weight: 600;
-  font-size: 0.9375rem; /* Increased from 0.875rem for better readability */
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   line-height: 1.2;
 }
 
-/* STATUS VALUES: Prominent display */
 .status-card .value{
-  font-size: 2rem; /* Increased from 1.75rem for better prominence */
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary-red);
-  line-height: 1.1; /* Tighter for large numbers */
-  font-family: 'IBM Plex Mono', monospace; /* Monospace for numbers */
+  line-height: 1.1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; /* generic mono */
 }
 
-/* RESPONSIVE PLAYER NAME: Fits container width */
 #playerName{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+  font-size: 1.25rem !important;
 }
 
-/* ===== TEAM GRID SYSTEM ===== */
-/* 
-  LAYOUT STRATEGY:
-  - 4 columns on desktop for optimal scanning
-  - Responsive breakpoints for mobile
-  - Consistent gap system
-*/
+/* ===== TEAM GRID ===== */
 .team-grid{
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px; /* Generous spacing for touch targets */
-  margin-top: 24px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-/* ===== TEAM CARDS: Interactive Elements ===== */
-/* TEAM CARDS: Interactive Elements */
-/* 
-  DESIGN PRINCIPLES:
-  - Team secondary colors for backgrounds (readable on white page)
-  - Team primary colors for borders
-  - White page background shows through gaps
-  - High contrast text based on background color
-  - Clear interactive states
-  - Consistent sizing for scanning
-*/
 .team-card{
-  border-radius: 0; /* Pure Swiss geometry */
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 2px solid var(--bg-accent);
+  border-left: 6px solid transparent;
+  border-radius: 12px;
   padding: 20px 16px;
-  text-align: center;
-  border: 4px solid transparent; /* Will be set to team primary via JavaScript */
-  background: var(--bg-primary); /* Will be overridden with team secondary */
-  color: var(--text-primary); /* Will be overridden based on background contrast */
-  
-  /* INTERACTION DESIGN */
-  transition: transform 0.15s ease, box-shadow 0.15s ease, outline 0.15s ease;
+  text-align: left;
+  transition: all 0.2s ease;
   cursor: pointer;
-  
-  /* LAYOUT */
+  min-height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 100px; /* Consistent card height */
-  line-height: 1.3;
+  justify-content: flex-start;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* HOVER STATES: Clear interaction feedback */
 .team-card:hover{
-  transform: translateY(-3px); /* More pronounced lift */
-  box-shadow: 0 8px 24px rgba(26, 54, 93, 0.15); /* Swiss-style shadow */
+  background: var(--bg-hover);
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* DISABLED CARDS: Clear non-interactive state */
+.team-card.selected{
+  background: rgba(30, 64, 175, 0.05);
+  border-color: var(--primary-blue);
+  border-right-width: 4px;
+  border-right-color: var(--primary-blue);
+}
+
 .team-card.disabled{
-  opacity: 0.4;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none; /* Disable hover effects */
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
 }
 
-/* TEAM NAME: Bold, readable typography */
+.team-card.disabled:hover{
+  transform: none;
+  background: var(--bg-secondary);
+  border-color: var(--bg-accent);
+}
+
 .team-name{
-  font-weight: 700;
-  font-size: 0.95rem; /* Optimized for readability across all team names */
-  line-height: 1.2;
-  color: inherit; /* Use parent color for consistency */
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: inherit;
 }
 
-/* ===== USED TEAMS SECTION ===== */
+/* ===== ACTION BUTTONS ===== */
+.action-buttons{
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+  flex-direction: column;
+}
+
+.action-buttons .btn{
+  width: 100%;
+}
+
+/* ===== USED TEAMS ===== */
 .used-list{
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* USED TEAM CHIPS: Clean, minimal tags */
 .used-team{
-  background: var(--bg-accent);
-  padding: 10px 16px; /* Increased padding for better readability */
-  border-radius: 0; /* No rounded corners */
-  font-size: 0.9375rem; /* Increased from 0.875rem */
-  font-weight: 600;
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1.3;
-  
-  /* SUBTLE BORDER for definition */
-  border: 1px solid var(--text-tertiary);
+  border: 2px solid var(--bg-accent);
 }
 
-/* ===== TABLE SYSTEM ===== */
-/* 
-  SWISS TABLE DESIGN:
-  - Clean typography hierarchy
-  - Generous spacing
-  - Clear borders and dividers
-  - Optimal readability
-*/
+/* ===== TABLES ===== */
 table{
-  font-size: 0.9375rem; /* Increased from 0.9rem for better readability */
+  font-size: 0.875rem;
   width: 100%;
   border-collapse: collapse;
   line-height: 1.4;
+  background: var(--bg-primary);
 }
 
-/* TABLE HEADERS: Clear hierarchy */
 th{
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-primary);
   background: var(--bg-secondary);
+  font-size: 0.75rem;
 }
 
-/* CELL STYLING: Consistent spacing */
 th, td{
-  padding: 12px 16px; /* Generous padding */
+  padding: 12px 8px;
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid var(--bg-accent);
 }
 
-/* ===== ACTION BUTTONS SECTION ===== */
-.action-buttons{
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin: 32px 0;
-  flex-wrap: wrap; /* Responsive behavior */
-}
-
-/* ===== FOOTER: Minimal Swiss Style ===== */
+/* ===== FOOTER ===== */
 .footer{
   border-top: 2px solid var(--bg-accent);
   text-align: center;
   color: var(--text-tertiary);
-  padding: 24px;
-  margin-top: 48px;
-  font-size: 0.875rem; /* 14px */
-  line-height: 1.4;
+  padding: 20px 16px;
+  margin-top: 32px;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-/* 
-  BREAKPOINT STRATEGY:
-  - Mobile-first approach
-  - Logical breakpoints based on content
-  - Maintain Swiss principles at all sizes
-*/
-
-/* TABLET LAYOUT: 2 columns for teams */
-@media (max-width: 1024px){
-  .team-grid{
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .container{
-    padding: 20px;
-  }
+/* ===== RESPONSIVE ===== */
+@media (min-width: 480px){
+  .container{ padding: 20px; }
+  .law-text, .order-text{ font-size: 3rem; }
+  .ampersand{ font-size: 2.5rem; }
+  .svu-subtitle{ font-size: 1.4rem; }
+  .tagline{ font-size: 1rem; }
+  .team-grid{ grid-template-columns: repeat(2, 1fr); gap: 16px; }
 }
 
-/* MOBILE LAYOUT: Single column, optimized touch */
-@media (max-width: 600px){
-  .team-grid{
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .status-bar{
-    grid-template-columns: repeat(2, 1fr); /* 2x3 grid on mobile */
-  }
-  
-  .header h1{
-    font-size: 2rem; /* Reduced but still readable on mobile */
-    line-height: 1.1;
-  }
-  
-  .tagline{
-    font-size: 0.9375rem; /* Maintain readability on mobile */
-  }
-  
-  .action-buttons{
-    flex-direction: column;
-  }
-  
-  .btn{
-    width: 100%; /* Full-width buttons on mobile */
-    font-size: 0.9375rem; /* Ensure button text is readable */
-  }
-  
-  /* MOBILE TABLE: Maintain readability */
-  table{
-    font-size: 0.875rem; /* Slightly smaller but still readable */
-  }
-  
-  th, td{
-    padding: 10px 12px; /* Maintain generous padding for mobile */
-  }
-  
-  /* MOBILE CARD HEADERS */
-  .game-info h2,
-  .team-selection h2,
-  .game-over h2,
-  .used-teams h3{
-    font-size: 1.25rem; /* Slightly smaller on mobile but still prominent */
-  }
-  
-  /* MOBILE STATUS VALUES */
-  .status-card .value{
-    font-size: 1.75rem; /* Reduce size for mobile but keep prominence */
-  }
+@media (min-width: 768px){
+  .container{ padding: 24px; }
+  .law-text, .order-text{ font-size: 3.5rem; }
+  .ampersand{ font-size: 3rem; }
+  .svu-subtitle{ font-size: 1.6rem; }
+  .status-bar{ grid-template-columns: repeat(3, 1fr); }
+  .team-grid{ grid-template-columns: repeat(3, 1fr); }
+  .action-buttons{ flex-direction: row; }
+  .btn{ width: auto; }
 }
 
-/* ===== UTILITY CLASSES ===== */
-/* Swiss principle: Minimal, functional utilities */
+@media (min-width: 1024px){
+  body{ font-size: 16px; }
+  .header{ padding: 32px 24px; }
+  .law-text, .order-text{ font-size: 4rem; }
+  .ampersand{ font-size: 3.5rem; }
+  .svu-subtitle{ font-size: 1.8rem; }
+  .status-bar{ grid-template-columns: repeat(5, 1fr); }
+  .team-grid{ grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .team-card{ text-align: center; justify-content: center; }
+  .status-card .value{ font-size: 2rem; }
+  #playerName{ font-size: 1.75rem !important; }
+}
 
+/* ===== UTILITY ===== */
 .sr-only{
   position: absolute;
   width: 1px;
@@ -567,93 +572,29 @@ th, td{
   border: 0;
 }
 
-/* ===== ANIMATION SYSTEM ===== */
-/* 
-  SWISS ANIMATION PRINCIPLES:
-  - Subtle, functional
-  - Fast, responsive timing
-  - Enhances usability without distraction
-*/
-
 @keyframes slideIn{
-  from{
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to{
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from{ opacity: 0; transform: translateY(20px); }
+  to{ opacity: 1; transform: translateY(0); }
 }
 
-.slide-in{
-  animation: slideIn 0.3s ease-out;
-}
-
-/* ===== PRINT STYLES ===== */
-/* Swiss principle: Design for all media */
-@media print{
-  .header{
-    background: none !important;
-    color: var(--text-primary) !important;
-    border-bottom: 2px solid var(--text-primary) !important;
-  }
-  
-  .btn, #authBar{
-    display: none !important;
-  }
-  
-  .team-card{
-    border: 1px solid var(--text-primary) !important;
-    background: none !important;
-    color: var(--text-primary) !important;
-  }
-}
-
-/* ===== DARK MODE PREPARATION ===== */
-/* 
-  NOTE: Swiss design works excellently in dark mode
-  These variables could be swapped via CSS custom properties
-*/
-@media (prefers-color-scheme: dark){
-  :root{
-    --text-primary: #F7FAFC;
-    --text-secondary: #E2E8F0;
-    --text-tertiary: #A0AEC0;
-    --bg-primary: #1A202C;
-    --bg-secondary: #2D3748;
-    --bg-tertiary: #4A5568;
-    --bg-accent: #718096;
-  }
-}
+.slide-in{ animation: slideIn 0.3s ease-out; }
 </style>
 </head>
 
 <body>
-  <!-- 
-    HEADER SECTION
-    Swiss principle: Bold, clear hierarchy
-    Function: Brand identity and context setting
-  -->
   <header class="header" role="banner">
+    <img src="src/lawandorder.jpg" alt="Law & Order Logo" class="header-logo"/>
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Special Victory Unit</div>
     <h1>Law & Order: Special Victory Unit</h1>
     <p class="tagline">"In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories. Dun Dun."</p>
   </header>
 
-  <!-- 
-    MAIN CONTAINER
-    Swiss grid system: Centered content with generous margins
-    Responsive design: Scales naturally across devices
-  -->
   <div class="container">
-
-    <!-- 
-      AUTHENTICATION BAR
-      Function: User management and session control
-      Design: Clean, minimal form elements
-    -->
     <div id="authBar" role="complementary" aria-label="User authentication">
-      <!-- Logged Out State -->
       <div id="authWhenLoggedOut" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
         <input id="authEmail" type="email" placeholder="Email" aria-label="Email address" />
         <input id="authPass" type="password" placeholder="Password" aria-label="Password" />
@@ -661,18 +602,12 @@ th, td{
         <button id="btnSignIn" class="btn btn-secondary" type="button">Sign In</button>
       </div>
       
-      <!-- Logged In State -->
       <div id="authWhenLoggedIn" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;">
         <span id="displayUser" style="font-weight:600;color:var(--primary-blue)" aria-label="Current user"></span>
         <button id="btnSignOut" class="btn btn-secondary" type="button">Sign Out</button>
       </div>
     </div>
 
-    <!-- 
-      USERNAME GATE
-      Function: One-time username selection modal
-      Design: Card-style overlay with clear call-to-action
-    -->
     <div id="usernameGate" role="dialog" aria-labelledby="usernameGateTitle" aria-hidden="true">
       <h3 id="usernameGateTitle">Choose a Username</h3>
       <p style="margin-bottom:16px;color:var(--text-secondary);line-height:1.4">Pick a public handle for the game (3–20 letters/numbers/underscore). Cannot be changed later.</p>
@@ -681,27 +616,15 @@ th, td{
       <div id="usernameError" role="alert" style="color:var(--error);margin-top:12px;font-weight:600"></div>
     </div>
 
-    <!-- 
-      GAME INFORMATION CARD
-      Function: Rules explanation and context
-      Design: Red border for importance, clear typography hierarchy
-    -->
     <section class="game-info" aria-labelledby="gameInfoTitle">
       <h2 id="gameInfoTitle">🏛️ The Case File</h2>
       <p><strong>The Rules:</strong> Each week, you must select one NFL team that you believe will <em>lose</em> their game. If your selected team loses, you advance. If they win or tie, you're out. You can use each team only once per season.</p>
       
-      <!-- Character Quote Component -->
       <div class="verdict" role="note">
-        <strong>Detective Briscoe:</strong> "We're betting on losers? Sounds like my ex-wife's dating strategy."
+        <strong>Detective Briscoe:</strong> "We're betting on losers? Easy! I pick losers at the track every weekend."
       </div>
     </section>
 
-    <!-- 
-      STATUS DASHBOARD
-      Function: Real-time game state display
-      Layout: CSS Grid for responsive columns
-      Typography: Monospace numbers for alignment
-    -->
     <section class="status-bar" aria-label="Game status dashboard">
       <div class="status-card">
         <h3>Player</h3>
@@ -725,43 +648,29 @@ th, td{
       </div>
     </section>
 
-    <!-- 
-      TEAM SELECTION SECTION
-      Function: Main game interaction
-      Layout: 4-column grid (responsive to 2, then 1)
-      Accessibility: Full keyboard navigation support
-    -->
     <section class="team-selection" id="teamSelection" aria-labelledby="teamSelectionTitle">
-      <h2 id="teamSelectionTitle">⚖️ Select Your Weekly Defendant</h2>
-      <p>Choose the team you believe will lose this week:</p>
+      <h2 id="teamSelectionTitle">🏈 Select Your Victim of the Week</h2>
+      <p>(A team you believe will lose this week):</p>
       
-      <!-- Team Grid: Generated dynamically by JavaScript -->
       <div class="team-grid" id="teamGrid" role="group" aria-label="NFL teams selection"></div>
       
-      <!-- Already Picked Message -->
       <div id="alreadyPickedMsg" 
            role="alert" 
            aria-live="polite"
            style="margin-top:16px;color:var(--primary-blue);font-weight:600;display:none;"></div>
     </section>
 
-    <!-- 
-      ACTION BUTTONS
-      Function: Primary game controls
-      Layout: Centered flex with responsive stacking
-    -->
     <section class="action-buttons" role="group" aria-label="Game actions">
       <button class="btn btn-primary" id="submitPick" disabled aria-describedby="submitPickHelp">
-        Submit Your Verdict
+        Submit Your Loser
       </button>
       <button class="btn btn-secondary" id="simulateWeek" disabled aria-describedby="simulateWeekHelp">
         Simulate Week Results
       </button>
       <button class="btn btn-secondary" id="newGame" aria-describedby="newGameHelp">
-        Reset UI
+        Reset Pick
       </button>
       
-      <!-- Screen reader help text -->
       <div class="sr-only">
         <div id="submitPickHelp">Submit your team selection for this week</div>
         <div id="simulateWeekHelp">Test simulate the week's results</div>
@@ -769,39 +678,23 @@ th, td{
       </div>
     </section>
 
-    <!-- 
-      USED TEAMS SECTION
-      Function: Display player's pick history
-      Design: Muted styling for completed items
-    -->
     <section class="used-teams" id="usedTeamsSection" style="display:none;" aria-labelledby="usedTeamsTitle">
       <h3 id="usedTeamsTitle">🗂️ Case Files Closed (Your Picks)</h3>
       <div class="used-list" id="usedTeamsList" role="list" aria-label="Teams you have already selected"></div>
     </section>
 
-    <!-- 
-      GAME OVER SECTION
-      Function: End game messaging
-      Design: Prominent display with character quotes
-    -->
     <section class="game-over" id="gameOverSection" style="display:none;" aria-labelledby="gameOverTitle">
       <h2 id="gameOverTitle">⚖️ CASE CLOSED</h2>
       <p id="gameOverMessage" role="status"></p>
       <div class="verdict" id="finalVerdict" role="note"></div>
     </section>
 
-    <!-- 
-      LEAGUE STATISTICS
-      Function: Community data display
-      Tables: Accessible, responsive data presentation
-    -->
     <section class="game-info" id="leagueStats" aria-labelledby="leagueStatsTitle">
       <h2 id="leagueStatsTitle">📊 League Stats</h2>
       <div id="statsSummary" 
            style="margin:16px 0 24px;color:var(--primary-blue);font-weight:600"
            aria-live="polite"></div>
 
-      <!-- User Summary Table -->
       <div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary);margin-bottom:24px">
         <table id="userSummaryTable" role="table" aria-label="User summary statistics">
           <caption class="sr-only">Summary of all users' picks and activity</caption>
@@ -817,7 +710,6 @@ th, td{
         </table>
       </div>
 
-      <!-- All Picks Table -->
       <h3 style="margin:24px 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
         All Picks (Newest First)
       </h3>
@@ -837,57 +729,17 @@ th, td{
       </div>
     </section>
 
-  </div><!-- /.container -->
+  </div>
 
-  <!-- 
-    FOOTER
-    Swiss principle: Minimal, functional
-    Contains legal disclaimer in theme
-  -->
   <footer class="footer" role="contentinfo">
     <p>Executive Producer: Dick Wolf · "These stories are fictional. Any resemblance to actual fantasy football leagues is purely coincidental."</p>
   </footer>
 
   <script>
-    /* ==========================================
-       JAVASCRIPT ARCHITECTURE DOCUMENTATION
-       ==========================================
-       
-       This single-page application demonstrates:
-       1. Modern ES6+ JavaScript patterns
-       2. Supabase real-time database integration
-       3. Swiss design system implementation
-       4. Responsive component architecture
-       5. Accessibility-first development
-       
-       Key Patterns Used:
-       - Module pattern for organization
-       - Async/await for database operations
-       - Event delegation for dynamic content
-       - CSS custom properties for theming
-       - Progressive enhancement principles
-    */
-
-    /* ===== DATABASE CONFIGURATION ===== */
-    /*
-      Supabase Configuration:
-      - Provides real-time PostgreSQL database
-      - Handles authentication and user management
-      - Enables real-time subscriptions for live updates
-      - Row Level Security (RLS) for data protection
-    */
     const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWp5emFrY2ZtdndkZmd6enl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyNjAxNDQsImV4cCI6MjA3MTgzNjE0NH0.8gQ5Xg0HhZBI61i6XS-kK9Ui-3DxRywXT40OB9YNIbI';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* ===== NFL TEAMS DATA STRUCTURE ===== */
-    /*
-      Team Color System:
-      - Primary: Main team color (used for borders, accents)
-      - Secondary: Alternative color (used for backgrounds)
-      - Swiss Design: High contrast, no gradients
-      - Accessibility: Colors tested for WCAG compliance
-    */
     const nflTeams = [
       { name: "Arizona Cardinals",    primary: "#97233F", secondary: "#FFB612" },
       { name: "Atlanta Falcons",      primary: "#A71930", secondary: "#000000" },
@@ -923,65 +775,33 @@ th, td{
       { name: "Washington Commanders",primary: "#5A1414", secondary: "#FFB612" }
     ];
 
-    /* ===== APPLICATION STATE MANAGEMENT ===== */
-    /*
-      State Management Pattern:
-      - Single source of truth object
-      - Pure functions for state updates
-      - UI reflects state changes reactively
-      - Database is the ultimate source of truth
-    */
     let gameState = {
-      currentWeek: 1,              // Current NFL week
-      usedTeams: [],               // Teams already picked (from database)
-      selectedTeam: null,          // Currently selected team (UI state)
-      isActive: true,              // Whether player can still make picks
-      weeklyPicks: [],             // Complete pick history (UI cache)
-      lastWeekAdvancement: 0       // Timestamp of last week change
+      currentWeek: 1,
+      usedTeams: [],
+      selectedTeam: null,
+      isActive: true,
+      weeklyPicks: [],
+      lastWeekAdvancement: 0
     };
 
-    /* ===== USER MANAGEMENT SYSTEM ===== */
-    /*
-      Authentication Flow:
-      1. User signs up/in with Supabase Auth
-      2. Profile created with unique username
-      3. Username stored in separate profiles table
-      4. Email stored for communication (future feature)
-    */
-    let currentUser = null;      // Supabase user object
-    let currentProfile = null;   // Custom profile with username
+    let currentUser = null;
+    let currentProfile = null;
 
-    /* ===== UTILITY FUNCTIONS ===== */
-
-    /**
-     * Get current Central Time
-     * Used for week advancement logic
-     * NFL games typically decided by Monday 00:00 CT
-     */
     function getCentralNow(){
       const now = new Date();
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     }
 
-    /**
-     * Auto-fit Player Name Typography
-     * Swiss design principle: Typography should fit its container perfectly
-     * 
-     * @param {number} minPx - Minimum font size
-     * @param {number} maxPx - Maximum font size  
-     * @param {number} padPx - Container padding to account for
-     */
     function autoFitPlayerName(minPx = 12, maxPx = 28, padPx = 8){
       const el = document.getElementById('playerName');
       if(!el) return;
       
-      const container = el.parentElement; // .status-card
+      const container = el.parentElement;
       el.style.fontSize = maxPx + 'px';
       
       let size = maxPx;
-      let loops = 40; // Prevent infinite loops
+      let loops = 40;
       
-      // Decrease font size until text fits container
       while(size > minPx && el.scrollWidth > (container.clientWidth - padPx)){
         size--;
         el.style.fontSize = size + 'px';
@@ -989,37 +809,6 @@ th, td{
       }
     }
 
-    /**
-     * Color Contrast Calculator
-     * Determines if a hex color is light or dark
-     * Used for accessible text color selection
-     * 
-     * @param {string} hex - Hex color code
-     * @returns {boolean} - True if color is light
-     */
-    function isHexLight(hex){
-      try{
-        const h = hex.replace('#','');
-        const r = parseInt(h.substring(0,2), 16);
-        const g = parseInt(h.substring(2,4), 16);
-        const b = parseInt(h.substring(4,6), 16);
-        
-        // Calculate relative luminance (W3C formula)
-        const L = 0.2126 * (r/255) + 0.7152 * (g/255) + 0.0722 * (b/255);
-        return L > 0.6; // Threshold for light/dark determination
-      }catch(e){
-        console.warn('Invalid hex color:', hex);
-        return false;
-      }
-    }
-
-    /* ===== AUTHENTICATION SYSTEM ===== */
-
-    /**
-     * Refresh Authentication UI
-     * Updates UI based on current user state
-     * Handles username gate and profile loading
-     */
     async function refreshAuthUI(){
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1031,13 +820,11 @@ th, td{
         const displayUserEl = document.getElementById('displayUser');
 
         if(!currentUser){
-          // User not authenticated
           loggedOutEl.style.display = 'flex';
           loggedInEl.style.display = 'none';
           usernameGateEl.style.display = 'none';
           displayUserEl.textContent = '';
           
-          // Disable game controls
           document.getElementById('submitPick').disabled = true;
           document.getElementById('simulateWeek').disabled = true;
           document.getElementById('playerName').textContent = 'Detective';
@@ -1045,11 +832,9 @@ th, td{
           return;
         }
 
-        // User is authenticated
         loggedOutEl.style.display = 'none';
         loggedInEl.style.display = 'flex';
 
-        // Check for existing profile
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -1062,7 +847,6 @@ th, td{
         }
 
         if(!profile){
-          // Show username selection gate
           usernameGateEl.style.display = 'block';
           usernameGateEl.setAttribute('aria-hidden', 'false');
           currentProfile = null;
@@ -1070,7 +854,6 @@ th, td{
           document.getElementById('playerName').textContent = 'Detective';
           autoFitPlayerName();
         }else{
-          // Profile exists, proceed with game
           usernameGateEl.style.display = 'none';
           usernameGateEl.setAttribute('aria-hidden', 'true');
           currentProfile = profile;
@@ -1078,7 +861,6 @@ th, td{
           document.getElementById('playerName').textContent = '@' + profile.username;
           autoFitPlayerName();
           
-          // Load user's pick history
           await loadUserPicksAndDisableTeams();
         }
       } catch(error) {
@@ -1086,12 +868,6 @@ th, td{
       }
     }
 
-    /* ===== EVENT LISTENERS: AUTHENTICATION ===== */
-
-    /**
-     * Sign Up Handler
-     * Creates new user account with email confirmation
-     */
     document.getElementById('btnSignUp').addEventListener('click', async () => {
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPass').value;
@@ -1118,10 +894,6 @@ th, td{
       }
     });
 
-    /**
-     * Sign In Handler
-     * Authenticates existing user
-     */
     document.getElementById('btnSignIn').addEventListener('click', async () => {
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPass').value;
@@ -1148,10 +920,6 @@ th, td{
       }
     });
 
-    /**
-     * Sign Out Handler
-     * Clears user session and resets UI
-     */
     document.getElementById('btnSignOut').addEventListener('click', async () => {
       try {
         await supabase.auth.signOut();
@@ -1165,17 +933,12 @@ th, td{
       }
     });
 
-    /**
-     * Username Creation Handler
-     * Creates user profile with unique username
-     */
     document.getElementById('btnSaveUsername').addEventListener('click', async () => {
       const username = document.getElementById('usernameInput').value.trim();
       const errorEl = document.getElementById('usernameError');
       
       errorEl.textContent = '';
 
-      // Validate username format
       if(!username || !/^[a-zA-Z0-9_]{3,20}$/.test(username)){
         errorEl.textContent = 'Username must be 3–20 characters, letters/numbers/underscore only.';
         return;
@@ -1201,7 +964,6 @@ th, td{
           return;
         }
 
-        // Success - hide gate and refresh UI
         document.getElementById('usernameGate').style.display = 'none';
         document.getElementById('usernameGate').setAttribute('aria-hidden', 'true');
         await refreshAuthUI();
@@ -1212,23 +974,11 @@ th, td{
       }
     });
 
-    /**
-     * Auth State Change Listener
-     * Supabase automatically detects auth changes
-     * Updates UI when user logs in/out
-     */
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
       refreshAuthUI();
     });
 
-    /* ===== DATABASE OPERATIONS: PICKS ===== */
-
-    /**
-     * Load User Picks from Database
-     * Fetches user's complete pick history
-     * Updates UI state and disables used teams
-     */
     async function loadUserPicksAndDisableTeams(){
       if(!currentUser) return;
 
@@ -1244,11 +994,9 @@ th, td{
           return;
         }
 
-        // Update game state with database data
         gameState.usedTeams = picks.map(p => p.team);
         gameState.weeklyPicks = picks.slice();
 
-        // Check if user already picked this week
         const currentWeekPick = picks.find(p => p.week === gameState.currentWeek);
         const alreadyPickedEl = document.getElementById('alreadyPickedMsg');
 
@@ -1261,7 +1009,6 @@ th, td{
           alreadyPickedEl.style.display = 'none';
         }
 
-        // Update UI to reflect current state
         renderTeams();
         updateStatus();
         renderUsedPicks(picks);
@@ -1271,13 +1018,7 @@ th, td{
       }
     }
 
-    /**
-     * Submit Pick to Database
-     * Saves user's weekly team selection
-     * Handles validation and error states
-     */
     async function submitPick(){
-      // Validation checks
       if(!currentUser) {
         alert('Please sign in first.');
         return;
@@ -1313,25 +1054,21 @@ th, td{
           return;
         }
 
-        // Success! Update UI state
         gameState.weeklyPicks.push({ week, team });
         document.getElementById('submitPick').disabled = true;
         document.getElementById('simulateWeek').disabled = true;
 
-        // Show success message with character quote
         const verdictEl = document.createElement('div');
         verdictEl.className = 'verdict slide-in';
         verdictEl.innerHTML = `<strong>DA McCoy:</strong> "The people have selected ${team} to lose in Week ${week}. Let's see if justice prevails."`;
         document.getElementById('teamSelection').appendChild(verdictEl);
         
-        // Remove message after animation
         setTimeout(() => {
           if(verdictEl.parentNode) {
             verdictEl.remove();
           }
         }, 4500);
 
-        // Reload data and refresh league stats
         await loadUserPicksAndDisableTeams();
         await refreshLeagueStats();
 
@@ -1341,12 +1078,6 @@ th, td{
       }
     }
 
-    /**
-     * Render Used Picks Display
-     * Shows user's pick history in chronological order
-     * 
-     * @param {Array} picks - Array of pick objects {week, team}
-     */
     function renderUsedPicks(picks){
       const sectionEl = document.getElementById('usedTeamsSection');
       const listEl = document.getElementById('usedTeamsList');
@@ -1363,13 +1094,6 @@ th, td{
         .join('');
     }
 
-    /* ===== UI RENDERING SYSTEM ===== */
-
-    /**
-     * Render Team Selection Grid
-     * Creates interactive team cards with proper styling and accessibility
-     * Swiss Design: High contrast, geometric shapes, team color integration
-     */
     function renderTeams(){
       const teamGridEl = document.getElementById('teamGrid');
       teamGridEl.innerHTML = '';
@@ -1378,7 +1102,6 @@ th, td{
         const isUsed = gameState.usedTeams.includes(team.name);
         const isSelected = gameState.selectedTeam === team.name;
         
-        // Create team card element
         const cardEl = document.createElement('div');
         cardEl.className = 'team-card';
         cardEl.setAttribute('role', 'button');
@@ -1386,27 +1109,21 @@ th, td{
         cardEl.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
         cardEl.setAttribute('aria-label', `Select ${team.name}${isUsed ? ' (already used)' : ''}`);
 
-        // Apply team colors (Swiss design: team color background, white page bg shows through)
-        const backgroundColor = team.secondary || team.primary || '#FFFFFF';
-        const borderColor = team.primary || '#000000';
-        const textColor = isHexLight(backgroundColor) ? '#1A202C' : '#F7FAFC';
+        const teamColor = team.primary || '#4B5563';
+        
+        cardEl.style.background = 'var(--bg-primary)';
+        cardEl.style.color = 'var(--text-primary)';
+        cardEl.style.borderLeftColor = teamColor;
 
-        cardEl.style.background = backgroundColor;
-        cardEl.style.borderColor = borderColor;
-        cardEl.style.color = textColor;
-
-        // Card content
         cardEl.innerHTML = `
           <div class="team-name">${team.name}</div>
           ${isUsed ? '<div style="font-size:0.8rem;margin-top:4px;opacity:0.8">CASE CLOSED</div>' : ''}
         `;
 
-        // Handle disabled state
         if(isUsed || !gameState.isActive) {
           cardEl.classList.add('disabled');
           cardEl.setAttribute('aria-disabled', 'true');
         } else {
-          // Add click and keyboard handlers
           cardEl.addEventListener('click', () => selectTeam(team.name));
           cardEl.addEventListener('keydown', (e) => {
             if(e.key === 'Enter' || e.key === ' ') {
@@ -1416,24 +1133,14 @@ th, td{
           });
         }
 
-        // Selection visual feedback - border matches team primary color
         if(isSelected && !isUsed) {
-          cardEl.style.outline = `4px solid ${backgroundColor}`;
-          cardEl.style.outlineOffset = '2px';
-          cardEl.style.transform = 'translateY(-2px)';
-          cardEl.style.boxShadow = `0 8px 24px ${backgroundColor}33`; // 20% opacity shadow
+          cardEl.classList.add('selected');
         }
 
         teamGridEl.appendChild(cardEl);
       });
     }
 
-    /**
-     * Select Team Handler
-     * Updates game state when user selects a team
-     * 
-     * @param {string} teamName - Name of selected NFL team
-     */
     function selectTeam(teamName){
       if(gameState.usedTeams.includes(teamName) || !gameState.isActive) {
         return;
@@ -1443,7 +1150,6 @@ th, td{
       renderTeams();
       document.getElementById('submitPick').disabled = false;
       
-      // Announce selection to screen readers
       const announcement = `Selected ${teamName}`;
       const ariaLiveEl = document.createElement('div');
       ariaLiveEl.setAttribute('aria-live', 'polite');
@@ -1453,11 +1159,6 @@ th, td{
       setTimeout(() => ariaLiveEl.remove(), 1000);
     }
 
-    /**
-     * Update Status Dashboard
-     * Refreshes all status cards with current game state
-     * Swiss Design: Clean typography, prominent numbers
-     */
     function updateStatus(){
       document.getElementById('currentWeek').textContent = gameState.currentWeek;
       document.getElementById('teamsUsedCount').textContent = gameState.usedTeams.length;
@@ -1471,10 +1172,6 @@ th, td{
       autoFitPlayerName();
     }
 
-    /**
-     * Update Used Teams Display
-     * Shows chips for each team already selected
-     */
     function updateUsedTeams(){
       const sectionEl = document.getElementById('usedTeamsSection');
       const listEl = document.getElementById('usedTeamsList');
@@ -1490,15 +1187,6 @@ th, td{
       }
     }
 
-    /* ===== GAME LOGIC SYSTEM ===== */
-
-    /**
-     * Show Game Over Screen
-     * Displays end-game messaging with character quotes
-     * 
-     * @param {boolean} won - Whether player won or lost
-     * @param {string} customMessage - Custom end game message
-     */
     function showGameOver(won = false, customMessage = null){
       const gameOverEl = document.getElementById('gameOverSection');
       const messageEl = document.getElementById('gameOverMessage');
@@ -1522,25 +1210,17 @@ th, td{
       gameOverEl.style.display = 'block';
       document.getElementById('teamSelection').style.display = 'none';
       
-      // Focus management for accessibility
       gameOverEl.focus();
     }
 
-    /**
-     * Simulate Week Results (Testing Feature)
-     * Randomly determines if selected team loses
-     * Used for UI testing without real NFL data
-     */
     function simulateWeek(){
       if(!gameState.selectedTeam || !gameState.isActive) {
         return;
       }
 
-      // 70% chance team loses (advances player)
       const teamLoses = Math.random() < 0.7;
 
       if(teamLoses) {
-        // Player advances
         gameState.usedTeams.push(gameState.selectedTeam);
         gameState.currentWeek++;
         gameState.selectedTeam = null;
@@ -1559,7 +1239,6 @@ th, td{
         }, 4500);
 
       } else {
-        // Player eliminated
         gameState.isActive = false;
         showGameOver(false);
       }
@@ -1572,21 +1251,14 @@ th, td{
       document.getElementById('simulateWeek').disabled = true;
     }
 
-    /**
-     * Week Advancement Logic
-     * Automatically advances week on Monday 00:00 CT
-     * Matches NFL schedule timing
-     */
     function checkWeekAdvancement(){
       const centralTime = getCentralNow();
       
-      // Check if it's Monday at midnight
       if(centralTime.getDay() === 1 && centralTime.getHours() === 0 && centralTime.getMinutes() === 0) {
         const lastAdvancement = gameState.lastWeekAdvancement || 0;
         const currentStart = new Date(centralTime);
         currentStart.setHours(0, 0, 0, 0);
         
-        // Only advance once per Monday
         if(currentStart.getTime() > lastAdvancement && gameState.isActive) {
           gameState.currentWeek++;
           gameState.selectedTeam = null;
@@ -1613,11 +1285,6 @@ th, td{
       }
     }
 
-    /**
-     * Reset Game UI
-     * Resets local UI state without affecting database
-     * Useful for testing and recovery
-     */
     function newGame(){
       gameState.selectedTeam = null;
       gameState.isActive = true;
@@ -1633,13 +1300,6 @@ th, td{
       loadUserPicksAndDisableTeams();
     }
 
-    /* ===== LEAGUE STATISTICS SYSTEM ===== */
-
-    /**
-     * Fetch All Picks (Public Data)
-     * Retrieves all picks from all users for league statistics
-     * Uses Supabase RLS for appropriate data access
-     */
     async function fetchAllPicksPublic() {
       try {
         const { data, error } = await supabase
@@ -1659,22 +1319,13 @@ th, td{
       }
     }
 
-    /**
-     * Render League Statistics
-     * Processes and displays community pick data
-     * Swiss Design: Clean tables, clear hierarchy
-     * 
-     * @param {Array} picks - All picks from all users
-     */
     function renderLeagueStats(picks) {
-      // Data processing: Group by user and team
       const users = new Map();
       const teamCounts = new Map();
 
       for(const pick of picks) {
         const username = pick.username || '(unknown)';
         
-        // Track user statistics
         if(!users.has(username)) {
           users.set(username, { 
             weeks: new Set(), 
@@ -1690,30 +1341,25 @@ th, td{
           userRecord.lastWeek = pick.week;
         }
 
-        // Track team popularity
         teamCounts.set(pick.team, (teamCounts.get(pick.team) || 0) + 1);
       }
 
-      // Calculate summary statistics
       const totalPicks = picks.length;
       const totalPlayers = users.size;
 
-      // Most popular teams
       const topTeams = [...teamCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([team, count]) => `${team} (${count})`)
         .join(' · ');
 
-      // Update summary display
       const summaryEl = document.getElementById('statsSummary');
       summaryEl.textContent = `Players: ${totalPlayers} · Total Picks: ${totalPicks}` + 
         (topTeams ? ` · Most Picked: ${topTeams}` : '');
 
-      // Render user summary table
       const userTableBody = document.getElementById('userSummaryBody');
       const userRows = [...users.entries()]
-        .sort((a, b) => a[0].localeCompare(b[0])) // Sort alphabetically by username
+        .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([username, record]) => {
           const weeksPicked = record.weeks.size;
           const teamsUsed = record.teams.size;
@@ -1732,7 +1378,6 @@ th, td{
       userTableBody.innerHTML = userRows || 
         `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
 
-      // Render all picks table (chronological)
       const allPicksBody = document.getElementById('allPicksBody');
       const pickRows = picks.map(pick => {
         const createdAt = new Date(pick.created_at);
@@ -1760,50 +1405,17 @@ th, td{
         `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
     }
 
-    /**
-     * Refresh League Statistics
-     * Fetches latest data and updates league tables
-     * Called after user makes a pick
-     */
     async function refreshLeagueStats() {
       const picks = await fetchAllPicksPublic();
       renderLeagueStats(picks);
     }
 
-    /* ===== EVENT LISTENERS: GAME CONTROLS ===== */
-
-    /**
-     * Submit Pick Button
-     * Primary game action - submits user's weekly pick
-     */
     document.getElementById('submitPick').addEventListener('click', submitPick);
-
-    /**
-     * Simulate Week Button  
-     * Testing feature - simulates week results
-     */
     document.getElementById('simulateWeek').addEventListener('click', simulateWeek);
-
-    /**
-     * New Game Button
-     * Resets UI state for fresh start
-     */
     document.getElementById('newGame').addEventListener('click', newGame);
-
-    /**
-     * Window Resize Handler
-     * Ensures player name typography scales properly
-     */
     window.addEventListener('resize', autoFitPlayerName);
 
-    /* ===== KEYBOARD ACCESSIBILITY ===== */
-
-    /**
-     * Global Keyboard Navigation
-     * Enhanced accessibility for power users
-     */
     document.addEventListener('keydown', (e) => {
-      // Escape key closes username gate
       if(e.key === 'Escape') {
         const usernameGate = document.getElementById('usernameGate');
         if(usernameGate.style.display === 'block') {
@@ -1812,219 +1424,34 @@ th, td{
         }
       }
       
-      // Enter key in username input saves username
       if(e.target.id === 'usernameInput' && e.key === 'Enter') {
         document.getElementById('btnSaveUsername').click();
       }
       
-      // Enter key in auth inputs triggers sign in
       if((e.target.id === 'authEmail' || e.target.id === 'authPass') && e.key === 'Enter') {
         document.getElementById('btnSignIn').click();
       }
     });
 
-    /* ===== INITIALIZATION SYSTEM ===== */
-
-    /**
-     * Application Initialization
-     * Swiss Design Principle: Clean, systematic startup
-     * 
-     * Initialization Order:
-     * 1. Render initial UI state
-     * 2. Check authentication status
-     * 3. Load league statistics
-     * 4. Start background timers
-     */
     (async function initializeApplication(){
-      console.log('🏛️ Law & Order: Special Victory Unit - Initializing...');
+      console.log('Law & Order: Special Victory Unit - Mobile-First Version Initializing...');
       
       try {
-        // 1. Initial UI render
         renderTeams();
         updateStatus();
         updateUsedTeams();
         
-        // 2. Authentication check
         await refreshAuthUI();
-        
-        // 3. Load community data
         await refreshLeagueStats();
         
-        // 4. Start week advancement checker (every minute)
         setInterval(checkWeekAdvancement, 60000);
         
-        console.log('✅ Application initialized successfully');
-        
-        // 5. Accessibility announcement
-        const announcement = document.createElement('div');
-        announcement.setAttribute('aria-live', 'polite');
-        announcement.className = 'sr-only';
-        announcement.textContent = 'Law & Order Special Victory Unit loaded successfully. Sign in to begin playing.';
-        document.body.appendChild(announcement);
-        setTimeout(() => announcement.remove(), 3000);
+        console.log('Mobile-first application initialized successfully');
         
       } catch(error) {
-        console.error('❌ Application initialization failed:', error);
-        
-        // Fallback error display
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--error);
-          color: white;
-          padding: 16px 24px;
-          border-radius: 0;
-          font-weight: 600;
-          z-index: 1000;
-        `;
-        errorDiv.textContent = 'Application failed to load. Please refresh the page.';
-        document.body.appendChild(errorDiv);
+        console.error('Application initialization failed:', error);
       }
     })();
-
-    /* ===== PERFORMANCE MONITORING ===== */
-
-    /**
-     * Performance Metrics
-     * Swiss principle: Measure and optimize systematically
-     */
-    window.addEventListener('load', () => {
-      // Measure page load performance
-      if('performance' in window) {
-        const loadTime = performance.now();
-        console.log(`⚡ Page loaded in ${loadTime.toFixed(2)}ms`);
-        
-        // Log Core Web Vitals when available
-        setTimeout(() => {
-          const navigation = performance.getEntriesByType('navigation')[0];
-          if(navigation) {
-            console.log('📊 Performance Metrics:', {
-              'DOM Content Loaded': `${navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart}ms`,
-              'Load Complete': `${navigation.loadEventEnd - navigation.loadEventStart}ms`,
-              'First Paint': performance.getEntriesByType('paint').find(entry => entry.name === 'first-paint')?.startTime.toFixed(2) + 'ms'
-            });
-          }
-        }, 1000);
-      }
-    });
-
-    /* ===== ERROR HANDLING SYSTEM ===== */
-
-    /**
-     * Global Error Handler
-     * Catches and logs unexpected errors
-     * Swiss principle: Graceful degradation
-     */
-    window.addEventListener('error', (e) => {
-      console.error('🚨 Global Error:', e.error);
-      
-      // User-friendly error message
-      const errorToast = document.createElement('div');
-      errorToast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--error);
-        color: white;
-        padding: 16px;
-        max-width: 300px;
-        font-size: 14px;
-        border-left: 4px solid white;
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
-      `;
-      errorToast.innerHTML = `
-        <strong>Error Detected</strong><br>
-        Something went wrong. Please refresh if issues persist.
-      `;
-      
-      document.body.appendChild(errorToast);
-      setTimeout(() => errorToast.remove(), 5000);
-    });
-
-    /**
-     * Unhandled Promise Rejection Handler
-     * Catches async errors that might slip through
-     */
-    window.addEventListener('unhandledrejection', (e) => {
-      console.error('🚨 Unhandled Promise Rejection:', e.reason);
-      e.preventDefault(); // Prevent default browser console error
-    });
-
-    /* ===== DEVELOPMENT HELPERS ===== */
-
-    /**
-     * Development Console Commands
-     * Available in browser console for debugging
-     * Swiss principle: Tools should be discoverable
-     */
-    if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      window.GameDebug = {
-        state: () => gameState,
-        user: () => ({ currentUser, currentProfile }),
-        setWeek: (week) => { gameState.currentWeek = week; updateStatus(); },
-        resetPicks: () => { gameState.usedTeams = []; renderTeams(); updateStatus(); },
-        simulateAdvancement: checkWeekAdvancement,
-        teams: nflTeams,
-        logs: () => console.table(gameState.weeklyPicks)
-      };
-      
-      console.log('🛠️ Development mode detected. Type GameDebug in console for debugging tools.');
-    }
-
-    /* ===== BROWSER COMPATIBILITY ===== */
-
-    /**
-     * Feature Detection and Polyfills
-     * Swiss principle: Universal access
-     */
-    (function checkBrowserSupport() {
-      const requiredFeatures = {
-        'CSS Grid': 'CSS' in window && 'supports' in CSS && CSS.supports('display', 'grid'),
-        'CSS Custom Properties': 'CSS' in window && 'supports' in CSS && CSS.supports('color', 'var(--test)'),
-        'Fetch API': 'fetch' in window,
-        'Promises': 'Promise' in window,
-        'Arrow Functions': (() => true)()
-      };
-
-      const unsupportedFeatures = Object.entries(requiredFeatures)
-        .filter(([name, supported]) => !supported)
-        .map(([name]) => name);
-
-      if(unsupportedFeatures.length > 0) {
-        console.warn('⚠️ Unsupported features detected:', unsupportedFeatures);
-        
-        // Show compatibility warning
-        const warningEl = document.createElement('div');
-        warningEl.style.cssText = `
-          background: var(--warning);
-          color: white;
-          padding: 16px;
-          text-align: center;
-          font-weight: 600;
-        `;
-        warningEl.innerHTML = `
-          ⚠️ Your browser may not support all features. 
-          Please update to the latest version for the best experience.
-        `;
-        
-        document.body.insertBefore(warningEl, document.body.firstChild);
-      }
-    })();
-
-    /* ===== END OF APPLICATION ===== */
-    
-    console.log('📚 Swiss Design Learning Notes:');
-    console.log('• Typography: IBM Plex Sans for clean, Swiss modernist feel');
-    console.log('• Colors: Monochromatic palette, no gradients, high contrast');
-    console.log('• Layout: Mathematical spacing system, CSS Grid for responsive design');
-    console.log('• Interactions: Subtle animations, clear focus states, accessible');
-    console.log('• Architecture: Modular JavaScript, separation of concerns, progressive enhancement');
-    console.log('• Data: Real-time with Supabase, optimistic UI updates, error handling');
-    console.log('🏛️ "In the design system, typography and whitespace are represented by two separate yet equally important groups..."');
 
   </script>
 </body>
