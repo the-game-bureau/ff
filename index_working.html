@@ -691,43 +691,47 @@ th, td{
     </section>
 
     <section class="game-info" id="leagueStats" aria-labelledby="leagueStatsTitle">
-      <h2 id="leagueStatsTitle">🔐 Evidence Locker</h2>
-      <div id="statsSummary" 
-           style="margin:16px 0 24px;color:var(--primary-blue);font-weight:600"
-           aria-live="polite"></div>
+<h3 style="margin:24px 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
+  🔐 Evidence Locker
+</h3>
 
-      <div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary);margin-bottom:24px">
-        <table id="userSummaryTable" role="table" aria-label="User summary statistics">
-          <caption class="sr-only">Summary of all users' picks and activity</caption>
-          <thead>
-            <tr>
-              <th scope="col">User</th>
-              <th scope="col">Weeks Picked</th>
-              <th scope="col">Teams Used</th>
-              <th scope="col">Last Pick (Week)</th>
-            </tr>
-          </thead>
-          <tbody id="userSummaryBody"></tbody>
-        </table>
-      </div>
+<div id="statsSummary" 
+     style="margin:16px 0 24px;color:var(--primary-blue);font-weight:600"
+     aria-live="polite"></div>
 
-      <h3 style="margin:24px 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
-      🔎 Evidence Log: Latest Filings
-      </h3>
-      <div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary)">
-        <table id="allPicksTable" role="table" aria-label="All user picks chronologically">
-          <caption class="sr-only">Complete chronological list of all picks made by all users</caption>
-          <thead>
-            <tr>
-              <th scope="col">Week</th>
-              <th scope="col">User</th>
-              <th scope="col">Team</th>
-              <th scope="col">Picked At</th>
-            </tr>
-          </thead>
-          <tbody id="allPicksBody"></tbody>
-        </table>
-      </div>
+<div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary);margin-bottom:24px">
+  <table id="userSummaryTable" role="table" aria-label="User summary statistics">
+    <caption class="sr-only">Summary of all users' picks and activity</caption>
+    <thead>
+      <tr>
+        <th scope="col">User</th>
+        <th scope="col">Status</th> <!-- NEW -->
+        <th scope="col">Weeks Picked</th>
+        <th scope="col">Teams Used</th>
+        <th scope="col">Last Pick (Week)</th>
+      </tr>
+    </thead>
+    <tbody id="userSummaryBody"></tbody>
+  </table>
+</div>
+
+<h3 style="margin:24px 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
+  🔎 Evidence Log: Latest Filings
+</h3>
+<div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary)">
+  <table id="allPicksTable" role="table" aria-label="All user picks chronologically">
+    <caption class="sr-only">Complete chronological list of all picks made by all users</caption>
+    <thead>
+      <tr>
+        <th scope="col">Week</th>
+        <th scope="col">User</th>
+        <th scope="col">Team</th>
+        <th scope="col">Picked At</th>
+      </tr>
+    </thead>
+    <tbody id="allPicksBody"></tbody>
+  </table>
+</div>
     </section>
 
   </div>
@@ -1372,115 +1376,125 @@ th, td{
       loadUserPicksAndDisableTeams();
     }
 
-    async function fetchAllPicksPublic() {
-      try {
-        const { data, error } = await supabase
-          .from('picks')
-          .select('week, team, username, created_at')
-          .order('created_at', { ascending: false });
-          
-        if(error) {
-          console.error('Error fetching league picks:', error);
-          return [];
-        }
-        
-        return data || [];
-      } catch(error) {
-        console.error('Unexpected error fetching league data:', error);
+  async function fetchAllPicksPublic() {
+    try {
+      // Select * so it won't fail if 'result' doesn't exist/isn't visible
+      const { data, error } = await supabase
+        .from('picks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching league picks:', error);
         return [];
       }
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching league data:', error);
+      return [];
     }
+  }
+  function renderLeagueStats(picks) {
+    const users = new Map();
+    const teamCounts = new Map();
 
-    function renderLeagueStats(picks) {
-      const users = new Map();
-      const teamCounts = new Map();
+    for (const pick of picks) {
+      const username = pick.username || '(unknown)';
+      const result = String(pick.result ?? '').trim().toUpperCase();
 
-      for(const pick of picks) {
-        const username = pick.username || '(unknown)';
-        
-        if(!users.has(username)) {
-          users.set(username, { 
-            weeks: new Set(), 
-            teams: new Set(), 
-            lastWeek: 0 
-          });
-        }
-        
-        const userRecord = users.get(username);
-        userRecord.weeks.add(pick.week);
-        userRecord.teams.add(pick.team);
-        if(pick.week > userRecord.lastWeek) {
-          userRecord.lastWeek = pick.week;
-        }
-
-        teamCounts.set(pick.team, (teamCounts.get(pick.team) || 0) + 1);
+      if (!users.has(username)) {
+        users.set(username, { 
+          weeks: new Set(), 
+          teams: new Set(), 
+          lastWeek: 0,
+          status: 'ACTIVE' // default
+        });
       }
 
-      const totalPicks = picks.length;
-      const totalPlayers = users.size;
+      const userRecord = users.get(username);
+      userRecord.weeks.add(pick.week);
+      userRecord.teams.add(pick.team);
+      if (pick.week > userRecord.lastWeek) {
+        userRecord.lastWeek = pick.week;
+      }
+      // If ANY pick shows ELIMINATED, user is ELIMINATED
+      if (result === 'ELIMINATED') {
+        userRecord.status = 'ELIMINATED';
+      }
 
-      const topTeams = [...teamCounts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([team, count]) => `${team} (${count})`)
-        .join(' · ');
+      teamCounts.set(pick.team, (teamCounts.get(pick.team) || 0) + 1);
+    }
 
-      const summaryEl = document.getElementById('statsSummary');
-      summaryEl.textContent = `Players: ${totalPlayers} · Total Picks: ${totalPicks}` + 
-        (topTeams ? ` · Most Picked: ${topTeams}` : '');
+    const totalPicks = picks.length;
+    const totalPlayers = users.size;
 
-      const userTableBody = document.getElementById('userSummaryBody');
-      const userRows = [...users.entries()]
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([username, record]) => {
-          const weeksPicked = record.weeks.size;
-          const teamsUsed = record.teams.size;
-          const lastWeek = record.lastWeek || '-';
-          
-          return `
-            <tr>
-              <td><strong>@${username}</strong></td>
-              <td>${weeksPicked}</td>
-              <td>${teamsUsed}</td>
-              <td>${lastWeek}</td>
-            </tr>
-          `;
-        }).join('');
+    const topTeams = [...teamCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([team, count]) => `${team} (${count})`)
+      .join(' · ');
 
-      userTableBody.innerHTML = userRows || 
-        `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
+    const summaryEl = document.getElementById('statsSummary');
+    summaryEl.textContent = `Players: ${totalPlayers} · Total Picks: ${totalPicks}` + 
+      (topTeams ? ` · Most Picked: ${topTeams}` : '');
 
-      const allPicksBody = document.getElementById('allPicksBody');
-      const pickRows = picks.map(pick => {
-        const createdAt = new Date(pick.created_at);
-        const timestamp = isNaN(createdAt.getTime()) ? 
-          'Invalid Date' : 
-          createdAt.toLocaleString('en-US', {
-            timeZone: 'America/Chicago',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-          });
-          
+    const userTableBody = document.getElementById('userSummaryBody');
+    const userRows = [...users.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([username, record]) => {
+        const weeksPicked = record.weeks.size;
+        const teamsUsed = record.teams.size;
+        const lastWeek = record.lastWeek || '-';
+        const statusText = record.status;
+        const statusColor = statusText === 'ELIMINATED' ? 'var(--error)' : 'var(--success)';
+
         return `
           <tr>
-            <td><strong>Week ${pick.week}</strong></td>
-            <td>@${pick.username || '(unknown)'}</td>
-            <td>${pick.team}</td>
-            <td style="color:var(--text-secondary);font-size:0.875rem;">${timestamp}</td>
+            <td><strong>@${username}</strong></td>
+            <td style="font-weight:700;color:${statusColor};">${statusText}</td>
+            <td>${weeksPicked}</td>
+            <td>${teamsUsed}</td>
+            <td>${lastWeek}</td>
           </tr>
         `;
       }).join('');
 
-      allPicksBody.innerHTML = pickRows || 
-        `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
-    }
+    userTableBody.innerHTML = userRows || 
+      `<tr><td colspan="5" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
 
-    async function refreshLeagueStats() {
-      const picks = await fetchAllPicksPublic();
-      renderLeagueStats(picks);
-    }
-  </script>
+    const allPicksBody = document.getElementById('allPicksBody');
+    const pickRows = picks.map(pick => {
+      const createdAt = new Date(pick.created_at);
+      const timestamp = isNaN(createdAt.getTime()) ? 
+        'Invalid Date' : 
+        createdAt.toLocaleString('en-US', {
+          timeZone: 'America/Chicago',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+        
+      return `
+        <tr>
+          <td><strong>Week ${pick.week}</strong></td>
+          <td>@${pick.username || '(unknown)'}</td>
+          <td>${pick.team}</td>
+          <td style="color:var(--text-secondary);font-size:0.875rem;">${timestamp}</td>
+        </tr>
+      `;
+    }).join('');
+
+    allPicksBody.innerHTML = pickRows || 
+      `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
+  }
+
+  async function refreshLeagueStats() {
+    const picks = await fetchAllPicksPublic();
+    renderLeagueStats(picks);
+  }
+</script>
+<!-- SECTION: League Stats JS — END -->
+
 </body>
 </html>
