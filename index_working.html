@@ -1394,10 +1394,12 @@ th, td{
       return [];
     }
   }
+  
   function renderLeagueStats(picks) {
     const users = new Map();
     const teamCounts = new Map();
 
+    // First pass: collect all picks and find eliminations
     for (const pick of picks) {
       const username = pick.username || '(unknown)';
       const result = String(pick.result ?? '').trim().toUpperCase();
@@ -1407,26 +1409,47 @@ th, td{
           weeks: new Set(), 
           teams: new Set(), 
           lastWeek: 0,
-          status: 'ACTIVE' // default
+          status: 'ACTIVE',
+          eliminatedWeek: null,
+          allPicks: []
         });
       }
 
       const userRecord = users.get(username);
       userRecord.weeks.add(pick.week);
       userRecord.teams.add(pick.team);
+      userRecord.allPicks.push(pick);
+      
       if (pick.week > userRecord.lastWeek) {
         userRecord.lastWeek = pick.week;
       }
-      // If ANY pick shows ELIMINATED, user is ELIMINATED
+
+      // Check for elimination
       if (result === 'ELIMINATED') {
         userRecord.status = 'ELIMINATED';
+        userRecord.eliminatedWeek = pick.week;
       }
 
       teamCounts.set(pick.team, (teamCounts.get(pick.team) || 0) + 1);
     }
 
+    // Second pass: for users marked as eliminated but no week captured,
+    // find the elimination week by looking at their picks
+    for (const [username, record] of users.entries()) {
+      if (record.status === 'ELIMINATED' && record.eliminatedWeek === null) {
+        // Find the pick with ELIMINATED result
+        const eliminatedPick = record.allPicks.find(p => 
+          String(p.result ?? '').trim().toUpperCase() === 'ELIMINATED'
+        );
+        if (eliminatedPick) {
+          record.eliminatedWeek = eliminatedPick.week;
+        }
+      }
+    }
+
     const totalPicks = picks.length;
     const totalPlayers = users.size;
+    const eliminatedCount = [...users.values()].filter(record => record.status === 'ELIMINATED').length;
 
     const topTeams = [...teamCounts.entries()]
       .sort((a, b) => b[1] - a[1])
@@ -1435,7 +1458,7 @@ th, td{
       .join(' · ');
 
     const summaryEl = document.getElementById('statsSummary');
-    summaryEl.textContent = `Players: ${totalPlayers} · Total Picks: ${totalPicks}` + 
+    summaryEl.textContent = `Prosecutors: ${totalPlayers} · Eliminated: ${eliminatedCount} · Total Picks: ${totalPicks}` + 
       (topTeams ? ` · Most Picked: ${topTeams}` : '');
 
     const userTableBody = document.getElementById('userSummaryBody');
@@ -1445,8 +1468,10 @@ th, td{
         const weeksPicked = record.weeks.size;
         const teamsUsed = record.teams.size;
         const lastWeek = record.lastWeek || '-';
-        const statusText = record.status;
-        const statusColor = statusText === 'ELIMINATED' ? 'var(--error)' : 'var(--success)';
+        const statusText = record.status === 'ELIMINATED' && record.eliminatedWeek 
+          ? `ELIMINATED WK ${record.eliminatedWeek}` 
+          : record.status;
+        const statusColor = record.status === 'ELIMINATED' ? 'var(--error)' : 'var(--success)';
 
         return `
           <tr>
