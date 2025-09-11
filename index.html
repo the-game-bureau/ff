@@ -1174,9 +1174,10 @@ th, td{
           // Check for password reset flow first
           await handlePasswordResetFlow();
           
+          // COMMENTED OUT - using hardcoded week 2 for now
           // Load current week from database first
-          gameState.currentWeek = await getCurrentWeekFromDB();
-          console.log(`Current week loaded from database: ${gameState.currentWeek}`);
+          // gameState.currentWeek = await getCurrentWeekFromDB();
+          // console.log(`Current week loaded from database: ${gameState.currentWeek}`);
           
           renderTeams();
           updateStatus();
