@@ -801,7 +801,7 @@ th, td{
     ];
 
     let gameState = {
-      currentWeek: 1,
+      currentWeek: 1, // Will be loaded from database
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -815,6 +815,68 @@ th, td{
     function getCentralNow(){
       const now = new Date();
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+    }
+
+    // NEW: Database-based week management functions
+    async function getCurrentWeekFromDB() {
+      try {
+        const { data, error } = await supabase
+          .from('game_settings')
+          .select('current_week, last_updated')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching current week:', error);
+          return 1;
+        }
+
+        if (!data) {
+          // Initialize the game settings table
+          const { data: newData, error: insertError } = await supabase
+            .from('game_settings')
+            .insert({ id: 1, current_week: 1, last_updated: new Date().toISOString() })
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error('Error initializing game settings:', insertError);
+            return 1;
+          }
+          
+          return newData?.current_week || 1;
+        }
+
+        return data.current_week || 1;
+      } catch (error) {
+        console.error('Unexpected error fetching current week:', error);
+        return 1;
+      }
+    }
+
+    async function advanceWeekInDB() {
+      try {
+        const { data, error } = await supabase
+          .from('game_settings')
+          .update({ 
+            current_week: gameState.currentWeek + 1,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', 1)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error advancing week:', error);
+          return false;
+        }
+
+        gameState.currentWeek = data.current_week;
+        return true;
+      } catch (error) {
+        console.error('Unexpected error advancing week:', error);
+        return false;
+      }
     }
 
     function autoFitPlayerName(minPx = 12, maxPx = 28, padPx = 8){
@@ -1074,10 +1136,15 @@ th, td{
         }
       });
 
+      // UPDATED: Modified initialization
       (async function initializeApplication(){
-        console.log('Law & Order: Special Victory Unit - Mobile-First Version Initializing...');
+        console.log('Law & Order: Special Victory Unit - Initializing...');
         
         try {
+          // Load current week from database first
+          gameState.currentWeek = await getCurrentWeekFromDB();
+          console.log(`Current week loaded from database: ${gameState.currentWeek}`);
+          
           renderTeams();
           updateStatus();
           updateUsedTeams();
@@ -1085,9 +1152,10 @@ th, td{
           await refreshAuthUI();
           await refreshLeagueStats();
           
-          setInterval(checkWeekAdvancement, 60000);
+          // Check for week advancement every 5 minutes instead of every minute
+          setInterval(checkWeekAdvancement, 300000);
           
-          console.log('Mobile-first application initialized successfully');
+          console.log(`Application initialized successfully - Week ${gameState.currentWeek}`);
           
         } catch(error) {
           console.error('Application initialization failed:', error);
@@ -1344,39 +1412,73 @@ th, td{
       gameOverEl.focus();
     }
 
-    function checkWeekAdvancement(){
+    // UPDATED: Improved week advancement check with database support
+    async function checkWeekAdvancement() {
       const centralTime = getCentralNow();
       
-      if(centralTime.getDay() === 1 && centralTime.getHours() === 0 && centralTime.getMinutes() === 0) {
-        const lastAdvancement = gameState.lastWeekAdvancement || 0;
-        const currentStart = new Date(centralTime);
-        currentStart.setHours(0, 0, 0, 0);
-        
-        if(currentStart.getTime() > lastAdvancement && gameState.isActive) {
-          gameState.currentWeek++;
-          gameState.selectedTeam = null;
-          gameState.lastWeekAdvancement = Date.now();
+      // Check for Tuesday morning between 6 AM and 11 AM (wider window)
+      if (centralTime.getDay() === 2 && centralTime.getHours() >= 6 && centralTime.getHours() <= 11) {
+        try {
+          // Get current week from database to see if someone else already advanced it
+          const dbWeek = await getCurrentWeekFromDB();
           
-          const submitPickEl = document.getElementById('submitPick');
-          if (submitPickEl) {
-            submitPickEl.disabled = true;
+          if (dbWeek > gameState.currentWeek) {
+            // Someone else already advanced it
+            gameState.currentWeek = dbWeek;
+            gameState.selectedTeam = null;
+            
+            updateUI();
+            return;
           }
-
-          const verdictEl = document.createElement('div');
-          verdictEl.className = 'verdict slide-in';
-          verdictEl.innerHTML = 
-            `<strong>Judge:</strong> "Court in session for Week ${gameState.currentWeek}. New cases await your judgment, Detective."`;
-          document.getElementById('teamSelection').appendChild(verdictEl);
           
-          setTimeout(() => {
-            if(verdictEl.parentNode) {
-              verdictEl.remove();
+          // Check if we should advance (hasn't been advanced today)
+          const { data, error } = await supabase
+            .from('game_settings')
+            .select('last_updated')
+            .eq('id', 1)
+            .single();
+          
+          if (data?.last_updated) {
+            const lastUpdate = new Date(data.last_updated);
+            const today = new Date(centralTime);
+            today.setHours(0, 0, 0, 0);
+            
+            if (lastUpdate >= today) {
+              // Already advanced today
+              return;
             }
-          }, 4500);
-
-          renderTeams();
-          updateStatus();
+          }
+          
+          // Advance the week
+          const success = await advanceWeekInDB();
+          if (success) {
+            gameState.selectedTeam = null;
+            updateUI();
+            
+            const verdictEl = document.createElement('div');
+            verdictEl.className = 'verdict slide-in';
+            verdictEl.innerHTML = 
+              `<strong>Judge:</strong> "Court in session for Week ${gameState.currentWeek}. New cases await your judgment, Detective."`;
+            document.getElementById('teamSelection').appendChild(verdictEl);
+            
+            setTimeout(() => {
+              if(verdictEl.parentNode) {
+                verdictEl.remove();
+              }
+            }, 4500);
+          }
+          
+        } catch (error) {
+          console.error('Error in week advancement:', error);
         }
+      }
+    }
+
+    function updateUI() {
+      renderTeams();
+      updateStatus();
+      if(currentUser && currentProfile) {
+        loadUserPicksAndDisableTeams();
       }
     }
 
