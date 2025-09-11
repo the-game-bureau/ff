@@ -1196,21 +1196,24 @@ th, td{
       })();
     });
 
+    // Helper function to check if we're in password reset mode
+    function isPasswordResetMode() {
+      const urlHash = window.location.hash;
+      return urlHash.includes('type=recovery') || urlHash.includes('access_token');
+    }
+
     // Handle password reset flow
     async function handlePasswordResetFlow() {
       // Check if this is a password reset redirect
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlHash = window.location.hash;
-      
-      // Supabase sends tokens in URL hash
-      if (urlHash.includes('access_token') || urlHash.includes('type=recovery')) {
+      if (isPasswordResetMode()) {
         console.log('Password reset flow detected');
         
-        // Show password reset form
+        // Hide all other auth forms and show password reset form
         document.getElementById('authWhenLoggedOut').style.display = 'none';
+        document.getElementById('authWhenLoggedIn').style.display = 'none';
+        document.getElementById('usernameGate').style.display = 'none';
         document.getElementById('passwordResetForm').style.display = 'block';
         
-        // The session will be automatically established by Supabase
         return true;
       }
       
@@ -1221,9 +1224,11 @@ th, td{
       console.log('Auth state changed:', event);
       
       // Handle password recovery specifically
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || isPasswordResetMode()) {
         console.log('Password recovery event detected');
         document.getElementById('authWhenLoggedOut').style.display = 'none';
+        document.getElementById('authWhenLoggedIn').style.display = 'none';
+        document.getElementById('usernameGate').style.display = 'none';
         document.getElementById('passwordResetForm').style.display = 'block';
         return;
       }
@@ -1721,4 +1726,4 @@ th, td{
 </script>
 
 </body>
-</html>s
+</html>
