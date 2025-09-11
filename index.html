@@ -1208,11 +1208,16 @@ th, td{
       if (isPasswordResetMode()) {
         console.log('Password reset flow detected');
         
-        // Hide all other auth forms and show password reset form
-        document.getElementById('authWhenLoggedOut').style.display = 'none';
-        document.getElementById('authWhenLoggedIn').style.display = 'none';
-        document.getElementById('usernameGate').style.display = 'none';
-        document.getElementById('passwordResetForm').style.display = 'block';
+        // Hide all other auth forms and show password reset form with null checks
+        const loggedOutEl = document.getElementById('authWhenLoggedOut');
+        const loggedInEl = document.getElementById('authWhenLoggedIn');
+        const usernameGateEl = document.getElementById('usernameGate');
+        const passwordResetEl = document.getElementById('passwordResetForm');
+        
+        if (loggedOutEl) loggedOutEl.style.display = 'none';
+        if (loggedInEl) loggedInEl.style.display = 'none';
+        if (usernameGateEl) usernameGateEl.style.display = 'none';
+        if (passwordResetEl) passwordResetEl.style.display = 'block';
         
         return true;
       }
