@@ -802,7 +802,7 @@ th, td{
     ];
 
     let gameState = {
-      currentWeek: 1, // Will be loaded from database
+      currentWeek: 2, // Will be loaded from database
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -1174,8 +1174,7 @@ th, td{
           // Check for password reset flow first
           await handlePasswordResetFlow();
           
-          // COMMENTED OUT - using hardcoded week 2 for now
-          // Load current week from database first
+          // HARDCODED TO WEEK 2 - NOT LOADING FROM DATABASE
           // gameState.currentWeek = await getCurrentWeekFromDB();
           // console.log(`Current week loaded from database: ${gameState.currentWeek}`);
           
