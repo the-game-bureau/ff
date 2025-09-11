@@ -632,6 +632,14 @@ th, td{
         <span id="displayUser" style="font-weight:600;color:var(--primary-blue)" aria-label="Current user"></span>
         <button id="btnSignOut" class="btn btn-secondary" type="button">Sign Out</button>
       </div>
+
+      <div id="passwordResetForm" style="display:none;max-width:400px;margin:20px auto;padding:24px;border:3px solid var(--primary-blue);border-radius:12px;background:var(--bg-primary);">
+        <h3 style="margin-bottom:16px;color:var(--primary-blue);text-transform:uppercase;">Set New Password</h3>
+        <input id="newPassword" type="password" placeholder="New Password" style="width:100%;padding:16px;border:2px solid var(--bg-accent);border-radius:8px;margin-bottom:16px;font-family:inherit;" />
+        <input id="confirmPassword" type="password" placeholder="Confirm New Password" style="width:100%;padding:16px;border:2px solid var(--bg-accent);border-radius:8px;margin-bottom:16px;font-family:inherit;" />
+        <button id="btnUpdatePassword" class="btn btn-primary" style="width:100%;">Update Password</button>
+        <div id="passwordResetError" style="color:var(--error);margin-top:12px;font-weight:600;"></div>
+      </div>
     </div>
 
     <div id="usernameGate" role="dialog" aria-labelledby="usernameGateTitle" aria-hidden="true">
@@ -701,7 +709,7 @@ th, td{
     </section>
 
     <section class="used-teams" id="usedTeamsSection" style="display:none;" aria-labelledby="usedTeamsTitle">
-      <h3 id="usedTeamsTitle">⚖️ Judgements Rendered (Your Picks)</h3>
+      <h3 id="usernameGateTitle">⚖️ Judgements Rendered (Your Picks)</h3>
       <div class="used-list" id="usedTeamsList" role="list" aria-label="Teams you have already picked"></div>
     </section>
 
@@ -802,7 +810,7 @@ th, td{
     ];
 
     let gameState = {
-      currentWeek: 1, // Will be loaded from database
+      currentWeek: 2, // Manually set to week 2 - not loading from database
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -818,7 +826,13 @@ th, td{
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     }
 
-    // Database-based week management functions
+    // Helper function to check if we're in password reset mode
+    function isPasswordResetMode() {
+      const urlHash = window.location.hash;
+      return urlHash.includes('type=recovery') || urlHash.includes('access_token');
+    }
+
+    // Database-based week management functions (commented out for now)
     async function getCurrentWeekFromDB() {
       try {
         const { data, error } = await supabase
@@ -829,29 +843,29 @@ th, td{
 
         if (error && error.code !== 'PGRST116') {
           console.error('Error fetching current week:', error);
-          return 1;
+          return 2; // Return 2 as fallback
         }
 
         if (!data) {
           // Initialize the game settings table
           const { data: newData, error: insertError } = await supabase
             .from('game_settings')
-            .insert({ id: 1, current_week: 1, last_updated: new Date().toISOString() })
+            .insert({ id: 1, current_week: 2, last_updated: new Date().toISOString() })
             .select()
             .single();
           
           if (insertError) {
             console.error('Error initializing game settings:', insertError);
-            return 1;
+            return 2;
           }
           
-          return newData?.current_week || 1;
+          return newData?.current_week || 2;
         }
 
-        return data.current_week || 1;
+        return data.current_week || 2;
       } catch (error) {
         console.error('Unexpected error fetching current week:', error);
-        return 1;
+        return 2;
       }
     }
 
@@ -899,6 +913,11 @@ th, td{
 
     async function refreshAuthUI(){
       try {
+        // Check if we're in password reset mode first
+        if (isPasswordResetMode()) {
+          return; // Don't run normal auth UI if we're in reset mode
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         currentUser = user || null;
 
@@ -967,6 +986,7 @@ th, td{
       const btnSignInEl = document.getElementById('btnSignIn');
       const btnSignOutEl = document.getElementById('btnSignOut');
       const btnResetPasswordEl = document.getElementById('btnResetPassword');
+      const btnUpdatePasswordEl = document.getElementById('btnUpdatePassword');
       const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
       const submitPickEl = document.getElementById('submitPick');
       const newGameEl = document.getElementById('newGame');
@@ -998,8 +1018,6 @@ th, td{
             alert('An unexpected error occurred during signup.');
           }
         });
-      } else {
-        console.warn('Element with ID "btnSignUp" not found in DOM');
       }
 
       if (btnSignInEl) {
@@ -1028,8 +1046,6 @@ th, td{
             alert('An unexpected error occurred during sign in.');
           }
         });
-      } else {
-        console.warn('Element with ID "btnSignIn" not found in DOM');
       }
 
       if (btnResetPasswordEl) {
@@ -1056,8 +1072,45 @@ th, td{
             alert('An unexpected error occurred during password reset.');
           }
         });
-      } else {
-        console.warn('Element with ID "btnResetPassword" not found in DOM');
+      }
+
+      if (btnUpdatePasswordEl) {
+        btnUpdatePasswordEl.addEventListener('click', async () => {
+          const newPassword = document.getElementById('newPassword').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+          const errorEl = document.getElementById('passwordResetError');
+          
+          errorEl.textContent = '';
+          
+          if(!newPassword || newPassword.length < 6) {
+            errorEl.textContent = 'Password must be at least 6 characters long.';
+            return;
+          }
+          
+          if(newPassword !== confirmPassword) {
+            errorEl.textContent = 'Passwords do not match.';
+            return;
+          }
+          
+          try {
+            const { error } = await supabase.auth.updateUser({
+              password: newPassword
+            });
+            
+            if(error) {
+              errorEl.textContent = 'Error updating password: ' + error.message;
+            } else {
+              alert('Password updated successfully! You can now sign in with your new password.');
+              document.getElementById('passwordResetForm').style.display = 'none';
+              document.getElementById('authWhenLoggedOut').style.display = 'flex';
+              // Clear the URL hash/params
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } catch(error) {
+            console.error('Password update error:', error);
+            errorEl.textContent = 'An unexpected error occurred.';
+          }
+        });
       }
 
       if (btnSignOutEl) {
@@ -1073,8 +1126,6 @@ th, td{
             console.error('Signout error:', error);
           }
         });
-      } else {
-        console.warn('Element with ID "btnSignOut" not found in DOM');
       }
 
       if (btnSaveUsernameEl) {
@@ -1118,28 +1169,20 @@ th, td{
             errorEl.textContent = 'An unexpected error occurred.';
           }
         });
-      } else {
-        console.warn('Element with ID "btnSaveUsername" not found in DOM');
       }
 
       if (submitPickEl) {
         submitPickEl.addEventListener('click', submitPick);
-      } else {
-        console.warn('Element with ID "submitPick" not found in DOM');
       }
 
       if (newGameEl) {
         newGameEl.addEventListener('click', newGame);
-      } else {
-        console.warn('Element with ID "newGame" not found in DOM');
       }
 
       if (viewScheduleEl) {
         viewScheduleEl.addEventListener('click', () => {
           window.open('https://plaintextsports.com/nfl/2025/schedule', '_blank');
         });
-      } else {
-        console.warn('Element with ID "viewSchedule" not found in DOM');
       }
 
       window.addEventListener('resize', autoFitPlayerName);
@@ -1196,28 +1239,37 @@ th, td{
       })();
     });
 
-    // Helper function to check if we're in password reset mode
-    function isPasswordResetMode() {
-      const urlHash = window.location.hash;
-      return urlHash.includes('type=recovery') || urlHash.includes('access_token');
-    }
-
     // Handle password reset flow
     async function handlePasswordResetFlow() {
       // Check if this is a password reset redirect
       if (isPasswordResetMode()) {
         console.log('Password reset flow detected');
         
-        // Hide all other auth forms and show password reset form with null checks
-        const loggedOutEl = document.getElementById('authWhenLoggedOut');
-        const loggedInEl = document.getElementById('authWhenLoggedIn');
-        const usernameGateEl = document.getElementById('usernameGate');
-        const passwordResetEl = document.getElementById('passwordResetForm');
-        
-        if (loggedOutEl) loggedOutEl.style.display = 'none';
-        if (loggedInEl) loggedInEl.style.display = 'none';
-        if (usernameGateEl) usernameGateEl.style.display = 'none';
-        if (passwordResetEl) passwordResetEl.style.display = 'block';
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+          // Hide all other auth forms and show password reset form with null checks
+          const loggedOutEl = document.getElementById('authWhenLoggedOut');
+          const loggedInEl = document.getElementById('authWhenLoggedIn');
+          const usernameGateEl = document.getElementById('usernameGate');
+          const passwordResetEl = document.getElementById('passwordResetForm');
+          
+          console.log('DOM elements found:', {
+            loggedOutEl: !!loggedOutEl,
+            loggedInEl: !!loggedInEl, 
+            usernameGateEl: !!usernameGateEl,
+            passwordResetEl: !!passwordResetEl
+          });
+          
+          if (loggedOutEl) loggedOutEl.style.display = 'none';
+          if (loggedInEl) loggedInEl.style.display = 'none';
+          if (usernameGateEl) usernameGateEl.style.display = 'none';
+          if (passwordResetEl) {
+            passwordResetEl.style.display = 'block';
+            console.log('Password reset form should now be visible');
+          } else {
+            console.error('Password reset form element not found!');
+          }
+        }, 100);
         
         return true;
       }
@@ -1228,13 +1280,33 @@ th, td{
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
       
-      // Handle password recovery specifically
+      // Handle password recovery specifically with timeout for DOM readiness
       if (event === 'PASSWORD_RECOVERY' || isPasswordResetMode()) {
         console.log('Password recovery event detected');
-        document.getElementById('authWhenLoggedOut').style.display = 'none';
-        document.getElementById('authWhenLoggedIn').style.display = 'none';
-        document.getElementById('usernameGate').style.display = 'none';
-        document.getElementById('passwordResetForm').style.display = 'block';
+        
+        setTimeout(() => {
+          // Hide all auth forms with null checks
+          const loggedOutEl = document.getElementById('authWhenLoggedOut');
+          const loggedInEl = document.getElementById('authWhenLoggedIn');
+          const usernameGateEl = document.getElementById('usernameGate');
+          const passwordResetEl = document.getElementById('passwordResetForm');
+          
+          console.log('Auth state change - DOM elements:', { 
+            loggedOutEl: !!loggedOutEl, 
+            loggedInEl: !!loggedInEl, 
+            usernameGateEl: !!usernameGateEl, 
+            passwordResetEl: !!passwordResetEl 
+          });
+          
+          if (loggedOutEl) loggedOutEl.style.display = 'none';
+          if (loggedInEl) loggedInEl.style.display = 'none';
+          if (usernameGateEl) usernameGateEl.style.display = 'none';
+          if (passwordResetEl) {
+            passwordResetEl.style.display = 'block';
+            console.log('Password reset form displayed via auth state change');
+          }
+        }, 100);
+        
         return;
       }
       
@@ -1269,8 +1341,6 @@ th, td{
           alreadyPickedEl.textContent = `Week ${currentWeekPick.week} you picked: ${currentWeekPick.team}.`;
         } else {
           if (alreadyPickedEl) alreadyPickedEl.style.display = 'none';
-          if (!alreadyPickedEl) console.warn('Element with ID "alreadyPickedMsg" not found in DOM');
-          if (!submitPickEl) console.warn('Element with ID "submitPick" not found in DOM');
         }
 
         renderTeams();
@@ -1485,66 +1555,10 @@ th, td{
       gameOverEl.focus();
     }
 
-    // Improved week advancement check with database support
+    // Week advancement check (commented out database parts)
     async function checkWeekAdvancement() {
-      const centralTime = getCentralNow();
-      
-      // Check for Tuesday morning between 6 AM and 11 AM (wider window)
-      if (centralTime.getDay() === 2 && centralTime.getHours() >= 6 && centralTime.getHours() <= 11) {
-        try {
-          // Get current week from database to see if someone else already advanced it
-          const dbWeek = await getCurrentWeekFromDB();
-          
-          if (dbWeek > gameState.currentWeek) {
-            // Someone else already advanced it
-            gameState.currentWeek = dbWeek;
-            gameState.selectedTeam = null;
-            
-            updateUI();
-            return;
-          }
-          
-          // Check if we should advance (hasn't been advanced today)
-          const { data, error } = await supabase
-            .from('game_settings')
-            .select('last_updated')
-            .eq('id', 1)
-            .single();
-          
-          if (data?.last_updated) {
-            const lastUpdate = new Date(data.last_updated);
-            const today = new Date(centralTime);
-            today.setHours(0, 0, 0, 0);
-            
-            if (lastUpdate >= today) {
-              // Already advanced today
-              return;
-            }
-          }
-          
-          // Advance the week
-          const success = await advanceWeekInDB();
-          if (success) {
-            gameState.selectedTeam = null;
-            updateUI();
-            
-            const verdictEl = document.createElement('div');
-            verdictEl.className = 'verdict slide-in';
-            verdictEl.innerHTML = 
-              `<strong>Judge:</strong> "Court in session for Week ${gameState.currentWeek}. New cases await your judgment, Detective."`;
-            document.getElementById('teamSelection').appendChild(verdictEl);
-            
-            setTimeout(() => {
-              if(verdictEl.parentNode) {
-                verdictEl.remove();
-              }
-            }, 4500);
-          }
-          
-        } catch (error) {
-          console.error('Error in week advancement:', error);
-        }
-      }
+      // Disabled for manual week 2 mode
+      return;
     }
 
     function updateUI() {
@@ -1615,14 +1629,12 @@ th, td{
       
       if (pick.week > userRecord.lastWeek) {
         userRecord.lastWeek = pick.week;
-        // Store the exact database result field
         userRecord.status = pick.result || '';
       }
 
       teamCounts.set(pick.team, (teamCounts.get(pick.team) || 0) + 1);
     }
 
-    // Count unique statuses
     for (const [username, record] of users.entries()) {
       const status = record.status || 'No Status';
       statusCounts.set(status, (statusCounts.get(status) || 0) + 1);
@@ -1637,7 +1649,6 @@ th, td{
       .map(([team, count]) => `${team} (${count})`)
       .join(' · ');
 
-    // Format status counts
     const statusCountsText = [...statusCounts.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([status, count]) => `${status} (${count})`)
@@ -1654,12 +1665,10 @@ th, td{
         const statusA = a[1].status || '';
         const statusB = b[1].status || '';
         
-        // First sort by status alphabetically
         if (statusA !== statusB) {
           return statusA.localeCompare(statusB);
         }
         
-        // Then sort by username alphabetically
         return a[0].localeCompare(b[0]);
       })
       .map(([username, record]) => {
@@ -1668,7 +1677,6 @@ th, td{
         const lastWeek = record.lastWeek || '-';
         const status = record.status;
         
-        // Format status as a label with conditional coloring
         let statusDisplay = '';
         if (status) {
           const statusLower = status.toLowerCase();
