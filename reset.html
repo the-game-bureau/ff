@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password - Law & Order: Special Victory Unit</title>
+  
+  <!-- Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+/* ===== SINGLE LOCAL HEADER FONT ===== */
+@font-face {
+  font-family: 'FrizQuadrataRegular';
+  src: url('./fonts/FrizQuadrataRegular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== COLOR SYSTEM ===== */
+:root{
+  --primary-red: #DC2626;
+  --primary-red-dark: #B91C1C;
+  --primary-blue: #1E40AF;
+  --primary-blue-mid: #1D4ED8;
+  
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6B7280;
+  
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary: #F3F4F6;
+  --bg-accent: #E5E7EB;
+  --bg-hover: #F9FAFB;
+  
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
+}
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html{
+  background: var(--bg-primary);
+}
+
+body{
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  min-height: 100vh;
+  letter-spacing: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ===== HEADER WITH LAW & ORDER LOGO ===== */
+.header{
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  padding: 24px 16px;
+  text-align: center;
+  border-bottom: 4px solid var(--primary-blue);
+  border-radius: 12px;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.header-logo-text{
+  font-family: 'FrizQuadrataRegular', serif;
+  font-weight: 900;
+  margin-bottom: 16px;
+  line-height: 1.0;
+  text-transform: uppercase;
+}
+
+.law-text{
+  font-size: 2rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #4169E1, 
+    0 0 10px #4169E1, 
+    0 0 20px #4169E1,
+    0 0 30px #4169E1,
+    2px 2px 4px rgba(0,0,0,0.8);
+  display: block;
+  letter-spacing: 0.15em;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.ampersand{
+  font-size: 1.5rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #4169E1, 
+    0 0 10px #4169E1,
+    2px 2px 4px rgba(0,0,0,0.8);
+  margin: 0 0.3em;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.order-text{
+  font-size: 2rem;
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 5px #DC143C, 
+    0 0 10px #DC143C, 
+    0 0 20px #DC143C,
+    0 0 30px #DC143C,
+    2px 2px 4px rgba(0,0,0,0.8);
+  display: block;
+  letter-spacing: 0.15em;
+  margin-top: 8px;
+  font-weight: 900;
+  font-family: 'FrizQuadrataRegular', serif;
+}
+
+.svu-subtitle{
+  font-size: 1rem;
+  color: #FFFFFF; 
+  text-shadow: 
+    0 0 3px #FFFFFF,
+    0 0 8px #FFD700,
+    0 0 15px #FFD700,
+    0 0 25px #FFA500,
+    0 0 35px #FF8C00,
+    2px 2px 4px rgba(0,0,0,0.8);
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+  font-family: 'FrizQuadrataRegular', serif;
+  text-transform: uppercase;
+}
+
+/* ===== RESET FORM ===== */
+.reset-container{
+  background: var(--bg-primary);
+  border: 3px solid var(--primary-blue);
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.reset-container h1{
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--primary-blue);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+
+.form-group{
+  margin-bottom: 20px;
+}
+
+.form-group label{
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input{
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--bg-accent);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus{
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.btn-primary{
+  background: var(--primary-red);
+  color: white;
+  border: 2px solid var(--primary-red);
+}
+
+.btn-primary:hover, .btn-primary:focus{
+  background: var(--primary-red-dark);
+  border-color: var(--primary-red-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary{
+  background: var(--primary-blue);
+  color: white;
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-secondary:hover, .btn-secondary:focus{
+  background: var(--primary-blue-mid);
+  border-color: var(--primary-blue-mid);
+  transform: translateY(-1px);
+}
+
+.btn:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: var(--bg-accent);
+  color: var(--text-tertiary);
+  border-color: var(--bg-accent);
+}
+
+/* ===== MESSAGES ===== */
+.error-message{
+  color: var(--error);
+  margin-top: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.success-message{
+  color: var(--success);
+  margin-top: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.back-link{
+  text-align: center;
+  margin-top: 20px;
+}
+
+.back-link a{
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back-link a:hover{
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 768px){
+  .law-text, .order-text{ font-size: 2.5rem; }
+  .ampersand{ font-size: 2rem; }
+  .svu-subtitle{ font-size: 1.2rem; }
+}
+</style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Special Victory Unit</div>
+  </header>
+
+  <div class="reset-container">
+    <h1>Set New Password</h1>
+    
+    <div class="form-group">
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter your new password" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="confirmPassword">Confirm New Password</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm your new password" required>
+    </div>
+    
+    <button id="updatePasswordBtn" class="btn btn-primary">Update Password</button>
+    
+    <div id="errorMessage" class="error-message" style="display:none;"></div>
+    <div id="successMessage" class="success-message" style="display:none;"></div>
+    
+    <div class="back-link">
+      <a href="index.html">← Back to Game</a>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWp5emFrY2ZtdndkZmd6enl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyNjAxNDQsImV4cCI6MjA3MTgzNjE0NH0.8gQ5Xg0HhZBI61i6XS-kK9Ui-3DxRywXT40OB9YNIbI';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function showError(message) {
+      const errorEl = document.getElementById('errorMessage');
+      const successEl = document.getElementById('successMessage');
+      
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      successEl.style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const errorEl = document.getElementById('errorMessage');
+      const successEl = document.getElementById('successMessage');
+      
+      successEl.textContent = message;
+      successEl.style.display = 'block';
+      errorEl.style.display = 'none';
+    }
+
+    function hideMessages() {
+      document.getElementById('errorMessage').style.display = 'none';
+      document.getElementById('successMessage').style.display = 'none';
+    }
+
+    async function updatePassword() {
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const updateBtn = document.getElementById('updatePasswordBtn');
+      
+      hideMessages();
+      
+      // Validation
+      if (!newPassword || newPassword.length < 6) {
+        showError('Password must be at least 6 characters long.');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showError('Passwords do not match.');
+        return;
+      }
+      
+      updateBtn.disabled = true;
+      updateBtn.textContent = 'Updating...';
+      
+      try {
+        // Check if we have an active session
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session check:', session ? 'exists' : 'missing');
+        
+        if (!session) {
+          showError('Session expired. Please request a new password reset email.');
+          return;
+        }
+        
+        // Update the password
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        
+        if (error) {
+          console.error('Password update error:', error);
+          showError('Error updating password: ' + error.message);
+        } else {
+          showSuccess('Password updated successfully!');
+          
+          // Redirect to main page after 2 seconds
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000);
+        }
+        
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        showError('An unexpected error occurred. Please try again.');
+      } finally {
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Update Password';
+      }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      const updateBtn = document.getElementById('updatePasswordBtn');
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+      
+      updateBtn.addEventListener('click', updatePassword);
+      
+      // Enter key support
+      [newPasswordInput, confirmPasswordInput].forEach(input => {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            updatePassword();
+          }
+        });
+      });
+      
+      // Check if we have the right URL parameters
+      const urlHash = window.location.hash;
+      if (!urlHash.includes('access_token') && !urlHash.includes('type=recovery')) {
+        showError('Invalid reset link. Please request a new password reset.');
+      }
+    });
+
+    // Handle auth state changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session ? 'has session' : 'no session');
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('Password recovery session established');
+        hideMessages();
+      }
+    });
+  </script>
+
+</body>
+</html>
