@@ -763,7 +763,15 @@ th, td{
   <script>
     const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWp5emFrY2ZtdndkZmd6enl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyNjAxNDQsImV4cCI6MjA3MTgzNjE0NH0.8gQ5Xg0HhZBI61i6XS-kK9Ui-3DxRywXT40OB9YNIbI';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // FIXED: Added session persistence to prevent auth cycling
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        storageKey: 'law-order-svu-auth',
+        storage: window.localStorage
+      }
+    });
 
     const nflTeams = [
       { name: "Arizona Cardinals",    primary: "#97233F", secondary: "#FFB612" },
@@ -834,10 +842,14 @@ th, td{
       }
     }
 
+    // FIXED: Debug version with detailed logging
     async function refreshAuthUI(){
       try {
         const { data: { user } } = await supabase.auth.getUser();
         currentUser = user || null;
+        
+        // DEBUG: Log current user
+        console.log('🔍 Current user:', currentUser?.id, currentUser?.email);
 
         const loggedOutEl = document.getElementById('authWhenLoggedOut');
         const loggedInEl = document.getElementById('authWhenLoggedIn');
@@ -863,18 +875,27 @@ th, td{
         loggedOutEl.style.display = 'none';
         loggedInEl.style.display = 'flex';
 
+        // DEBUG: Log the profile fetch attempt
+        console.log('🔍 Fetching profile for user ID:', currentUser.id);
+        
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
           .maybeSingle();
 
+        // DEBUG: Log the results
+        console.log('🔍 Profile fetch result:', { profile, error });
+        
         if(error && error.code !== 'PGRST116') {
-          console.error('Profile fetch error:', error);
+          console.error('❌ Profile fetch error:', error);
+          // Show more details about the error
+          alert(`Profile fetch error: ${error.message} (Code: ${error.code})`);
           return;
         }
 
         if(!profile){
+          console.log('⚠️ No profile found, showing username gate');
           usernameGateEl.style.display = 'block';
           usernameGateEl.setAttribute('aria-hidden', 'false');
           currentProfile = null;
@@ -883,6 +904,7 @@ th, td{
           updateStatus();
           autoFitPlayerName();
         }else{
+          console.log('✅ Profile found:', profile.username);
           usernameGateEl.style.display = 'none';
           usernameGateEl.setAttribute('aria-hidden', 'true');
           currentProfile = profile;
@@ -893,7 +915,8 @@ th, td{
           await loadUserPicksAndDisableTeams();
         }
       } catch(error) {
-        console.error('Auth refresh error:', error);
+        console.error('❌ Auth refresh error:', error);
+        alert(`Auth refresh error: ${error.message}`);
       }
     }
 
@@ -925,6 +948,7 @@ th, td{
             if(error) {
               alert('Sign in error: ' + error.message);
             } else {
+              console.log('✅ Sign in successful');
               await refreshAuthUI();
             }
           } catch(error) {
@@ -1076,9 +1100,19 @@ th, td{
       })();
     });
 
+    // FIXED: Added debouncing to prevent rapid auth state cycling
+    let authRefreshTimeout;
+
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
-      refreshAuthUI();
+      
+      // Clear any pending refresh
+      clearTimeout(authRefreshTimeout);
+      
+      // Debounce the refresh to avoid rapid cycles
+      authRefreshTimeout = setTimeout(() => {
+        refreshAuthUI();
+      }, 500);
     });
 
     async function loadUserPicksAndDisableTeams(){
