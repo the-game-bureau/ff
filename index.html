@@ -708,7 +708,7 @@ th, td{
     </section>
 
     <section class="used-teams" id="usedTeamsSection" style="display:none;" aria-labelledby="usedTeamsTitle">
-      <h3 id="usernameGateTitle">⚖️ Judgements Rendered (Your Picks)</h3>
+      <h3 id="usedTeamsTitle">⚖️ Judgements Rendered (Your Picks)</h3>
       <div class="used-list" id="usedTeamsList" role="list" aria-label="Teams you have already picked"></div>
     </section>
 
@@ -912,8 +912,20 @@ th, td{
 
     async function refreshAuthUI(){
       try {
-        // Check if we're in password reset mode first
+        // IMPROVED: Check if we're in password reset mode first - exit immediately if so
         if (isPasswordResetMode()) {
+          console.log('Skipping refreshAuthUI - in password reset mode');
+          // Force hide all auth elements and show only password reset form
+          const loggedOutEl = document.getElementById('authWhenLoggedOut');
+          const loggedInEl = document.getElementById('authWhenLoggedIn');
+          const usernameGateEl = document.getElementById('usernameGate');
+          const passwordResetEl = document.getElementById('passwordResetForm');
+          
+          if (loggedOutEl) loggedOutEl.style.display = 'none';
+          if (loggedInEl) loggedInEl.style.display = 'none';
+          if (usernameGateEl) usernameGateEl.style.display = 'none';
+          if (passwordResetEl) passwordResetEl.style.display = 'block';
+          
           return; // Don't run normal auth UI if we're in reset mode
         }
 
@@ -990,34 +1002,6 @@ th, td{
       const submitPickEl = document.getElementById('submitPick');
       const newGameEl = document.getElementById('newGame');
       const viewScheduleEl = document.getElementById('viewSchedule');
-
-      if (btnSignUpEl) {
-        btnSignUpEl.addEventListener('click', async () => {
-          const email = document.getElementById('authEmail').value.trim();
-          const password = document.getElementById('authPass').value;
-          
-          if(!email || !password) {
-            alert('Please enter both email and password.');
-            return;
-          }
-
-          try {
-            const { data, error } = await supabase.auth.signUp({ 
-              email, 
-              password 
-            });
-            
-            if(error) {
-              alert('Sign up error: ' + error.message);
-            } else {
-              alert('You are signed up! Choose a username below to get started.');
-            }
-          } catch(error) {
-            console.error('Signup error:', error);
-            alert('An unexpected error occurred during signup.');
-          }
-        });
-      }
 
       if (btnSignInEl) {
         btnSignInEl.addEventListener('click', async () => {
@@ -1289,7 +1273,7 @@ th, td{
       console.log('Auth state changed:', event);
       
       // Handle password recovery specifically with timeout for DOM readiness
-      if (event === 'PASSWORD_RECOVERY' || isPasswordResetMode()) {
+      if (event === 'PASSWORD_RECOVERY') {
         console.log('Password recovery event detected');
         
         setTimeout(() => {
@@ -1315,6 +1299,12 @@ th, td{
           }
         }, 100);
         
+        return; // Don't continue to refreshAuthUI for password recovery
+      }
+      
+      // Skip normal auth UI refresh if we're in password reset mode
+      if (isPasswordResetMode()) {
+        console.log('Skipping auth UI refresh - in password reset mode');
         return;
       }
       
