@@ -1043,7 +1043,7 @@ th, td{
 
           try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.origin, // Redirects back to your site
+              redirectTo: 'https://the-game-bureau.github.io/ff/index.html',
             });
             
             if(error) {
@@ -1721,4 +1721,4 @@ th, td{
 </script>
 
 </body>
-</html>
+</html>s
