@@ -1093,27 +1093,18 @@ th, td{
           }
           
           try {
-            // Check if we have an active session
-            const { data: { session } } = await supabase.auth.getSession();
-            console.log('Current session:', session ? 'exists' : 'missing');
-            
-            if (!session) {
-              errorEl.textContent = 'Session expired. Please request a new password reset.';
-              return;
-            }
-            
             const { error } = await supabase.auth.updateUser({
               password: newPassword
             });
             
             if(error) {
-              console.error('Password update error:', error);
               errorEl.textContent = 'Error updating password: ' + error.message;
             } else {
               alert('Password updated successfully! You can now sign in with your new password.');
-              // Clear the URL and redirect to normal login
+              document.getElementById('passwordResetForm').style.display = 'none';
+              document.getElementById('authWhenLoggedOut').style.display = 'flex';
+              // Clear the URL hash/params
               window.history.replaceState({}, document.title, window.location.pathname);
-              window.location.reload(); // Force a clean reload
             }
           } catch(error) {
             console.error('Password update error:', error);
