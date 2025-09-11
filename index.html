@@ -631,14 +631,6 @@ th, td{
         <span id="displayUser" style="font-weight:600;color:var(--primary-blue)" aria-label="Current user"></span>
         <button id="btnSignOut" class="btn btn-secondary" type="button">Sign Out</button>
       </div>
-
-      <div id="passwordResetForm" style="display:none;max-width:400px;margin:20px auto;padding:24px;border:3px solid var(--primary-blue);border-radius:12px;background:var(--bg-primary);">
-        <h3 style="margin-bottom:16px;color:var(--primary-blue);text-transform:uppercase;">Set New Password</h3>
-        <input id="newPassword" type="password" placeholder="New Password" style="width:100%;padding:16px;border:2px solid var(--bg-accent);border-radius:8px;margin-bottom:16px;font-family:inherit;" />
-        <input id="confirmPassword" type="password" placeholder="Confirm New Password" style="width:100%;padding:16px;border:2px solid var(--bg-accent);border-radius:8px;margin-bottom:16px;font-family:inherit;" />
-        <button id="btnUpdatePassword" class="btn btn-primary" style="width:100%;">Update Password</button>
-        <div id="passwordResetError" style="color:var(--error);margin-top:12px;font-weight:600;"></div>
-      </div>
     </div>
 
     <div id="usernameGate" role="dialog" aria-labelledby="usernameGateTitle" aria-hidden="true">
@@ -825,74 +817,6 @@ th, td{
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     }
 
-    // Helper function to check if we're in password reset mode
-    function isPasswordResetMode() {
-      const urlHash = window.location.hash;
-      return urlHash.includes('type=recovery') || urlHash.includes('access_token');
-    }
-
-    // Database-based week management functions (commented out for now)
-    async function getCurrentWeekFromDB() {
-      try {
-        const { data, error } = await supabase
-          .from('game_settings')
-          .select('current_week, last_updated')
-          .eq('id', 1)
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching current week:', error);
-          return 2; // Return 2 as fallback
-        }
-
-        if (!data) {
-          // Initialize the game settings table
-          const { data: newData, error: insertError } = await supabase
-            .from('game_settings')
-            .insert({ id: 1, current_week: 2, last_updated: new Date().toISOString() })
-            .select()
-            .single();
-          
-          if (insertError) {
-            console.error('Error initializing game settings:', insertError);
-            return 2;
-          }
-          
-          return newData?.current_week || 2;
-        }
-
-        return data.current_week || 2;
-      } catch (error) {
-        console.error('Unexpected error fetching current week:', error);
-        return 2;
-      }
-    }
-
-    async function advanceWeekInDB() {
-      try {
-        const { data, error } = await supabase
-          .from('game_settings')
-          .update({ 
-            current_week: gameState.currentWeek + 1,
-            last_updated: new Date().toISOString()
-          })
-          .eq('id', 1)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error advancing week:', error);
-          return false;
-        }
-
-        gameState.currentWeek = data.current_week;
-        return true;
-      } catch (error) {
-        console.error('Unexpected error advancing week:', error);
-        return false;
-      }
-    }
-
     function autoFitPlayerName(minPx = 12, maxPx = 28, padPx = 8){
       const el = document.getElementById('playerName');
       if(!el) return;
@@ -912,23 +836,6 @@ th, td{
 
     async function refreshAuthUI(){
       try {
-        // IMPROVED: Check if we're in password reset mode first - exit immediately if so
-        if (isPasswordResetMode()) {
-          console.log('Skipping refreshAuthUI - in password reset mode');
-          // Force hide all auth elements and show only password reset form
-          const loggedOutEl = document.getElementById('authWhenLoggedOut');
-          const loggedInEl = document.getElementById('authWhenLoggedIn');
-          const usernameGateEl = document.getElementById('usernameGate');
-          const passwordResetEl = document.getElementById('passwordResetForm');
-          
-          if (loggedOutEl) loggedOutEl.style.display = 'none';
-          if (loggedInEl) loggedInEl.style.display = 'none';
-          if (usernameGateEl) usernameGateEl.style.display = 'none';
-          if (passwordResetEl) passwordResetEl.style.display = 'block';
-          
-          return; // Don't run normal auth UI if we're in reset mode
-        }
-
         const { data: { user } } = await supabase.auth.getUser();
         currentUser = user || null;
 
@@ -946,8 +853,6 @@ th, td{
           
           if (submitPickEl) {
             submitPickEl.disabled = true;
-          } else {
-            console.warn('Element with ID "submitPick" not found in DOM');
           }
           document.getElementById('playerName').textContent = 'Detective';
           updateStatus();
@@ -993,11 +898,9 @@ th, td{
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const btnSignUpEl = document.getElementById('btnSignUp');
       const btnSignInEl = document.getElementById('btnSignIn');
       const btnSignOutEl = document.getElementById('btnSignOut');
       const btnResetPasswordEl = document.getElementById('btnResetPassword');
-      const btnUpdatePasswordEl = document.getElementById('btnUpdatePassword');
       const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
       const submitPickEl = document.getElementById('submitPick');
       const newGameEl = document.getElementById('newGame');
@@ -1042,7 +945,7 @@ th, td{
 
           try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: 'https://the-game-bureau.github.io/ff/index.html',
+              redirectTo: 'https://the-game-bureau.github.io/ff/reset.html',
             });
             
             if(error) {
@@ -1053,54 +956,6 @@ th, td{
           } catch(error) {
             console.error('Password reset error:', error);
             alert('An unexpected error occurred during password reset.');
-          }
-        });
-      }
-
-      if (btnUpdatePasswordEl) {
-        btnUpdatePasswordEl.addEventListener('click', async () => {
-          const newPassword = document.getElementById('newPassword').value;
-          const confirmPassword = document.getElementById('confirmPassword').value;
-          const errorEl = document.getElementById('passwordResetError');
-          
-          errorEl.textContent = '';
-          
-          if(!newPassword || newPassword.length < 6) {
-            errorEl.textContent = 'Password must be at least 6 characters long.';
-            return;
-          }
-          
-          if(newPassword !== confirmPassword) {
-            errorEl.textContent = 'Passwords do not match.';
-            return;
-          }
-          
-          try {
-            // Check if we have an active session
-            const { data: { session } } = await supabase.auth.getSession();
-            console.log('Current session:', session ? 'exists' : 'missing');
-            
-            if (!session) {
-              errorEl.textContent = 'Session expired. Please request a new password reset.';
-              return;
-            }
-            
-            const { error } = await supabase.auth.updateUser({
-              password: newPassword
-            });
-            
-            if(error) {
-              console.error('Password update error:', error);
-              errorEl.textContent = 'Error updating password: ' + error.message;
-            } else {
-              alert('Password updated successfully! You can now sign in with your new password.');
-              // Clear the URL and redirect to normal login
-              window.history.replaceState({}, document.title, window.location.pathname);
-              window.location.reload(); // Force a clean reload
-            }
-          } catch(error) {
-            console.error('Password update error:', error);
-            errorEl.textContent = 'An unexpected error occurred.';
           }
         });
       }
@@ -1206,22 +1061,12 @@ th, td{
         console.log('Law & Order: Special Victory Unit - Initializing...');
         
         try {
-          // Check for password reset flow first
-          await handlePasswordResetFlow();
-          
-          // HARDCODED TO WEEK 2 - NOT LOADING FROM DATABASE
-          // gameState.currentWeek = await getCurrentWeekFromDB();
-          // console.log(`Current week loaded from database: ${gameState.currentWeek}`);
-          
           renderTeams();
           updateStatus();
           updateUsedTeams();
           
           await refreshAuthUI();
           await refreshLeagueStats();
-          
-          // Check for week advancement every 5 minutes instead of every minute
-          setInterval(checkWeekAdvancement, 300000);
           
           console.log(`Application initialized successfully - Week ${gameState.currentWeek}`);
           
@@ -1231,83 +1076,8 @@ th, td{
       })();
     });
 
-    // Handle password reset flow
-    async function handlePasswordResetFlow() {
-      // Check if this is a password reset redirect
-      if (isPasswordResetMode()) {
-        console.log('Password reset flow detected');
-        
-        // Use setTimeout to ensure DOM is ready
-        setTimeout(() => {
-          // Hide all other auth forms and show password reset form with null checks
-          const loggedOutEl = document.getElementById('authWhenLoggedOut');
-          const loggedInEl = document.getElementById('authWhenLoggedIn');
-          const usernameGateEl = document.getElementById('usernameGate');
-          const passwordResetEl = document.getElementById('passwordResetForm');
-          
-          console.log('DOM elements found:', {
-            loggedOutEl: !!loggedOutEl,
-            loggedInEl: !!loggedInEl, 
-            usernameGateEl: !!usernameGateEl,
-            passwordResetEl: !!passwordResetEl
-          });
-          
-          if (loggedOutEl) loggedOutEl.style.display = 'none';
-          if (loggedInEl) loggedInEl.style.display = 'none';
-          if (usernameGateEl) usernameGateEl.style.display = 'none';
-          if (passwordResetEl) {
-            passwordResetEl.style.display = 'block';
-            console.log('Password reset form should now be visible');
-          } else {
-            console.error('Password reset form element not found!');
-          }
-        }, 100);
-        
-        return true;
-      }
-      
-      return false;
-    }
-
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
-      
-      // Handle password recovery specifically with timeout for DOM readiness
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('Password recovery event detected');
-        
-        setTimeout(() => {
-          // Hide all auth forms with null checks
-          const loggedOutEl = document.getElementById('authWhenLoggedOut');
-          const loggedInEl = document.getElementById('authWhenLoggedIn');
-          const usernameGateEl = document.getElementById('usernameGate');
-          const passwordResetEl = document.getElementById('passwordResetForm');
-          
-          console.log('Auth state change - DOM elements:', { 
-            loggedOutEl: !!loggedOutEl, 
-            loggedInEl: !!loggedInEl, 
-            usernameGateEl: !!usernameGateEl, 
-            passwordResetEl: !!passwordResetEl 
-          });
-          
-          if (loggedOutEl) loggedOutEl.style.display = 'none';
-          if (loggedInEl) loggedInEl.style.display = 'none';
-          if (usernameGateEl) usernameGateEl.style.display = 'none';
-          if (passwordResetEl) {
-            passwordResetEl.style.display = 'block';
-            console.log('Password reset form displayed via auth state change');
-          }
-        }, 100);
-        
-        return; // Don't continue to refreshAuthUI for password recovery
-      }
-      
-      // Skip normal auth UI refresh if we're in password reset mode
-      if (isPasswordResetMode()) {
-        console.log('Skipping auth UI refresh - in password reset mode');
-        return;
-      }
-      
       refreshAuthUI();
     });
 
@@ -1551,20 +1321,6 @@ th, td{
       document.getElementById('teamSelection').style.display = 'none';
       
       gameOverEl.focus();
-    }
-
-    // Week advancement check (commented out database parts)
-    async function checkWeekAdvancement() {
-      // Disabled for manual week 2 mode
-      return;
-    }
-
-    function updateUI() {
-      renderTeams();
-      updateStatus();
-      if(currentUser && currentProfile) {
-        loadUserPicksAndDisableTeams();
-      }
     }
 
     function newGame(){
