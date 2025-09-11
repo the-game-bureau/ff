@@ -624,7 +624,8 @@ th, td{
         <input id="authPass" type="password" placeholder="Password" aria-label="Password" />
         <button id="btnSignUp" class="btn btn-secondary" type="button">Sign Up</button>
         <button id="btnSignIn" class="btn btn-secondary" type="button">Sign In</button>
-        <p style="width:100%;text-align:center;">Text KK if you forget your password after you signup. If you've played before you still have to sign up.</p>
+        <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
+        <p style="width:100%;text-align:center;">If you've played before you still have to sign up.</p>
       </div>
 
       <div id="authWhenLoggedIn" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -817,7 +818,7 @@ th, td{
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     }
 
-    // NEW: Database-based week management functions
+    // Database-based week management functions
     async function getCurrentWeekFromDB() {
       try {
         const { data, error } = await supabase
@@ -965,6 +966,7 @@ th, td{
       const btnSignUpEl = document.getElementById('btnSignUp');
       const btnSignInEl = document.getElementById('btnSignIn');
       const btnSignOutEl = document.getElementById('btnSignOut');
+      const btnResetPasswordEl = document.getElementById('btnResetPassword');
       const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
       const submitPickEl = document.getElementById('submitPick');
       const newGameEl = document.getElementById('newGame');
@@ -1028,6 +1030,34 @@ th, td{
         });
       } else {
         console.warn('Element with ID "btnSignIn" not found in DOM');
+      }
+
+      if (btnResetPasswordEl) {
+        btnResetPasswordEl.addEventListener('click', async () => {
+          const email = document.getElementById('authEmail').value.trim();
+          
+          if(!email) {
+            alert('Please enter your email address first.');
+            return;
+          }
+
+          try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin, // Redirects back to your site
+            });
+            
+            if(error) {
+              alert('Password reset error: ' + error.message);
+            } else {
+              alert('Password reset email sent! Check your inbox and follow the instructions.');
+            }
+          } catch(error) {
+            console.error('Password reset error:', error);
+            alert('An unexpected error occurred during password reset.');
+          }
+        });
+      } else {
+        console.warn('Element with ID "btnResetPassword" not found in DOM');
       }
 
       if (btnSignOutEl) {
@@ -1136,7 +1166,7 @@ th, td{
         }
       });
 
-      // UPDATED: Modified initialization
+      // Modified initialization
       (async function initializeApplication(){
         console.log('Law & Order: Special Victory Unit - Initializing...');
         
@@ -1412,7 +1442,7 @@ th, td{
       gameOverEl.focus();
     }
 
-    // UPDATED: Improved week advancement check with database support
+    // Improved week advancement check with database support
     async function checkWeekAdvancement() {
       const centralTime = getCentralNow();
       
