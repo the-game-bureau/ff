@@ -539,22 +539,6 @@ th, td{
   background: var(--text-tertiary);
 }
 
-/* ===== NEW STATUS CELL COLORS ===== */
-.status-survived{
-  background: #059669 !important;
-  color: white !important;
-}
-
-.status-dun-dun{
-  background: #DC2626 !important;
-  color: white !important;
-}
-
-.status-pick-is-in{
-  background: #D97706 !important;
-  color: white !important;
-}
-
 /* ===== FOOTER ===== */
 .footer{
   border-top: 2px solid var(--bg-accent);
@@ -1422,8 +1406,7 @@ th, td{
           teams: new Set(), 
           lastWeek: 0,
           allPicks: [],
-          status: '',
-          latestPickedAt: null
+          status: ''
         });
       }
 
@@ -1431,12 +1414,6 @@ th, td{
       userRecord.weeks.add(pick.week);
       userRecord.teams.add(pick.team);
       userRecord.allPicks.push(pick);
-      
-      // Track the latest pick timestamp
-      const pickDate = new Date(pick.created_at);
-      if (!userRecord.latestPickedAt || pickDate > userRecord.latestPickedAt) {
-        userRecord.latestPickedAt = pickDate;
-      }
       
       if (pick.week > userRecord.lastWeek) {
         userRecord.lastWeek = pick.week;
@@ -1473,17 +1450,14 @@ th, td{
     const userTableBody = document.getElementById('userSummaryBody');
     const userRows = [...users.entries()]
       .sort((a, b) => {
-        // First sort by weeks picked (descending)
-        const weeksA = a[1].weeks.size;
-        const weeksB = b[1].weeks.size;
-        if (weeksA !== weeksB) {
-          return weeksB - weeksA;
+        const statusA = a[1].status || '';
+        const statusB = b[1].status || '';
+        
+        if (statusA !== statusB) {
+          return statusA.localeCompare(statusB);
         }
         
-        // Then sort by latest pick timestamp (descending) 
-        const dateA = a[1].latestPickedAt || new Date(0);
-        const dateB = b[1].latestPickedAt || new Date(0);
-        return dateB - dateA;
+        return a[0].localeCompare(b[0]);
       })
       .map(([username, record]) => {
         const weeksPicked = record.weeks.size;
@@ -1492,29 +1466,23 @@ th, td{
         const status = record.status;
         
         let statusDisplay = '';
-        let statusCellClass = '';
-        
         if (status) {
           const statusLower = status.toLowerCase();
+          let labelClass = 'status-other';
           
-          if (statusLower.includes('survived')) {
-            statusCellClass = 'status-survived';
-            statusDisplay = status;
-          } else if (statusLower.includes('dun dun')) {
-            statusCellClass = 'status-dun-dun';
-            statusDisplay = status;
-          } else if (statusLower.includes('pick is in')) {
-            statusCellClass = 'status-pick-is-in';
-            statusDisplay = status;
-          } else {
-            statusDisplay = `<span class="status-label status-other">${status}</span>`;
+          if (statusLower.includes('active')) {
+            labelClass = 'status-active';
+          } else if (statusLower.includes('eliminated')) {
+            labelClass = 'status-eliminated';
           }
+          
+          statusDisplay = `<span class="status-label ${labelClass}">${status}</span>`;
         }
 
         return `
           <tr>
             <td><strong>@${username}</strong></td>
-            <td class="${statusCellClass}">${statusDisplay}</td>
+            <td>${statusDisplay}</td>
             <td>${weeksPicked}</td>
             <td>${teamsUsed}</td>
             <td>${lastWeek}</td>
