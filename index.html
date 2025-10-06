@@ -673,7 +673,7 @@ th, td{
       </div>
       <div class="status-card">
         <h3>Current Week</h3>
-        <div class="value" id="currentWeek" aria-live="polite">5</div>
+        <div class="value" id="currentWeek" aria-live="polite">6</div>
       </div>
       <div class="status-card">
         <h3>NFL Teams Used</h3>
@@ -825,7 +825,7 @@ th, td{
     ];
 
     let gameState = {
-      currentWeek: 5, // SET CURRENT WEEK HERE
+      currentWeek: 6, // SET CURRENT WEEK HERE
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -1479,11 +1479,16 @@ th, td{
         if (weeksA !== weeksB) {
           return weeksB - weeksA;
         }
-        
-        // Then sort by latest pick timestamp (descending) 
-        const dateA = a[1].latestPickedAt || new Date(0);
-        const dateB = b[1].latestPickedAt || new Date(0);
-        return dateB - dateA;
+
+        // Then sort by status (descending)
+        const statusA = a[1].status || '';
+        const statusB = b[1].status || '';
+        if (statusA !== statusB) {
+          return statusB.localeCompare(statusA);
+        }
+
+        // Finally sort by username (ascending)
+        return a[0].localeCompare(b[0]);
       })
       .map(([username, record]) => {
         const weeksPicked = record.weeks.size;
