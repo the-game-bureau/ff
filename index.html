@@ -1598,7 +1598,10 @@ th, td{
     const weekData = [];
     let cumulativeEliminated = 0;
 
-    for (let week = 1; week <= maxWeek; week++) {
+    // Only show weeks before current week
+    const lastWeekToShow = gameState.currentWeek - 1;
+
+    for (let week = 1; week <= lastWeekToShow; week++) {
       cumulativeEliminated += eliminationsByWeek.get(week) || 0;
       weekData.push({ week, eliminated: cumulativeEliminated });
     }
