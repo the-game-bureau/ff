@@ -657,6 +657,13 @@ th, td{
       <div id="usernameError" role="alert" style="color:var(--error);margin-top:12px;font-weight:600"></div>
     </div>
 
+    <section class="game-info" id="eliminationChart" aria-labelledby="eliminationChartTitle">
+      <h3 id="eliminationChartTitle" style="margin:0 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
+        ⚖️ League Timeline
+      </h3>
+      <div id="chartContainer" style="margin-top:20px;"></div>
+    </section>
+
     <section class="game-info" aria-labelledby="gameInfoTitle">
       <h2 id="gameInfoTitle">🏛️ The Case File</h2>
       <p><strong>The Rules:</strong> Each week, you must select one NFL team that you believe will <em>lose</em> their game. If your selected team loses, you advance. If they win or tie, you're out. You can use each team only once per season. No draft, no grand jury necessary.</p>
@@ -1557,9 +1564,92 @@ th, td{
       `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
   }
 
+  function renderEliminationChart(picks) {
+    const chartContainer = document.getElementById('chartContainer');
+
+    // Count eliminations by week
+    const eliminationsByWeek = new Map();
+    const users = new Map();
+
+    for (const pick of picks) {
+      const username = pick.username || '(unknown)';
+
+      if (!users.has(username)) {
+        users.set(username, { lastWeek: 0, status: '' });
+      }
+
+      const userRecord = users.get(username);
+      if (pick.week > userRecord.lastWeek) {
+        userRecord.lastWeek = pick.week;
+        userRecord.status = (pick.result || '').toLowerCase();
+      }
+    }
+
+    // Count how many users were eliminated each week
+    for (const [username, record] of users.entries()) {
+      if (record.status.includes('dun dun')) {
+        const week = record.lastWeek;
+        eliminationsByWeek.set(week, (eliminationsByWeek.get(week) || 0) + 1);
+      }
+    }
+
+    // Calculate cumulative eliminations and survivors
+    const maxWeek = Math.max(...Array.from(eliminationsByWeek.keys()), gameState.currentWeek);
+    const weekData = [];
+    let cumulativeEliminated = 0;
+
+    for (let week = 1; week <= maxWeek; week++) {
+      cumulativeEliminated += eliminationsByWeek.get(week) || 0;
+      weekData.push({ week, eliminated: cumulativeEliminated });
+    }
+
+    if (weekData.length === 0) {
+      chartContainer.innerHTML = '<p style="color:var(--text-tertiary);text-align:center;padding:24px;">No data yet.</p>';
+      return;
+    }
+
+    // Get total number of users
+    const totalUsers = users.size;
+    const maxEliminated = Math.max(...weekData.map(d => d.eliminated), 1);
+
+    let chartHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:900px;">
+        <div style="display:grid;grid-template-columns:70px 110px 1fr 110px;gap:12px;font-size:0.75rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;align-items:center;">
+          <div>Week</div>
+          <div style="text-align:right;">DUN DUN</div>
+          <div style="text-align:center;">Prosecutors</div>
+          <div style="text-align:left;">Survivors</div>
+        </div>
+    `;
+
+    weekData.forEach(({ week, eliminated }) => {
+      const survivors = totalUsers - eliminated;
+      const eliminatedPercentage = totalUsers > 0 ? (eliminated / totalUsers) * 100 : 0;
+      const survivorsPercentage = totalUsers > 0 ? (survivors / totalUsers) * 100 : 0;
+      const eliminatedDisplay = totalUsers > 0 ? ((eliminated / totalUsers) * 100).toFixed(1) : '0.0';
+      const survivorsDisplay = totalUsers > 0 ? ((survivors / totalUsers) * 100).toFixed(1) : '0.0';
+
+      chartHTML += `
+        <div style="display:grid;grid-template-columns:70px 110px 1fr 110px;gap:12px;align-items:center;">
+          <div style="font-weight:600;color:var(--primary-blue);">Week ${week}</div>
+          <div style="text-align:right;font-weight:700;color:var(--primary-red);font-family:ui-monospace,monospace;">${eliminated} (${eliminatedDisplay}%)</div>
+          <div style="background:var(--bg-secondary);border-radius:4px;overflow:hidden;height:28px;position:relative;display:flex;">
+            <div style="background:linear-gradient(90deg, var(--primary-red), var(--primary-red-dark));height:100%;width:${eliminatedPercentage}%;transition:width 0.3s ease;"></div>
+            <div style="background:linear-gradient(90deg, var(--success), #047857);height:100%;width:${survivorsPercentage}%;transition:width 0.3s ease;"></div>
+          </div>
+          <div style="text-align:left;font-weight:700;color:var(--success);font-family:ui-monospace,monospace;">${survivors} (${survivorsDisplay}%)</div>
+        </div>
+      `;
+    });
+
+    chartHTML += '</div>';
+    chartContainer.innerHTML = chartHTML;
+  }
+
   async function refreshLeagueStats() {
     const picks = await fetchAllPicksPublic();
     renderLeagueStats(picks);
+    renderEliminationChart(picks);
   }
 </script>
 
