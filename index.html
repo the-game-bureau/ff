@@ -600,6 +600,124 @@ th, td{
   #playerName{ font-size: 1.75rem !important; }
 }
 
+/* ===== FLOATING SCHEDULE ===== */
+#floatingScheduleContainer{
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 90%;
+  max-width: 600px;
+  height: 70vh;
+  max-height: 600px;
+  background: var(--bg-primary);
+  border: 3px solid var(--primary-blue);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#floatingScheduleContainer.visible{
+  display: flex;
+}
+
+.schedule-header{
+  background: var(--primary-blue);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.schedule-close{
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.schedule-close:hover{
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#scheduleIframe{
+  flex: 1;
+  border: none;
+  width: 100%;
+  background: white;
+}
+
+#toggleScheduleBtn{
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+#toggleScheduleBtn:hover{
+  background: var(--primary-blue-mid);
+  transform: scale(1.05);
+}
+
+#toggleScheduleBtn.hidden{
+  display: none;
+}
+
+/* ===== MOBILE ADJUSTMENTS FOR FLOATING SCHEDULE ===== */
+@media (max-width: 767px){
+  #floatingScheduleContainer{
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    max-width: none;
+    height: 60vh;
+    max-height: 500px;
+  }
+
+  #toggleScheduleBtn{
+    bottom: 10px;
+    right: 10px;
+    width: 56px;
+    height: 56px;
+    font-size: 1.25rem;
+  }
+
+  .schedule-header{
+    font-size: 0.75rem;
+    padding: 10px 12px;
+  }
+}
+
 /* ===== UTILITY ===== */
 .sr-only{
   position: absolute;
@@ -782,6 +900,20 @@ th, td{
   <footer class="footer" role="contentinfo">
     <p>Executive Producer: Dick Wolf · "These stories are fictional. Any resemblance to actual fantasy football leagues is purely coincidental."</p>
   </footer>
+
+  <!-- Floating Schedule Toggle Button -->
+  <button id="toggleScheduleBtn" aria-label="Toggle NFL Schedule" title="View NFL Schedule">
+    🏈
+  </button>
+
+  <!-- Floating Schedule Container -->
+  <div id="floatingScheduleContainer" role="dialog" aria-labelledby="scheduleTitle" aria-modal="false">
+    <div class="schedule-header">
+      <span id="scheduleTitle">NFL Week Schedule</span>
+      <button class="schedule-close" id="closeScheduleBtn" aria-label="Close schedule">×</button>
+    </div>
+    <iframe id="scheduleIframe" title="NFL Schedule" sandbox="allow-same-origin allow-scripts" loading="lazy"></iframe>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://jdyjyzakcfmvwdfgzzyz.supabase.co';
@@ -1078,6 +1210,48 @@ th, td{
           window.open('https://plaintextsports.com/nfl/2025/schedule', '_blank');
         });
       }
+
+      // Floating Schedule Controls
+      const toggleScheduleBtn = document.getElementById('toggleScheduleBtn');
+      const closeScheduleBtn = document.getElementById('closeScheduleBtn');
+      const floatingScheduleContainer = document.getElementById('floatingScheduleContainer');
+      const scheduleIframe = document.getElementById('scheduleIframe');
+      const scheduleTitle = document.getElementById('scheduleTitle');
+
+      function getScheduleUrl() {
+        const week = gameState.currentWeek;
+        return `https://plaintextsports.com/nfl/2025/week${week}`;
+      }
+
+      function openFloatingSchedule() {
+        const url = getScheduleUrl();
+        scheduleIframe.src = url;
+        scheduleTitle.textContent = `NFL Week ${gameState.currentWeek} Schedule`;
+        floatingScheduleContainer.classList.add('visible');
+        toggleScheduleBtn.classList.add('hidden');
+      }
+
+      function closeFloatingSchedule() {
+        floatingScheduleContainer.classList.remove('visible');
+        toggleScheduleBtn.classList.remove('hidden');
+        // Optional: clear iframe to save resources
+        // scheduleIframe.src = '';
+      }
+
+      if (toggleScheduleBtn) {
+        toggleScheduleBtn.addEventListener('click', openFloatingSchedule);
+      }
+
+      if (closeScheduleBtn) {
+        closeScheduleBtn.addEventListener('click', closeFloatingSchedule);
+      }
+
+      // Close on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && floatingScheduleContainer.classList.contains('visible')) {
+          closeFloatingSchedule();
+        }
+      });
 
       window.addEventListener('resize', autoFitPlayerName);
 
