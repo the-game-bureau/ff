@@ -823,19 +823,15 @@ th, td{
     </section>
 
     <section class="action-buttons" role="group" aria-label="Game actions">
-      <button class="btn btn-secondary" id="viewSchedule" aria-describedby="viewScheduleHelp">
-        View NFL Schedule
-      </button>
       <button class="btn btn-primary" id="submitPick" disabled aria-describedby="submitPickHelp">
         Submit Your Suspect
       </button>
       <button class="btn btn-secondary" id="newGame" aria-describedby="newGameHelp">
         Reset Pick
       </button>
-      
+
       <div class="sr-only">
         <div id="submitPickHelp">Submit your team pick for this week</div>
-        <div id="viewScheduleHelp">View the 2025 NFL schedule in a new tab</div>
         <div id="newGameHelp">Reset the game interface</div>
       </div>
     </section>
@@ -1082,7 +1078,6 @@ th, td{
       const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
       const submitPickEl = document.getElementById('submitPick');
       const newGameEl = document.getElementById('newGame');
-      const viewScheduleEl = document.getElementById('viewSchedule');
 
       if (btnSignInEl) {
         btnSignInEl.addEventListener('click', async () => {
@@ -1203,12 +1198,6 @@ th, td{
 
       if (newGameEl) {
         newGameEl.addEventListener('click', newGame);
-      }
-
-      if (viewScheduleEl) {
-        viewScheduleEl.addEventListener('click', () => {
-          window.open('https://plaintextsports.com/nfl/2025/schedule', '_blank');
-        });
       }
 
       // Floating Schedule Controls
