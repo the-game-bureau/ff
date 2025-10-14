@@ -360,7 +360,8 @@ body{
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin: 20px 0;
+  margin: 20px auto;
+  max-width: 500px;
 }
 
 #authStatusContainer .status-bar{
@@ -370,68 +371,93 @@ body{
 
 .status-card{
   background: var(--bg-primary);
-  padding: 16px;
+  padding: 8px;
   text-align: center;
-  border: 2px solid var(--bg-accent);
-  border-radius: 12px;
+  border: 2px solid var(--primary-blue);
+  border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .status-card h3{
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   color: var(--text-tertiary);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   line-height: 1.2;
 }
 
 .status-card .value{
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--primary-red);
   line-height: 1.1;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+.status-line{
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-line strong{
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+.status-line .separator{
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
 #playerStatusCard.status-survived{
   background: #059669;
-  border-color: #059669;
-}
-
-#playerStatusCard.status-survived h3{
-  color: rgba(255, 255, 255, 0.9);
-}
-
-#playerStatusCard.status-survived .value{
   color: white;
+}
+
+#playerStatusCard.status-survived strong{
+  color: white;
+}
+
+#playerStatusCard.status-survived .separator{
+  color: rgba(255, 255, 255, 0.7);
 }
 
 #playerStatusCard.status-dun-dun{
   background: #DC2626;
-  border-color: #DC2626;
-}
-
-#playerStatusCard.status-dun-dun h3{
-  color: rgba(255, 255, 255, 0.9);
-}
-
-#playerStatusCard.status-dun-dun .value{
   color: white;
+}
+
+#playerStatusCard.status-dun-dun strong{
+  color: white;
+}
+
+#playerStatusCard.status-dun-dun .separator{
+  color: rgba(255, 255, 255, 0.7);
 }
 
 #playerStatusCard.status-pick-is-in{
   background: #D97706;
-  border-color: #D97706;
-}
-
-#playerStatusCard.status-pick-is-in h3{
-  color: rgba(255, 255, 255, 0.9);
-}
-
-#playerStatusCard.status-pick-is-in .value{
   color: white;
+}
+
+#playerStatusCard.status-pick-is-in strong{
+  color: white;
+}
+
+#playerStatusCard.status-pick-is-in .separator{
+  color: rgba(255, 255, 255, 0.7);
 }
 
 #playerName{
@@ -476,10 +502,12 @@ body{
 }
 
 .team-card.selected{
-  background: rgba(30, 64, 175, 0.05);
-  border: 2px solid var(--primary-blue);
-  border-right: 4px solid var(--primary-blue);
-  border-left: 6px solid var(--team-primary, #4B5563);
+  background: rgba(30, 64, 175, 0.15);
+  border: 3px solid var(--primary-blue);
+  border-right: 5px solid var(--primary-blue);
+  border-left: 8px solid var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .team-card.disabled{
@@ -702,8 +730,8 @@ th, td{
   .status-bar{ grid-template-columns: repeat(5, 1fr); }
   .team-grid{ grid-template-columns: repeat(4, 1fr); gap: 20px; }
   .team-card{ text-align: center; justify-content: center; }
-  .status-card .value{ font-size: 2rem; }
-  #playerName{ font-size: 1.75rem !important; }
+  .status-card .value{ font-size: 1.1rem; }
+  #playerName{ font-size: 1.1rem !important; }
   #teamPicksList{ grid-template-columns: repeat(6, 1fr); }
   #usedTeamsList{ grid-template-columns: repeat(4, 1fr); }
 }
@@ -735,13 +763,19 @@ th, td{
   background: var(--primary-blue);
   color: white;
   padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 8px;
   align-items: center;
   font-weight: 600;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+}
+
+.schedule-header > span{
+  text-align: center;
+  grid-column: 2;
 }
 
 .schedule-close{
@@ -762,6 +796,31 @@ th, td{
 
 .schedule-close:hover{
   background: rgba(255, 255, 255, 0.2);
+}
+
+.week-nav-btn{
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.week-nav-btn:hover{
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.week-nav-btn:disabled{
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 #scheduleIframe{
@@ -804,7 +863,7 @@ th, td{
 #floatingPickTickerContainer{
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  right: 20px;
   width: 90%;
   max-width: 600px;
   height: 70vh;
@@ -829,8 +888,8 @@ th, td{
 
 #togglePickTickerBtn{
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: 90px;
+  right: 20px;
   background: var(--primary-red);
   color: white;
   border: none;
@@ -887,8 +946,8 @@ th, td{
   }
 
   #togglePickTickerBtn{
-    bottom: 10px;
-    left: 10px;
+    bottom: 76px;
+    right: 10px;
     width: 56px;
     height: 56px;
     font-size: 1.25rem;
@@ -968,25 +1027,14 @@ th, td{
       </div>
 
       <section class="status-bar" id="statusBar" style="display:none;" aria-label="Game status overview">
-        <div class="status-card">
-          <h3>Player</h3>
-          <div class="value" id="playerName" aria-live="polite">Detective</div>
-        </div>
-        <div class="status-card">
-          <h3>Current Week</h3>
-          <div class="value" id="currentWeek" aria-live="polite">7</div>
-        </div>
-        <div class="status-card">
-          <h3>NFL Teams Used</h3>
-          <div class="value" id="teamsUsedCount" aria-live="polite">0</div>
-        </div>
-        <div class="status-card">
-          <h3>NFL Teams Remaining</h3>
-          <div class="value" id="teamsRemaining" aria-live="polite">32</div>
-        </div>
-        <div class="status-card" id="playerStatusCard">
-          <h3>Status</h3>
-          <div class="value" id="playerStatus" aria-live="polite">-</div>
+        <div class="status-line" id="playerStatusCard">
+          <span>Week <strong id="currentWeek">7</strong></span>
+          <span class="separator">·</span>
+          <span>Teams Used: <strong id="teamsUsedCount">0</strong></span>
+          <span class="separator">·</span>
+          <span>Teams Remaining: <strong id="teamsRemaining">32</strong></span>
+          <span class="separator">·</span>
+          <span>Status: <strong id="playerStatus">-</strong></span>
         </div>
       </section>
     </section>
@@ -1000,7 +1048,7 @@ th, td{
 
     <section class="team-selection" id="teamSelection" aria-labelledby="teamSelectionTitle">
       <h2 id="teamSelectionTitle">🏈 Suspect Lineup</h2>
-      <p>(A team you believe will lose this week):</p>
+      <p id="teamSelectionSubtitle">(Pick a team you believe will lose in week 7):</p>
 
       <div class="team-grid" id="teamGrid" role="group" aria-label="NFL teams pick"></div>
 
@@ -1049,23 +1097,6 @@ th, td{
   </table>
 </div>
 
-<h3 style="margin:24px 0 16px;font-weight:700;color:var(--primary-blue);text-transform:uppercase;">
-  🔎 Dispatch Log: Latest Filings
-</h3>
-<div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary)">
-  <table id="allPicksTable" role="table" aria-label="All user picks chronologically">
-    <caption class="sr-only">Complete chronological list of all picks made by all users</caption>
-    <thead>
-      <tr>
-        <th scope="col">Week</th>
-        <th scope="col">User</th>
-        <th scope="col">Team</th>
-        <th scope="col">Picked At</th>
-      </tr>
-    </thead>
-    <tbody id="allPicksBody"></tbody>
-  </table>
-</div>
     </section>
 
   </div>
@@ -1096,16 +1127,17 @@ th, td{
   <!-- Floating Pick Ticker Container -->
   <div id="floatingPickTickerContainer" role="dialog" aria-labelledby="pickTickerTitle" aria-modal="false">
     <div class="schedule-header">
-      <span id="pickTickerTitle">📋 Pick Ticker: Latest Filings</span>
+      <button id="prevPickWeekBtn" class="week-nav-btn" aria-label="Previous week">◀</button>
+      <span id="pickTickerTitle">Pick Ticker Week 7</span>
+      <button id="nextPickWeekBtn" class="week-nav-btn" aria-label="Next week">▶</button>
       <button class="schedule-close" id="closePickTickerBtn" aria-label="Close pick ticker">×</button>
     </div>
     <div id="pickTickerContent" style="flex: 1; overflow: auto; padding: 16px; background: var(--bg-primary);">
       <div style="overflow:auto;border:2px solid var(--primary-blue);background:var(--bg-primary)">
-        <table id="floatingPicksTable" role="table" aria-label="All user picks chronologically">
-          <caption class="sr-only">Complete chronological list of all picks made by all users</caption>
+        <table id="floatingPicksTable" role="table" aria-label="User picks for selected week">
+          <caption class="sr-only">Picks made by users for the selected week</caption>
           <thead>
             <tr>
-              <th scope="col">Week</th>
               <th scope="col">User</th>
               <th scope="col">Team</th>
               <th scope="col">Picked At</th>
@@ -1177,28 +1209,15 @@ th, td{
     let currentUser = null;
     let currentProfile = null;
     let globalTeamCounts = new Map(); // Store team pick counts globally
+    let allPicksData = []; // Store all picks data globally for week navigation
+    let currentPickTickerWeek = 7; // Track current week in Pick Ticker
 
     function getCentralNow(){
       const now = new Date();
       return new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     }
 
-    function autoFitPlayerName(minPx = 12, maxPx = 28, padPx = 8){
-      const el = document.getElementById('playerName');
-      if(!el) return;
-      
-      const container = el.parentElement;
-      el.style.fontSize = maxPx + 'px';
-      
-      let size = maxPx;
-      let loops = 40;
-      
-      while(size > minPx && el.scrollWidth > (container.clientWidth - padPx)){
-        size--;
-        el.style.fontSize = size + 'px';
-        if(--loops <= 0) break;
-      }
-    }
+    // Removed: autoFitPlayerName function no longer needed since playerName element was removed
 
     // FIXED: Debug version with detailed logging
     async function refreshAuthUI(){
@@ -1226,9 +1245,8 @@ th, td{
           if (submitPickEl) {
             submitPickEl.disabled = true;
           }
-          document.getElementById('playerName').textContent = 'Detective';
+          // Removed: playerName element no longer exists
           updateStatus();
-          autoFitPlayerName();
           return;
         }
 
@@ -1261,18 +1279,16 @@ th, td{
           usernameGateEl.setAttribute('aria-hidden', 'false');
           currentProfile = null;
           displayUserEl.textContent = '(set username)';
-          document.getElementById('playerName').textContent = 'Detective';
+          // Removed: playerName element no longer exists
           updateStatus();
-          autoFitPlayerName();
         }else{
           console.log('✅ Profile found:', profile.username);
           usernameGateEl.style.display = 'none';
           usernameGateEl.setAttribute('aria-hidden', 'true');
           currentProfile = profile;
           displayUserEl.textContent = '@' + profile.username;
-          document.getElementById('playerName').textContent = '@' + profile.username;
-          autoFitPlayerName();
-          
+          // Removed: playerName element no longer exists
+
           await loadUserPicksAndDisableTeams();
         }
       } catch(error) {
@@ -1443,8 +1459,59 @@ th, td{
       const togglePickTickerBtn = document.getElementById('togglePickTickerBtn');
       const closePickTickerBtn = document.getElementById('closePickTickerBtn');
       const floatingPickTickerContainer = document.getElementById('floatingPickTickerContainer');
+      const prevPickWeekBtn = document.getElementById('prevPickWeekBtn');
+      const nextPickWeekBtn = document.getElementById('nextPickWeekBtn');
+      const pickTickerTitle = document.getElementById('pickTickerTitle');
+
+      function renderPickTickerForWeek(week) {
+        const floatingPicksBody = document.getElementById('floatingPicksBody');
+
+        // Filter picks for the selected week
+        const weekPicks = allPicksData.filter(pick => pick.week === week);
+
+        // Sort by created_at descending (newest first)
+        weekPicks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Update title
+        pickTickerTitle.textContent = `Pick Ticker Week ${week}`;
+
+        // Render picks
+        const pickRows = weekPicks.map(pick => {
+          const createdAt = new Date(pick.created_at);
+          const timestamp = isNaN(createdAt.getTime()) ?
+            'Invalid Date' :
+            createdAt.toLocaleString('en-US', {
+              timeZone: 'America/Chicago',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+
+          return `
+            <tr>
+              <td>@${pick.username || '(unknown)'}</td>
+              <td>${pick.team}</td>
+              <td style="color:var(--text-secondary);font-size:0.875rem;">${timestamp}</td>
+            </tr>
+          `;
+        }).join('');
+
+        floatingPicksBody.innerHTML = pickRows ||
+          `<tr><td colspan="3" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks for Week ${week} yet.</td></tr>`;
+
+        // Update navigation buttons state
+        const minWeek = 1;
+        const maxWeek = Math.max(...allPicksData.map(p => p.week), gameState.currentWeek);
+
+        prevPickWeekBtn.disabled = week <= minWeek;
+        nextPickWeekBtn.disabled = week >= maxWeek;
+      }
 
       function openFloatingPickTicker() {
+        // Set to current week by default
+        currentPickTickerWeek = gameState.currentWeek;
+        renderPickTickerForWeek(currentPickTickerWeek);
         floatingPickTickerContainer.classList.add('visible');
         togglePickTickerBtn.classList.add('hidden');
       }
@@ -1462,6 +1529,25 @@ th, td{
         closePickTickerBtn.addEventListener('click', closeFloatingPickTicker);
       }
 
+      if (prevPickWeekBtn) {
+        prevPickWeekBtn.addEventListener('click', () => {
+          if (currentPickTickerWeek > 1) {
+            currentPickTickerWeek--;
+            renderPickTickerForWeek(currentPickTickerWeek);
+          }
+        });
+      }
+
+      if (nextPickWeekBtn) {
+        nextPickWeekBtn.addEventListener('click', () => {
+          const maxWeek = Math.max(...allPicksData.map(p => p.week), gameState.currentWeek);
+          if (currentPickTickerWeek < maxWeek) {
+            currentPickTickerWeek++;
+            renderPickTickerForWeek(currentPickTickerWeek);
+          }
+        });
+      }
+
       // Close on escape key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && floatingScheduleContainer.classList.contains('visible')) {
@@ -1472,7 +1558,7 @@ th, td{
         }
       });
 
-      window.addEventListener('resize', autoFitPlayerName);
+      // Removed: window resize listener for autoFitPlayerName no longer needed
 
       document.addEventListener('keydown', (e) => {
         if(e.key === 'Escape') {
@@ -1711,7 +1797,7 @@ th, td{
           <div class="team-name">
             ${team.name}
             <br><span style="font-size:0.8rem;margin-top:4px;opacity:0.8">${isUsed && pickedWeek ? `PICKED BY YOU WK${pickedWeek}` : 'AVAILABLE'}</span>
-            <br><span style="font-size:0.75rem;margin-top:4px;opacity:0.7">Total Picks: ${totalPicks}</span>
+            <br><span style="font-size:0.75rem;margin-top:4px;opacity:0.7">Picked by League ${totalPicks} ${totalPicks === 1 ? 'Time' : 'Times'}</span>
           </div>
         `;
 
@@ -1761,12 +1847,14 @@ th, td{
       document.getElementById('currentWeek').textContent = gameState.currentWeek;
       document.getElementById('teamsUsedCount').textContent = gameState.usedTeams.length;
       document.getElementById('teamsRemaining').textContent = 32 - gameState.usedTeams.length;
-      
-      if(!currentProfile) {
-        document.getElementById('playerName').textContent = 'Detective';
+
+      // Update team selection subtitle with current week
+      const subtitleEl = document.getElementById('teamSelectionSubtitle');
+      if (subtitleEl) {
+        subtitleEl.textContent = `(Pick a team you believe will lose in week ${gameState.currentWeek}):`;
       }
-      
-      autoFitPlayerName();
+
+      // Removed: playerName element no longer exists
     }
 
 
@@ -1882,7 +1970,7 @@ th, td{
       .join(' · ');
 
     const summaryEl = document.getElementById('statsSummary');
-    summaryEl.textContent = `Prosecutors: ${totalPlayers} · Total Picks: ${totalPicks}` +
+    summaryEl.textContent = `Prosecutors: ${totalPlayers} · Picks by League: ${totalPicks}` +
       (statusCountsText ? ` · Status: ${statusCountsText}` : '');
 
     const userTableBody = document.getElementById('userSummaryBody');
@@ -1962,32 +2050,6 @@ th, td{
 
     userTableBody.innerHTML = userRows ||
       `<tr><td colspan="3" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
-
-    const allPicksBody = document.getElementById('allPicksBody');
-    const pickRows = picks.map(pick => {
-      const createdAt = new Date(pick.created_at);
-      const timestamp = isNaN(createdAt.getTime()) ? 
-        'Invalid Date' : 
-        createdAt.toLocaleString('en-US', {
-          timeZone: 'America/Chicago',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit'
-        });
-        
-      return `
-        <tr>
-          <td><strong>Week ${pick.week}</strong></td>
-          <td>@${pick.username || '(unknown)'}</td>
-          <td>${pick.team}</td>
-          <td style="color:var(--text-secondary);font-size:0.875rem;">${timestamp}</td>
-        </tr>
-      `;
-    }).join('');
-
-    allPicksBody.innerHTML = pickRows || 
-      `<tr><td colspan="4" style="color:var(--text-tertiary);text-align:center;padding:24px;">No picks yet.</td></tr>`;
   }
 
   function renderEliminationChart(picks) {
@@ -2077,6 +2139,7 @@ th, td{
 
   async function refreshLeagueStats() {
     const picks = await fetchAllPicksPublic();
+    allPicksData = picks; // Store globally for Pick Ticker week navigation
     renderLeagueStats(picks);
     renderEliminationChart(picks);
     // Re-render teams after stats are loaded to show updated pick counts
