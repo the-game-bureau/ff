@@ -1028,7 +1028,7 @@ th, td{
 
       <section class="status-bar" id="statusBar" style="display:none;" aria-label="Game status overview">
         <div class="status-line" id="playerStatusCard">
-          <span>Week <strong id="currentWeek">7</strong></span>
+          <span>Week <strong id="currentWeek">8</strong></span>
           <span class="separator">·</span>
           <span>Teams Used: <strong id="teamsUsedCount">0</strong></span>
           <span class="separator">·</span>
@@ -1048,7 +1048,7 @@ th, td{
 
     <section class="team-selection" id="teamSelection" aria-labelledby="teamSelectionTitle">
       <h2 id="teamSelectionTitle">🏈 Suspect Lineup</h2>
-      <p id="teamSelectionSubtitle">(Pick a team you believe will lose in week 7):</p>
+      <p id="teamSelectionSubtitle">(Pick a team you believe will lose in week 8):</p>
 
       <div class="team-grid" id="teamGrid" role="group" aria-label="NFL teams pick"></div>
 
@@ -1128,7 +1128,7 @@ th, td{
   <div id="floatingPickTickerContainer" role="dialog" aria-labelledby="pickTickerTitle" aria-modal="false">
     <div class="schedule-header">
       <button id="prevPickWeekBtn" class="week-nav-btn" aria-label="Previous week">◀</button>
-      <span id="pickTickerTitle">Pick Ticker Week 7</span>
+      <span id="pickTickerTitle">Pick Ticker Week 8</span>
       <button id="nextPickWeekBtn" class="week-nav-btn" aria-label="Next week">▶</button>
       <button class="schedule-close" id="closePickTickerBtn" aria-label="Close pick ticker">×</button>
     </div>
@@ -1198,7 +1198,7 @@ th, td{
     ];
 
     let gameState = {
-      currentWeek: 7, // SET CURRENT WEEK HERE
+      currentWeek: 8, // SET CURRENT WEEK HERE
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -1210,7 +1210,7 @@ th, td{
     let currentProfile = null;
     let globalTeamCounts = new Map(); // Store team pick counts globally
     let allPicksData = []; // Store all picks data globally for week navigation
-    let currentPickTickerWeek = 7; // Track current week in Pick Ticker
+    let currentPickTickerWeek = 8; // Track current week in Pick Ticker
 
     function getCentralNow(){
       const now = new Date();
@@ -2073,11 +2073,17 @@ th, td{
       }
     }
 
-    // Count how many users were eliminated each week
+    // Count how many users were eliminated each week and how many have "Pick Is In"
+    let pickIsInCount = 0;
+    let pickIsInWeek = 0;
     for (const [username, record] of users.entries()) {
       if (record.status.includes('dun dun')) {
         const week = record.lastWeek;
         eliminationsByWeek.set(week, (eliminationsByWeek.get(week) || 0) + 1);
+      }
+      if (record.status.includes('pick is in')) {
+        pickIsInCount++;
+        pickIsInWeek = record.lastWeek; // Track the week
       }
     }
 
@@ -2109,7 +2115,7 @@ th, td{
           <div>Week</div>
           <div style="text-align:right;">DUN DUN</div>
           <div style="text-align:center;">Prosecutors</div>
-          <div style="text-align:left;">Survivors</div>
+          <div style="text-align:left;">Survivors${pickIsInCount > 0 ? '*' : ''}</div>
         </div>
     `;
 
@@ -2134,6 +2140,16 @@ th, td{
     });
 
     chartHTML += '</div>';
+
+    // Add asterisk note if there are any "Pick Is In" users
+    if (pickIsInCount > 0) {
+      chartHTML += `
+        <div style="margin-top:12px;font-size:0.875rem;color:var(--text-secondary);font-style:italic;">
+          * ${pickIsInCount} ${pickIsInCount === 1 ? 'prosecutor' : 'prosecutors'} still playing week ${pickIsInWeek}
+        </div>
+      `;
+    }
+
     chartContainer.innerHTML = chartHTML;
   }
 
