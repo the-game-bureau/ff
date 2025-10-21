@@ -2115,7 +2115,7 @@ th, td{
           <div>Week</div>
           <div style="text-align:right;">DUN DUN</div>
           <div style="text-align:center;">Prosecutors</div>
-          <div style="text-align:left;">Survivors${pickIsInCount > 0 ? '*' : ''}</div>
+          <div style="text-align:left;">Survivors</div>
         </div>
     `;
 
@@ -2140,15 +2140,6 @@ th, td{
     });
 
     chartHTML += '</div>';
-
-    // Add asterisk note if there are any "Pick Is In" users
-    if (pickIsInCount > 0) {
-      chartHTML += `
-        <div style="margin-top:12px;font-size:0.875rem;color:var(--text-secondary);font-style:italic;">
-          * ${pickIsInCount} ${pickIsInCount === 1 ? 'prosecutor' : 'prosecutors'} still playing week ${pickIsInWeek}
-        </div>
-      `;
-    }
 
     chartContainer.innerHTML = chartHTML;
   }
