@@ -1028,7 +1028,7 @@ th, td{
 
       <section class="status-bar" id="statusBar" style="display:none;" aria-label="Game status overview">
         <div class="status-line" id="playerStatusCard">
-          <span>Week <strong id="currentWeek">8</strong></span>
+          <span>Week <strong id="currentWeek">9</strong></span><!-- Auto-updated by JavaScript -->
           <span class="separator">·</span>
           <span>Teams Used: <strong id="teamsUsedCount">0</strong></span>
           <span class="separator">·</span>
@@ -1197,8 +1197,11 @@ th, td{
       { name: "Washington Commanders",primary: "#5A1414", secondary: "#FFB612" }
     ];
 
+
+    // ===== SET CURRENT WEEK HERE (ONLY PLACE TO CHANGE) =====
+    const CURRENT_WEEK = 9;
     let gameState = {
-      currentWeek: 8, // SET CURRENT WEEK HERE
+      currentWeek: CURRENT_WEEK,
       usedTeams: [],
       selectedTeam: null,
       isActive: true,
@@ -1210,7 +1213,7 @@ th, td{
     let currentProfile = null;
     let globalTeamCounts = new Map(); // Store team pick counts globally
     let allPicksData = []; // Store all picks data globally for week navigation
-    let currentPickTickerWeek = 8; // Track current week in Pick Ticker
+    let currentPickTickerWeek = CURRENT_WEEK - 1; // Track current week in Pick Ticker (one week behind)
 
     function getCentralNow(){
       const now = new Date();
