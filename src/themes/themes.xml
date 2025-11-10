@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<themes>
+  <!--
+    Each theme has:
+    - title: Combined title for browser tab (e.g., "Law & Order: Special Victory Unit")
+    - titleLine1: First word displayed on page (e.g., "Law")
+    - titleLine2: Second word displayed on page (e.g., "Order")
+    - titleLine3: Subtitle displayed below (e.g., "Special Victory Unit")
+    - primaryColor: Main color (red/pink)
+    - secondaryColor: Accent color (blue)
+    - quote1: Detective quote
+    - tagline: Main tagline text
+  -->
+  <theme id="1">
+    <title>Law &amp; Order: Special Victory Unit</title>
+    <titleLine1>Law</titleLine1>
+    <titleLine2>Order</titleLine2>
+    <titleLine3>Special Victory Unit</titleLine3>
+    <primaryColor>#DC2626</primaryColor>
+    <secondaryColor>#1E40AF</secondaryColor>
+    <quote1>Detective Briscoe: "We're betting on losers? Easy! I pick losers at the track every weekend."</quote1>
+    <tagline>In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories. Dun Dun.</tagline>
+  </theme>
+  <theme id="2">
+    <title>Losers Table</title>
+    <titleLine1>Losers</titleLine1>
+    <titleLine2>Table</titleLine2>
+    <titleLine3>Losers Table</titleLine3>
+    <primaryColor>#EC4899</primaryColor>
+    <secondaryColor>#3B82F6</secondaryColor>
+    <quote1>Detective Briscoe: "We're betting on losers? Easy! I pick losers at the track every weekend."</quote1>
+    <tagline>Welcome to the Losers Table, where picking the worst teams is a winning strategy.</tagline>
+  </theme>
+</themes>
