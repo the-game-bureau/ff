@@ -959,6 +959,40 @@ th, td{
   }
 }
 
+/* ===== SCROLLING BANNER ===== */
+.scrolling-banner{
+  background: linear-gradient(90deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 3px solid #FF8C00;
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.scrolling-banner-content{
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-left 20s linear infinite;
+  font-family: 'FrizQuadrataRegular', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-shadow:
+    0 0 10px #FFFFFF,
+    0 0 20px #FFFFFF,
+    2px 2px 4px rgba(255,255,255,0.8);
+}
+
+@keyframes scroll-left{
+  0%{ transform: translateX(0); }
+  100%{ transform: translateX(-100%); }
+}
+
 /* ===== UTILITY ===== */
 .sr-only{
   position: absolute;
@@ -991,6 +1025,10 @@ th, td{
     <h1>Law & Order: Special Victory Unit</h1>
     <p class="tagline">"In the NFL justice system, the people are represented by two separate yet equally important groups: those who win, and those who lose. These are their stories. Dun Dun."</p>
   </header>
+
+  <div class="scrolling-banner">
+    <div class="scrolling-banner-content">CASE CLOSED munch wins!!! 🏆 CASE CLOSED munch wins!!! 🏆 CASE CLOSED munch wins!!! 🏆 CASE CLOSED munch wins!!! 🏆 CASE CLOSED munch wins!!! 🏆 </div>
+  </div>
 
   <div class="container">
     <section class="game-info" aria-labelledby="gameInfoTitle">
@@ -1199,7 +1237,7 @@ th, td{
 
 
     // ===== SET CURRENT WEEK HERE (ONLY PLACE TO CHANGE) =====
-    const CURRENT_WEEK = 13;
+    const CURRENT_WEEK = 14;
     let gameState = {
       currentWeek: CURRENT_WEEK,
       usedTeams: [],
