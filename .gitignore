@@ -1,2 +1,5 @@
 # Admin page with sensitive data access
 admin.html
+
+# Archived database - sensitive/old data
+archived_db/
