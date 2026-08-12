@@ -36,69 +36,55 @@
   <div id="siteNav" data-current="report" data-prefix="../"></div>
 
   <div class="container">
-    <!-- Your own week at a glance, above the league-wide numbers. app.js fills
-         it in and unhides it once you are signed in. -->
-    <section class="status-bar status-bar-hidden" id="statusBar" aria-label="Game status overview">
-      <div class="status-line" id="playerStatusCard">
-        <span>Week <strong id="currentWeek">—</strong></span>
-        <span class="separator">·</span>
-        <span>Victims Named: <strong id="teamsUsedCount">0</strong></span>
-        <span class="separator">·</span>
-        <span>Available: <strong id="teamsRemaining">32</strong></span>
-        <span class="separator">·</span>
-        <span>Status: <strong id="playerStatus">-</strong></span>
-      </div>
-    </section>
+    <!-- Who is left against who is out. js/docket.js fills both. -->
+    <section class="game-info docket" id="docket" aria-labelledby="docketTitle">
+      <h3 id="docketTitle" class="sr-only">League status totals</h3>
 
-    <section class="game-info" id="eliminationChart" aria-labelledby="eliminationChartTitle">
-      <h3 id="eliminationChartTitle" class="section-heading">
-        &#9878;&#65039; League Timeline
-      </h3>
-      <div id="chartContainer" class="chart-container"></div>
-    </section>
+      <div class="scoreboard">
+        <div class="scoreboard-cell" id="docketStanding">
+          <span class="scoreboard-count" id="docketCount" aria-live="polite">&mdash;</span>
+          <span class="scoreboard-label" id="docketLabel">Still Standing</span>
+        </div>
 
-    <section class="game-info" id="pickTicker" aria-labelledby="pickTickerTitle">
-      <div class="ticker-head">
-        <h3 id="pickTickerTitle" class="section-heading">&#128203; Pick Ticker</h3>
-        <div class="ticker-weeknav">
-          <button id="prevPickWeekBtn" class="week-nav-btn" type="button" aria-label="Previous week">&#9664;</button>
-          <span id="pickTickerWeek" class="ticker-week">Week 1</span>
-          <button id="nextPickWeekBtn" class="week-nav-btn" type="button" aria-label="Next week">&#9654;</button>
+        <div class="scoreboard-cell scoreboard-cell-out" id="docketEliminated">
+          <span class="scoreboard-count" id="docketOutCount" aria-live="polite">&mdash;</span>
+          <span class="scoreboard-label" id="docketOutLabel">Dun Dun</span>
         </div>
       </div>
-
-      <div class="table-wrap">
-        <table id="floatingPicksTable" role="table" aria-label="User picks for selected week">
-          <caption class="sr-only">Picks made by users for the selected week</caption>
-          <thead>
-            <tr>
-              <th scope="col">User</th>
-              <th scope="col">Victim</th>
-              <th scope="col">Picked At</th>
-            </tr>
-          </thead>
-          <tbody id="floatingPicksBody"></tbody>
-        </table>
-      </div>
     </section>
 
-    <section class="game-info" id="leagueStats" aria-labelledby="leagueStatsTitle">
-      <h3 id="leagueStatsTitle" class="section-heading">&#128274; Evidence Locker</h3>
+    <section class="pick-clipboard" id="pickClipboard" aria-labelledby="pickClipboardTitle">
+      <div class="pick-clipboard-paper">
+        <div class="pick-clipboard-pad-head">
+          <span class="pick-clipboard-pad-brand">the Legal Pad</span>
+          <div class="pick-clipboard-nav" aria-label="Choose week">
+            <button id="prevPickClipboardWeek" class="pick-clipboard-btn" type="button" aria-label="Previous week">&#9664;</button>
+            <label class="sr-only" for="pickClipboardWeek">Week</label>
+            <select id="pickClipboardWeek" class="pick-clipboard-select"></select>
+            <button id="nextPickClipboardWeek" class="pick-clipboard-btn" type="button" aria-label="Next week">&#9654;</button>
+          </div>
+        </div>
 
-      <div id="statsSummary" class="stats-summary" aria-live="polite"></div>
+        <div class="pick-clipboard-head">
+          <h2 id="pickClipboardTitle">
+            Week <span id="pickClipboardWeekTitle">1</span> Picks
+            <span class="pick-clipboard-count" id="pickClipboardCount" aria-live="polite">Loading picks...</span>
+          </h2>
+        </div>
 
-      <div class="table-wrap">
-        <table id="userSummaryTable" role="table" aria-label="User summary statistics">
-          <caption class="sr-only">Summary of all users' picks and activity</caption>
-          <thead>
-            <tr>
-              <th scope="col">Status</th>
-              <th scope="col">User</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody id="userSummaryBody"></tbody>
-        </table>
+        <div class="pick-clipboard-table-wrap">
+          <table class="pick-clipboard-table">
+            <caption class="sr-only">Picks filed for the selected week</caption>
+            <thead>
+              <tr>
+                <th scope="col">Suspect</th>
+                <th scope="col">Victim</th>
+                <th scope="col">Filed</th>
+              </tr>
+            </thead>
+            <tbody id="pickClipboardBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
@@ -112,7 +98,8 @@
   <script src="../js/season.js"></script>
   <script src="../js/teams.js"></script>
   <script src="../js/nav.js"></script>
-  <script src="../js/app.js"></script>
+  <script src="../js/docket.js"></script>
+  <script src="../js/pick-clipboard.js"></script>
   <script src="../js/auth-corner.js"></script>
   <script src="../js/join-modal.js"></script>
   <script src="../js/join.js"></script>

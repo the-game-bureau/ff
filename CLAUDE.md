@@ -110,9 +110,9 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   pick is made. Takes `?week=N`.
 - [suspects/index.html](suspects/index.html) — the players, as mugshot cards.
 - [law/index.html](law/index.html) — the rules.
-- [reports/index.html](reports/index.html) — the **Case File**: status bar, League Timeline, Pick
-  Ticker, Evidence Locker. Its nav button is currently disabled ("Coming Soon"), so
-  the page is reachable only by URL.
+- [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard,
+  still standing against eliminated. Linked from the nav. The League Timeline
+  and Evidence Locker that used to live here have been removed.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
 - [admin/index.html](admin/index.html) — schedule reconciliation and league removal.
   Gated on the username `theclarinetofjustice`.

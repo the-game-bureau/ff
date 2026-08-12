@@ -30,14 +30,16 @@ function setSuspectsTitle(count){
   el.textContent = `${count} Suspect${count === 1 ? '' : 's'}`;
 }
 
-// The header line is the officer working the lineup, calling the next man up:
-// one past the number of suspects on the wall. So a 12-suspect lineup is called
-// as "Number 13", and it moves on its own as the league fills.
+// The header line counts the faces pinned to the board, so it grows with the
+// league on its own.
 function setLineupCall(count){
   const el = document.getElementById('lineupCall');
   if(!el) return;
 
-  el.textContent = `"Number ${Number(count || 0) + 1} step forward and turn to your right."`;
+  const total = Number(count || 0);
+  el.textContent = total === 1
+    ? '"One face on the board. Nobody comes down until the case closes."'
+    : `"${total} faces on the board. Nobody comes down until the case closes."`;
 }
 
 function escapeHtml(value){

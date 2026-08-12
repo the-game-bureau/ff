@@ -1100,20 +1100,7 @@ td{
 
 tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
-.stats-summary{
-  margin: 0 0 22px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: var(--accent-yellow);
-  border: var(--rule);
-  padding: 12px 14px;
-}
-
 .is-hidden{ display: none; }
-
-.chart-container{ margin-top: 20px; }
 
 /* ===== ADMIN ===== */
 .admin-panel{ max-width: 1120px; margin-left: auto; margin-right: auto; }
@@ -1876,6 +1863,545 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .victim-status-face-alt{ display: none; }
 }
 
+/* ===== DOCKET TOTALS =====
+   One black board: dim SVG dots for the field, amber SVG dots for the type. */
+.docket{
+  background: #050505;
+  border: var(--rule-fat);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.28);
+}
+
+.scoreboard{
+  --score-amber: #F2A11B;
+  --score-gray: #111111;
+  --score-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='1.45' fill='%230D0D0D'/%3E%3C/svg%3E");
+  --score-divider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='20' viewBox='0 0 8 20'%3E%3Ccircle cx='4' cy='10' r='2.15' fill='%23483209'/%3E%3C/svg%3E");
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  min-height: 270px;
+  padding: 32px 28px;
+  margin: 0;
+  overflow: hidden;
+  background-color: #050505;
+  background-image: var(--score-grid);
+  background-size: 12px 12px;
+}
+
+.scoreboard::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 32px;
+  bottom: 32px;
+  width: 8px;
+  transform: translateX(-50%);
+  background-image: var(--score-divider);
+  background-repeat: repeat-y;
+  background-size: 8px 20px;
+  pointer-events: none;
+}
+
+.scoreboard-cell,
+.scoreboard-count,
+.scoreboard-label{
+  min-width: 0;
+}
+
+.scoreboard-cell{
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 22px;
+  min-height: 210px;
+  padding: 8px 18px;
+  background: transparent;
+}
+
+.scoreboard-count,
+.scoreboard-label{
+  display: grid;
+  place-items: center;
+  width: 100%;
+  line-height: 1;
+}
+
+.scoreboard-label{ order: -1; }
+
+.scoreboard-dot-svg{
+  display: block;
+  overflow: visible;
+}
+
+.scoreboard-count .scoreboard-dot-svg{
+  width: min(100%, 420px);
+  height: auto;
+}
+
+.scoreboard-label .scoreboard-dot-svg{
+  width: min(100%, 340px);
+  height: auto;
+}
+
+.scoreboard-dot-off{ fill: var(--score-gray); }
+.scoreboard-dot-on{ fill: var(--score-amber); }
+
+@media (max-width: 767px){
+  .game-info.docket{
+    padding: 14px 10px;
+  }
+
+  .scoreboard{
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    min-height: 0;
+    padding: 24px 16px;
+  }
+
+  .scoreboard::after{
+    left: 30px;
+    right: 30px;
+    top: 50%;
+    bottom: auto;
+    width: auto;
+    height: 8px;
+    transform: translateY(-50%);
+    background-repeat: repeat-x;
+    background-size: 20px 8px;
+  }
+
+  .scoreboard-cell{
+    min-height: 150px;
+    gap: 16px;
+    padding: 8px;
+  }
+
+  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 300px); }
+  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 260px); }
+}
+
+@media (max-width: 480px){
+  .game-info.docket{
+    padding: 12px 8px;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+  }
+
+  .scoreboard{ padding: 22px 12px; }
+  .scoreboard-cell{ min-height: 132px; }
+  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 280px); }
+  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 220px); }
+}
+
+/* ===== PICK CLIPBOARD ===== */
+.pick-clipboard{
+  --bic-blue: #0047AB;
+  --legal-pad-rule-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='31' viewBox='0 0 720 31'%3E%3Cpath d='M0 30 C60 29.2 120 30.8 180 30 C240 29.1 300 30.7 360 30 C420 29.2 480 30.7 540 30 C600 29.1 660 30.8 720 30' fill='none' stroke='%23004FAE' stroke-opacity='.42' stroke-width='1.35' stroke-linecap='round'/%3E%3C/svg%3E");
+  --legal-pad-margin-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='720' viewBox='0 0 70 720'%3E%3Cpath d='M45 0 C44 80 46 160 45 240 C44 330 46 430 45 520 C44 610 46 670 45 720' fill='none' stroke='%23C92232' stroke-opacity='.62' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M53 0 C54 92 52 174 53 264 C54 360 52 450 53 540 C54 628 52 680 53 720' fill='none' stroke='%23C92232' stroke-opacity='.42' stroke-width='1.45' stroke-linecap='round'/%3E%3C/svg%3E");
+  --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  position: relative;
+  max-width: 920px;
+  margin: 42px auto 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.pick-clipboard-paper{
+  position: relative;
+  z-index: 1;
+  min-height: 1360px;
+  padding: 86px 28px 28px;
+  background-color: #F7E789;
+  background-image:
+    var(--legal-pad-margin-svg),
+    var(--legal-pad-rule-svg);
+  background-position: 0 0, 0 15px;
+  background-repeat: repeat-y, repeat;
+  background-size: 70px 720px, 720px 31px;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-top: 0;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.28);
+}
+
+.pick-clipboard-pad-head{
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 0;
+  z-index: 2;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  color: rgba(0, 0, 0, 0.72);
+  background-color: #9C7651;
+  background-image:
+    radial-gradient(circle at 12% 34%, rgba(0, 0, 0, 0.18) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 75% 62%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1.5px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 1px, transparent 1px 7px);
+  background-size: 31px 29px, 43px 37px, auto;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-bottom: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.pick-clipboard-pad-brand{
+  font-size: 1.55rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pick-clipboard-paper::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 54px;
+  border-top: 2px solid rgba(0, 0, 0, 0.12);
+}
+
+.pick-clipboard-head{
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  margin-bottom: 12px;
+  border-bottom: 0;
+}
+
+.pick-clipboard-head h2{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--bic-blue);
+  font-family: var(--font-hand);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  line-height: 1.12;
+  text-transform: none;
+  letter-spacing: 0;
+  transform: rotate(-0.35deg);
+}
+
+.pick-clipboard-nav{
+  display: flex;
+  align-items: stretch;
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  background: var(--paper-raised);
+}
+
+.pick-clipboard-pad-head .pick-clipboard-nav{
+  flex: 0 0 auto;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-family: var(--font-mono);
+}
+
+.pick-clipboard-btn,
+.pick-clipboard-select{
+  min-height: 42px;
+  border: 0;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pick-clipboard-btn{
+  width: 46px;
+  cursor: pointer;
+}
+
+.pick-clipboard-btn + .pick-clipboard-select,
+.pick-clipboard-select + .pick-clipboard-btn{
+  border-left: var(--rule);
+}
+
+.pick-clipboard-btn:disabled{
+  color: #858076;
+  cursor: not-allowed;
+}
+
+.pick-clipboard-select{
+  min-width: 122px;
+  padding: 0 12px;
+}
+
+.pick-clipboard-pad-head .pick-clipboard-btn,
+.pick-clipboard-pad-head .pick-clipboard-select{
+  background: transparent;
+  background-color: transparent;
+  color: var(--ink);
+  font-family: var(--font-hand);
+  font-size: 1.12rem;
+  min-height: 34px;
+}
+
+.pick-clipboard-pad-head .pick-clipboard-btn{
+  width: 34px;
+}
+
+.pick-clipboard-pad-head .pick-clipboard-select{
+  min-width: 108px;
+  padding: 0 10px;
+}
+
+.pick-clipboard-pad-head .pick-clipboard-btn + .pick-clipboard-select,
+.pick-clipboard-pad-head .pick-clipboard-select + .pick-clipboard-btn{
+  border-left: 0;
+}
+
+.pick-clipboard-count{
+  min-height: 0;
+  margin: 0;
+  padding-left: 0;
+  color: var(--bic-blue);
+  font-family: var(--font-hand);
+  font-size: 0.7em;
+  font-weight: 700;
+  text-transform: none;
+  transform: rotate(0.8deg) translateY(0.12em);
+}
+
+.pick-clipboard-count-text{
+  display: inline-block;
+}
+
+.pick-clipboard-count-tally{
+  display: inline-flex;
+  align-items: center;
+}
+
+.pick-tally{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 44px;
+}
+
+.pick-tally-group{
+  display: block;
+  width: 50px;
+  height: 44px;
+  overflow: visible;
+}
+
+.pick-tally-group path{
+  fill: none;
+  stroke: var(--bic-blue);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pick-tally-empty{
+  width: 44px;
+}
+
+.pick-clipboard-table-wrap{
+  overflow-x: auto;
+}
+
+.pick-clipboard-table{
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+  color: var(--bic-blue);
+  font-family: var(--font-hand);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.36;
+}
+
+.pick-clipboard-table th,
+.pick-clipboard-table td{
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.pick-clipboard-table th{
+  color: var(--bic-blue);
+  font-weight: 900;
+  text-transform: none;
+}
+
+.pick-clipboard-table tbody tr:nth-child(even){
+  background: rgba(0, 71, 171, 0.035);
+}
+
+.pick-clipboard-team{
+  display: block;
+  font-weight: 900;
+}
+
+.pick-clipboard-matchup{
+  display: block;
+  margin-top: 3px;
+  color: rgba(0, 71, 171, 0.72);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.pick-clipboard-time{
+  color: var(--bic-blue);
+  white-space: nowrap;
+}
+
+.pick-clipboard-empty{
+  padding: 18px 12px;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px){
+  .pick-clipboard{
+    margin-top: 30px;
+  }
+
+  .pick-clipboard-paper{
+    min-height: 1240px;
+    padding: 74px 14px 18px;
+    --legal-pad-margin-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='720' viewBox='0 0 44 720'%3E%3Cpath d='M26 0 C25 82 27 164 26 246 C25 338 27 430 26 522 C25 610 27 672 26 720' fill='none' stroke='%23C92232' stroke-opacity='.62' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpath d='M34 0 C35 94 33 178 34 266 C35 360 33 452 34 542 C35 628 33 680 34 720' fill='none' stroke='%23C92232' stroke-opacity='.42' stroke-width='1.35' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-image:
+      var(--legal-pad-margin-svg),
+      var(--legal-pad-rule-svg);
+    background-size: 44px 720px, 720px 31px;
+  }
+
+  .pick-clipboard-pad-head{
+    height: 48px;
+    padding: 0 10px;
+    font-size: 0.6875rem;
+    gap: 8px;
+  }
+
+  .pick-clipboard-pad-brand{
+    font-size: 1.05rem;
+    max-width: calc(100% - 164px);
+    overflow: hidden;
+  }
+
+  .pick-clipboard-paper::after{
+    top: 48px;
+  }
+
+  .pick-clipboard-head{
+    display: grid;
+    gap: 12px;
+  }
+
+  .pick-clipboard-pad-head .pick-clipboard-nav{
+    position: absolute;
+    top: 9px;
+    left: 122px;
+    right: auto;
+    width: auto;
+    max-width: none;
+  }
+
+  .pick-clipboard-pad-head .pick-clipboard-btn{
+    width: 30px;
+  }
+
+  .pick-clipboard-pad-head .pick-clipboard-select{
+    flex: 0 0 auto;
+    min-width: 100px;
+    width: 100px;
+    padding: 0 4px;
+  }
+
+  .pick-clipboard-count{
+    padding-left: 0;
+  }
+
+  .pick-tally{
+    gap: 4px 7px;
+  }
+
+  .pick-tally-group{
+    width: 42px;
+    height: 38px;
+  }
+}
+
+@media (max-width: 560px){
+  .pick-clipboard-head h2{
+    font-size: 2rem;
+  }
+
+  .pick-clipboard-table{
+    font-size: 1.18rem;
+    line-height: 1.36;
+  }
+
+  .pick-clipboard-matchup{
+    font-size: 1.02rem;
+  }
+
+  .pick-clipboard-table,
+  .pick-clipboard-table tbody,
+  .pick-clipboard-table tr,
+  .pick-clipboard-table td{
+    display: block;
+    width: 100%;
+  }
+
+  .pick-clipboard-table thead{
+    display: none;
+  }
+
+  .pick-clipboard-table tr{
+    margin-bottom: 12px;
+    border: 0;
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .pick-clipboard-table tbody tr:nth-child(even){
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .pick-clipboard-table td{
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .pick-clipboard-table td:last-child{
+    border-bottom: 0;
+  }
+
+  .pick-clipboard-table td::before{
+    content: attr(data-label);
+    color: var(--bic-blue);
+    font-weight: 700;
+  }
+
+  .pick-clipboard-time{
+    white-space: normal;
+  }
+}
+
 /* ===== PICK TICKER ===== */
 /* Inline section on the home page. The heading and the week stepper share a
    row and wrap onto two lines when there isn't space. */
@@ -1936,11 +2462,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   cursor: not-allowed;
 }
 
-#pickTicker .table-wrap{
-  margin-top: 18px;
-  margin-bottom: 0;
-}
-
 .cell-time{
   color: var(--text-secondary);
   white-space: nowrap;
@@ -1974,86 +2495,30 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .suspects-status-good{ color: var(--success); }
 .suspects-status-bad{ color: var(--error); }
 
-/* The wall behind the lineup is a height chart, so it is drawn like one: a
-   ruled foot line every --foot, a lighter half-foot tick between each pair, and
-   faint vertical joints where the panels meet. One grid, one spacing, drawn
-   once — the old wall laid a second grid at a different pitch over the bottom
-   third, and the two crossing rhythms were what made it read as noise.
-   --chart-top is where the 7 FT line sits; the measure column hangs its labels
-   off the same two numbers, so the type lands on the lines instead of near
-   them. */
-.lineup-room{
-  --foot: 58px;
-  --chart-top: 38px;
-  --floor: 78px;
+/* The board in the squad room: cork, a hard frame, and every suspect's photo
+   pinned to it while the case is open. The wall it replaces was a height chart
+   for a lineup, which staged the players as one row of bodies — a corkboard
+   holds any number of faces and reads as an investigation rather than a parade.
+
+   Cork is drawn, not photographed: a warm ground with three sizes of speckle
+   scattered over it by repeating radial gradients. Cheaper than an image, and
+   nothing to load. */
+.corkboard{
   position: relative;
-  overflow: hidden;
   min-height: 420px;
   border: var(--rule-fat);
-  background-color: #E7E3D8;
+  /* The frame reads as the board's timber edge, so it gets its own inset line
+     rather than the site's usual offset shadow. */
+  box-shadow: inset 0 0 0 6px #8A5A2B;
+  background-color: #C39A63;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.20) 2px, transparent 2px),
-    linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, #F3EFE5 0%, #E7E3D8 62%, #DAD5C8 100%);
-  background-size:
-    100% var(--foot),
-    100% calc(var(--foot) / 2),
-    calc(var(--foot) * 1.5) 100%,
-    100% 100%;
-  background-position:
-    0 var(--chart-top),
-    0 var(--chart-top),
-    0 0,
-    0 0;
-  background-repeat: repeat, repeat, repeat, no-repeat;
-  padding: 78px 20px 30px 74px;
+    radial-gradient(circle at 20% 30%, rgba(90, 55, 20, 0.20) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(90, 55, 20, 0.16) 0 3px, transparent 4px),
+    radial-gradient(circle at 45% 85%, rgba(255, 240, 210, 0.18) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 15%, rgba(90, 55, 20, 0.12) 0 4px, transparent 5px);
+  background-size: 37px 37px, 61px 61px, 43px 43px, 89px 89px;
+  padding: 34px 24px 30px;
 }
-
-/* The floor. A single hard line where it meets the wall, in the flat style the
-   rest of the site uses, so the suspects are standing on something instead of
-   floating in the middle of a grid. */
-.lineup-room::after{
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--floor);
-  background: #CFC9BA;
-  border-top: 3px solid rgba(0, 0, 0, 0.42);
-  pointer-events: none;
-}
-
-.lineup-measure{
-  position: absolute;
-  top: var(--chart-top);
-  left: 12px;
-  /* Three feet of chart: 7 down to 4. Fixed rather than stretched to the room,
-     because the lines it labels are a fixed distance apart. */
-  height: calc(var(--foot) * 3);
-  width: 46px;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-align: right;
-  opacity: 0.76;
-}
-
-/* Each label straddles its own foot line rather than sitting in the gap. */
-.lineup-measure span{
-  position: absolute;
-  right: 0;
-  transform: translateY(-50%);
-  padding-right: 2px;
-  background: transparent;
-}
-
-.lineup-measure span:nth-child(1){ top: 0; }
-.lineup-measure span:nth-child(2){ top: var(--foot); }
-.lineup-measure span:nth-child(3){ top: calc(var(--foot) * 2); }
-.lineup-measure span:nth-child(4){ top: calc(var(--foot) * 3); }
 
 .suspect-grid{
   position: relative;
@@ -2068,6 +2533,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .suspect-card{
+  position: relative;
   display: grid;
   justify-items: center;
   align-content: end;
@@ -2076,7 +2542,35 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   /* One width for the whole card: the photo sets it, and anything sitting
      under the photo (the retake button) lines up with its edges. */
   --mugshot-width: min(152px, 100%);
+  /* Room above the photo for the pin to sit in. */
+  padding-top: 10px;
 }
+
+/* The pin. A diamond rather than a disc: this design has no round things in it
+   anywhere, and a rotated square still reads as a pinhead at this size. Sits
+   over the top edge of the photo, which is where a pin actually goes. */
+.suspect-card::before{
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 4;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  background: var(--primary-red);
+  border: 2px solid var(--ink);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+/* Pinned by hand, so nothing hangs perfectly straight. Four repeating angles
+   rather than one, kept under a degree and a half: enough to break the grid,
+   not enough to make the names hard to read or the cards collide. */
+.suspect-card:nth-child(4n + 1) .suspect-avatar-frame{ transform: rotate(-1.1deg); }
+.suspect-card:nth-child(4n + 2) .suspect-avatar-frame{ transform: rotate(0.8deg); }
+.suspect-card:nth-child(4n + 3) .suspect-avatar-frame{ transform: rotate(-0.5deg); }
+.suspect-card:nth-child(4n + 4) .suspect-avatar-frame{ transform: rotate(1.3deg); }
 
 /* The whole card is the mugshot now: photo, two-tone edge sampled from that
    photo, and the name plate laid over the bottom of it. */
@@ -2089,7 +2583,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   overflow: hidden;
   background: var(--paper-raised);
   border: var(--rule);
-  box-shadow: var(--shadow-sm);
+  /* A harder shadow than the site default: on cork these are objects lying on
+     a surface, not panels stacked on paper. */
+  box-shadow: 5px 6px 0 rgba(60, 35, 10, 0.45);
   /* suspects.js overwrites these per card from the photo's own colours. */
   --stripe-a: var(--ink);
   --stripe-b: var(--accent-yellow);
@@ -2388,13 +2884,8 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     box-shadow: var(--shadow-sm);
   }
 
-  .lineup-room{
-    padding: 70px 12px 22px 56px;
-  }
-
-  .lineup-measure{
-    left: 8px;
-    width: 36px;
+  .corkboard{
+    padding: 26px 14px 22px;
   }
 
   /* The heading and its control sit on separate rows once they stop fitting
@@ -2446,7 +2937,6 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   /* Clear of the notch/status bar and of the card's own top-right close box. */
   .modal-close{ top: -3px; right: -3px; }
 
-  .stats-summary,
   .status-line{ font-size: 0.8125rem; }
 
   /* ===== HAMBURGER MENU =====
@@ -2594,10 +3084,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .nav-btn-current{ margin-left: -12px; }
   .avatar-upload-row{ grid-template-columns: 1fr; }
   .avatar-preview-frame{ margin: 0 auto; }
-  .lineup-room{
-    padding: 62px 10px 18px;
-  }
-  .lineup-measure{ display: none; }
+  .corkboard{ padding: 20px 10px 18px; }
   .suspect-grid{ grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
   /* The avatar fills its frame now, so only the card's width token needs
      setting — the frame and the retake button both read it. */

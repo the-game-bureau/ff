@@ -28,10 +28,9 @@
     <div class="svu-subtitle">Suspects</div>
     <div id="weekBadge" class="week-badge" aria-live="polite"></div>
     <h1>Law &amp; Order: Special Victory Unit</h1>
-    <!-- The number is the next one in the lineup — one past however many
-         suspects are booked — and is filled in by js/suspects.js once the
-         count is known. The fallback text stands in until then. -->
-    <p class="tagline" id="lineupCall">"Step forward and turn to your right."</p>
+    <!-- Counts the faces pinned to the board; js/suspects.js fills the number
+         in once the roster loads. The fallback stands in until then. -->
+    <p class="tagline" id="lineupCall">"Nobody comes off the board until the case closes."</p>
   </header>
 
   <div id="siteNav" data-current="suspects" data-prefix="../"></div>
@@ -43,13 +42,9 @@
       <h2 id="currentSuspectsTitle" class="section-heading">Suspects</h2>
       <div id="suspectsStatus" class="suspects-status" role="status" aria-live="polite"></div>
 
-      <div class="lineup-room" aria-label="Police lineup room">
-        <div class="lineup-measure" aria-hidden="true">
-          <span>7 FT</span>
-          <span>6 FT</span>
-          <span>5 FT</span>
-          <span>4 FT</span>
-        </div>
+      <!-- The board in the squad room: every suspect's photo pinned up while
+           the case is open. Nobody comes down until it closes. -->
+      <div class="corkboard" aria-label="Investigation board">
         <ul id="suspectGrid" class="suspect-grid" aria-label="Current suspects"></ul>
       </div>
     </section>

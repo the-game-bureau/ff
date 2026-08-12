@@ -11,10 +11,7 @@ const NAV_ITEMS = [
   { label: 'Victims',    key: 'victims',
     href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,
     sublabel: 'Make Your Pick' },
-  // Not wired up yet. reports/ still exists and still works if you visit it
-  // directly; this button just doesn't lead there until the numbers are real.
-  { label: 'Case File',  key: 'report',  href: 'reports/index.html', sublabel: 'Stats & Picks',
-    disabled: true, title: 'Coming Soon' },
+  { label: 'Case File',  key: 'report',  href: 'reports/index.html', sublabel: 'Stats & Picks' },
   { label: 'Suspects',   key: 'suspects', href: 'suspects/index.html', sublabel: 'FF Players' },
   // Sublabel instead of a title: the gloss shows without needing a hover.
   { label: 'The Law',    key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
