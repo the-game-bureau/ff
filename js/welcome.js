@@ -36,7 +36,7 @@
     modal.hidden = true;
     modal.innerHTML = `
       <div class="modal-card welcome-card" role="dialog" aria-modal="true"
-           aria-labelledby="welcomeTitle">
+           aria-labelledby="welcomeTitle" tabindex="-1">
         <button class="modal-close" id="btnCloseWelcome" type="button" aria-label="Close">&times;</button>
 
         <h2 id="welcomeTitle">You&rsquo;ve Been Summoned</h2>
@@ -59,10 +59,9 @@
           <li>You can only name a victim once per season.</li>
         </ul>
 
-        <p class="welcome-close-line">Can you survive longer than the rest?</p>
 
         <div class="modal-actions welcome-actions">
-          <button id="btnWelcomeJoin" class="btn btn-primary" type="button">Join</button>
+          <button id="btnWelcomeJoin" class="btn btn-secondary" type="button">Join</button>
           <button id="btnWelcomeBrowse" class="btn btn-secondary" type="button">Investigate</button>
         </div>
       </div>
@@ -95,7 +94,13 @@
     const modal = document.getElementById('welcomeModal');
     if (!modal) return;
     modal.hidden = false;
-    document.getElementById('btnWelcomeJoin')?.focus();
+
+    // Focus the dialog itself, not a button. Focusing Join put it in its focus
+    // state — darker, shadow collapsed — so it sat looking pressed next to an
+    // untouched Investigate, as if the two had different styling. Moving focus
+    // to the card keeps keyboard users inside the dialog without lighting up
+    // one of the two choices before anyone has picked.
+    modal.querySelector('.welcome-card')?.focus();
   }
 
   function closeWelcome() {

@@ -40,6 +40,10 @@
   --bg-hover: #FFD400;
 
   --success: #007A33;
+  /* Pale washes of --success and --error, for filled states that must stay
+     readable with those same colours as the text on top. */
+  --success-tint: #D9F0E1;
+  --error-tint: #FBE1DF;
   --warning: #C25E00;
   --error: #E10600;
 
@@ -1154,6 +1158,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* White quiet-zone around the code so a camera can find it on any background. */
+/* Inert. There is no hover state and no click target, so the pointer should
+   not suggest one: no text caret over it, no selection highlight, and no drag
+   ghost when the mouse moves while pressed. It is a thing to point a camera
+   at, not a thing to interact with. */
 .qr-code{
   display: block;
   background: var(--paper-raised);
@@ -1161,6 +1169,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   box-shadow: var(--shadow-lg);
   padding: 6px;
   line-height: 0;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .qr-code img{
@@ -1168,6 +1179,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 220px;
   height: 220px;
   image-rendering: pixelated;
+  -webkit-user-drag: none;
 }
 
 /* Tucked under the code's bottom edge so the two read as one object. */
@@ -1269,8 +1281,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Custom markers: the default disc is the one round thing in a design that
    has no round things. */
+/* Pulled left by the same amount the markers indent the text, so the copy
+   lines up with the paragraph above and the squares hang into the card's
+   padding rather than shunting every bullet inward. */
 .welcome-facts{
-  margin: 0 0 16px;
+  margin: 0 0 16px -20px;
   padding: 0;
   list-style: none;
   display: grid;
@@ -1292,17 +1307,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 9px;
   height: 9px;
   background: var(--ink);
-}
-
-.welcome-close-line{
-  margin: 0 0 20px;
-  padding-top: 14px;
-  border-top: var(--rule);
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 /* Side by side: neither option should look like the afterthought. */
@@ -1429,12 +1433,18 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    push the colour outside the frame. Left padding clears the stripes; the
    right matches it so the content stays optically centred. */
 .victim-card{
+  /* One source of truth for the stripe geometry: the selected card's outline
+     is drawn at --stripe-b-w so the highlight is exactly as thick as the
+     secondary band it borrows its colour from. */
+  --stripe-a-w: 9px;
+  --stripe-b-w: 5px;
   background-color: var(--paper-raised);
   background-image: linear-gradient(
     90deg,
-    var(--victim-primary, var(--ink)) 0 9px,
-    var(--victim-secondary, var(--ink)) 9px 14px,
-    transparent 14px
+    var(--victim-primary, var(--ink)) 0 var(--stripe-a-w),
+    var(--victim-secondary, var(--ink)) var(--stripe-a-w)
+      calc(var(--stripe-a-w) + var(--stripe-b-w)),
+    transparent calc(var(--stripe-a-w) + var(--stripe-b-w))
   );
   background-origin: padding-box;
   background-clip: padding-box;
@@ -1461,9 +1471,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   outline-offset: 3px;
 }
 
-.victim-card.disabled{
-  cursor: not-allowed;
+/* Greyed per-child rather than on the card, because a filter on the card also
+   drains its status pill — and "Previous Selection" has to stay red to read as
+   a thing this player did. A child cannot undo an ancestor's filter, so the
+   pill has to be left out of it rather than corrected afterwards. */
+.victim-card.disabled{ cursor: not-allowed; }
+
+.victim-card.disabled .victim-logo,
+.victim-card.disabled .helmet,
+.victim-card.disabled .victim-name{
   filter: grayscale(0.55);
+  opacity: 0.72;
 }
 
 .victim-card.disabled:hover,
@@ -1472,9 +1490,28 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   box-shadow: var(--shadow-sm);
 }
 
+/* The selected card is ringed in that team's own secondary colour, so the
+   highlight names the team rather than being the same yellow for all 32.
+   Falls back to the house yellow if a team has no secondary set. */
 .victim-card.current-pick{
-  outline: 5px solid var(--accent-yellow);
-  outline-offset: -5px;
+  outline: var(--stripe-b-w) solid var(--victim-secondary, var(--accent-yellow));
+  outline-offset: calc(-1 * var(--stripe-b-w));
+}
+
+/* The two statuses about this player's own picks. Green for the one in force,
+   red for a team already spent. Everything else stays neutral.
+   Doubled selector on purpose: .victim-status is declared further down the
+   file, so a single class here would lose to it on source order. */
+.victim-status.victim-status-current{
+  color: var(--success);
+  background: var(--success-tint);
+  border-color: var(--success);
+}
+
+.victim-status.victim-status-previous{
+  color: var(--error);
+  background: var(--error-tint);
+  border-color: var(--error);
 }
 
 .victim-logo,

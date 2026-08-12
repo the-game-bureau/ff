@@ -1,0 +1,20 @@
+{
+  // The SQL in supabase/sql/ is PostgreSQL, run in the Supabase SQL editor.
+  // The mssql extension parses .sql files as SQL Server by default and reports
+  // valid Postgres as syntax errors: schema-qualified names (public.ff_picks),
+  // "limit", jsonb operators (?, ->>, -), "is not null" in projections, and
+  // dollar-quoted function bodies. None of those are real problems, and the
+  // noise buries anything that would be.
+  "mssql.intelliSense.enableErrorChecking": false,
+
+  // Throwaway screenshot/DOM harnesses. They must live under the served root
+  // to keep their iframes same-origin, but they are deleted seconds after use
+  // and linting them only produces errors for files that no longer exist.
+  "files.exclude": {
+    ".tmp": true,
+    "_shot.html": true
+  },
+  "files.watcherExclude": {
+    "**/.tmp/**": true
+  }
+}

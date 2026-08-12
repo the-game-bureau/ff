@@ -73,14 +73,33 @@ function renderWeekPicker(){
 
 // Signed out, the intro line leads with a Login link; signed in it just states
 // the task. The week number stays in a <strong id="victimWeek"> either way.
+// One line above the grid, in one of three states: signed out, signed in with
+// nothing picked, or signed in with a victim named. It used to say "Pick a
+// victim..." while a second line underneath separately announced the current
+// pick, which left the instruction contradicting the answer directly below it.
 function renderVictimIntro(){
   const intro = document.getElementById('victimIntro');
   if(!intro) return;
 
-  const tail = `a victim that you believe will lose in week <strong id="victimWeek">${viewWeek()}</strong>.`;
-  intro.innerHTML = victimState.user
-    ? `Pick ${tail}`
-    : `<a class="status-link" href="#signin">Login</a> to pick ${tail}`;
+  const week = `week <strong id="victimWeek">${viewWeek()}</strong>`;
+  const tail = `a victim that you believe will lose in ${week}.`;
+
+  if(!victimState.user){
+    intro.innerHTML = `<a class="status-link" href="#signin">Login</a> to pick ${tail}`;
+    return;
+  }
+
+  const activePick = currentWeekPick();
+  if(!activePick){
+    intro.innerHTML = `Pick ${tail}`;
+    return;
+  }
+
+  const change = currentPickLocked()
+    ? 'That pick is locked.'
+    : 'Pick another available team to change it.';
+  intro.innerHTML =
+    `Your ${week} victim: <strong>${escapeHtml(activePick.team)}</strong>. ${change}`;
 }
 
 // The "View Full Schedule" link follows the week in the dropdown.
@@ -191,6 +210,21 @@ function usedInOtherWeek(teamName){
   ) || null;
 }
 
+// Weeks are filled in order: you cannot name a Week 5 victim without having
+// named one in Week 4. Returns the earliest unfilled week before the one being
+// viewed, or 0 if there is no gap. Week 1 has nothing before it, so it is
+// always open.
+function firstMissingWeekBefore(){
+  const target = Number(viewWeek());
+
+  for(let week = 1; week < target; week++){
+    const filled = victimState.activePicks.some(pick => Number(pick.week) === week);
+    if(!filled) return week;
+  }
+
+  return 0;
+}
+
 function scheduleInfoForTeam(teamName){
   return window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(teamName, viewWeek()) || {
     game: null,
@@ -288,28 +322,62 @@ async function refreshVictimState(){
     setVictimStatus('Profile missing. Return to the Precinct and choose a username.', 'bad');
   } else {
     const activePick = currentWeekPick();
-    const locked = currentPickLocked();
-    setVictimStatus(activePick ?
-      `Week ${viewWeek()} victim: ${activePick.team}.${locked ? ' That pick is locked.' : ' Pick another unlocked team to change it.'}` :
-      `Week ${viewWeek()} is open. Click a victim to enter it.`,
-      'good');
+    const missingWeek = firstMissingWeekBefore();
+
+    if(missingWeek && !activePick){
+      // Say which week and how to get there, rather than leaving a grid of
+      // dead cards with no explanation.
+      setVictimStatus(
+        `Week ${missingWeek} has no victim yet. Weeks are filed in order, so ` +
+        `<a class="status-link" href="victims.html?week=${missingWeek}">name a Week ${missingWeek} victim</a> ` +
+        `before Week ${viewWeek()}.`,
+        'bad'
+      );
+    } else {
+      // The intro line above the grid now carries both the instruction and the
+      // current pick, so there is nothing left for this line to say. It stays
+      // for what it is actually for: blockers and failures.
+      setVictimStatus('', '');
+    }
   }
+
+  renderVictimIntro();
+}
+
+// Only the two states about this player's own picks get a colour. The rest —
+// bye, kickoff passed, earlier week first — are facts about the schedule and
+// stay neutral, so the colour means "you did this", not "blocked".
+function statusModifier(status){
+  if(status === 'Your Current Selection') return ' victim-status-current';
+  if(status === 'Previous Selection') return ' victim-status-previous';
+  return '';
 }
 
 function cardStatus(teamName, info){
   const activePick = currentWeekPick();
   const usedPick = usedInOtherWeek(teamName);
 
-  if(activePick?.team === teamName) return 'Current Victim';
+  if(activePick?.team === teamName) return 'Your Current Selection';
   // Burned in an earlier week: one team per season, so it is off the board.
-  if(usedPick) return 'Not Available';
-  if(info.isBye) return 'Bye';
-  if(info.locked) return 'Locked';
-  return 'Still Breathing';
+  // isCardDisabled() covers this too, so the card is unclickable as well.
+  if(usedPick) return 'Previous Selection';
+  // An unfilled earlier week closes the whole board, so this outranks the
+  // per-team reasons below: the gap is why you cannot pick, not the schedule.
+  const missingWeek = firstMissingWeekBefore();
+  if(missingWeek) return `Week ${missingWeek} First`;
+  if(info.isBye) return 'Not Playing';
+  if(info.locked) return 'Past Kickoff';
+  return 'Available';
 }
 
 function isCardDisabled(teamName, info){
-  return Boolean(currentPickLocked() || usedInOtherWeek(teamName) || info.isBye || info.locked);
+  return Boolean(
+    firstMissingWeekBefore() ||
+    currentPickLocked() ||
+    usedInOtherWeek(teamName) ||
+    info.isBye ||
+    info.locked
+  );
 }
 
 function renderVictims(){
@@ -344,7 +412,7 @@ function renderVictims(){
         <span class="victim-nickname">${escapeHtml(nickname)}</span>
         <span class="victim-matchup-line" title="${escapeHtml(info.line || matchupText(info))}">${escapeHtml(matchupText(info))}</span>
       </div>
-      <div class="victim-status">${escapeHtml(status)}</div>
+      <div class="victim-status${statusModifier(status)}">${escapeHtml(status)}</div>
     </li>
   `;
   }).join('');
@@ -426,6 +494,15 @@ async function submitVictimPick(teamName){
   const usedPick = usedInOtherWeek(teamName);
   if(usedPick){
     setVictimStatus(`${teamName} was already named in Week ${usedPick.week}.`, 'bad');
+    return;
+  }
+
+  const missingWeek = firstMissingWeekBefore();
+  if(missingWeek){
+    setVictimStatus(
+      `Name a Week ${missingWeek} victim first. Weeks are filed in order.`,
+      'bad'
+    );
     return;
   }
 

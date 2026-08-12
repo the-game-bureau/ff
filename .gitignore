@@ -1,5 +1,14 @@
 # Admin page with sensitive data access
+# NOTE: this rule does NOT match admin/index.html, which is where the admin
+# page actually lives and which IS tracked. Change to "admin/" if the intent
+# was to keep it out of the repo.
 admin.html
 
 # Archived database - sensitive/old data
 archived_db/
+
+# Scratch harnesses used to drive headless screenshots and DOM checks. They
+# have to sit under the served root so their iframes stay same-origin, but
+# they are throwaway and should never be committed or linted.
+.tmp/
+_shot.html

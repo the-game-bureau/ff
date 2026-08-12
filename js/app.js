@@ -1280,7 +1280,12 @@ chartContainer.innerHTML = chartHTML;
 
   async function refreshLeagueStats() {
 const picks = await fetchAllPicksPublic();
-allPicksData = picks; // Store globally for Pick Ticker week navigation
+// Changing a pick writes a new row rather than overwriting the old one, so the
+// raw list can hold several entries for the same player and week. The Pick
+// Ticker filters this list directly, so it has to be reduced to the latest
+// entry per player per week first or a player who changed their mind shows up
+// twice. Everything else already runs activePicksFromHistory on its own copy.
+allPicksData = activePicksFromHistory(picks);
 renderLeagueStats(picks);
 renderEliminationChart(picks);
 if (refreshPickTicker) refreshPickTicker();
