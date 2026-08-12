@@ -795,45 +795,20 @@ body{
 
 .privacy-tag-public{ background: var(--accent-yellow); }
 .privacy-tag-players{ background: var(--primary-blue); color: var(--paper-raised); }
-.privacy-tag-required{ background: var(--primary-red); color: var(--paper-raised); }
-
-/* ===== BAIL =====
-   The buy-in. Boxed off from the identity fields above it because it is the one
-   thing on this form that has to happen somewhere else first. */
-.bail-field{
-  border: var(--rule);
-  box-shadow: var(--shadow-sm);
-  padding: 16px 14px;
-  background: var(--bg-secondary);
-}
-
-.bail-pay{ display: inline-block; margin-bottom: 14px; }
-
-/* The whole line is the target, and the box does not shrink when the label
-   wraps on a phone. */
-.bail-confirm{
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1.35;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.bail-confirm input{
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  margin: 0;
-  accent-color: var(--ink);
-  cursor: pointer;
-}
 
 .join-actions{ margin-top: 6px; }
+
+/* The booking form as a popup (js/join-modal.js). Wider than the sign-in card
+   because it carries seven fields and a mugshot preview, and left-aligned
+   because it is a form rather than an announcement. It is taller than most
+   phones, which .modal-backdrop already handles by scrolling. */
+.join-card{
+  max-width: 520px;
+  padding: 28px 22px 22px;
+  text-align: left;
+}
+
+.join-card h2{ margin-bottom: 18px; }
 
 .join-status{
   min-height: 1.5em;
@@ -1538,27 +1513,37 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* ===== WELCOME =====
    The first thing a stranger sees, so it reads top-down: who this is from,
    what it is, the three rules, then the two ways out. */
-.welcome-card{ max-width: 480px; text-align: left; }
+/* A little more room than a plain modal: this one is read rather than acted on,
+   and the close box needs clearance from the heading now that the card is
+   left-aligned. */
+.welcome-card{
+  max-width: 480px;
+  padding: 28px 24px 24px;
+  text-align: left;
+}
 
 .welcome-card h2{ margin: 0 0 14px; }
 
 .welcome-lede{
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-size: 1rem;
   line-height: 1.45;
 }
 
-/* Custom markers: the default disc is the one round thing in a design that
-   has no round things. */
-/* Pulled left by the same amount the markers indent the text, so the copy
-   lines up with the paragraph above and the squares hang into the card's
-   padding rather than shunting every bullet inward. */
+/* Custom markers: the default disc is the one round thing in a design that has
+   no round things.
+   Everything in this card shares one left edge — heading, lede, bullets, note.
+   The list used to be pulled out by a negative margin so the squares hung in
+   the card's padding, which left the bullet text starting 20px left of every
+   other block and read as a layout bug once the note box arrived to measure it
+   against. The marker now sits inside the shared edge and the text is indented
+   from it. */
 .welcome-facts{
-  margin: 0 0 16px -20px;
+  margin: 0 0 18px;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 9px;
+  gap: 10px;
 }
 
 .welcome-facts li{
@@ -1576,18 +1561,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 9px;
   height: 9px;
   background: var(--ink);
-}
-
-/* Where the money goes. Set apart from the rules above it — it is the answer to
-   a question a stranger is entitled to ask before paying anyone $5. */
-.welcome-note{
-  margin: 0 0 18px;
-  padding: 12px 14px;
-  background: var(--bg-secondary);
-  border: 2px solid var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.45;
 }
 
 /* Side by side: neither option should look like the afterthought. */

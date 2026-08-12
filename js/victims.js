@@ -373,7 +373,7 @@ async function refreshVictimState(){
       // dead cards with no explanation.
       setVictimStatus(
         `Week ${missingWeek} has no victim yet. Weeks are filed in order, so ` +
-        `<a class="status-link" href="victims.html?week=${missingWeek}">name a Week ${missingWeek} victim</a> ` +
+        `<a class="status-link" href="?week=${missingWeek}">name a Week ${missingWeek} victim</a> ` +
         `before Week ${viewWeek()}.`,
         'bad'
       );

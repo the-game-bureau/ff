@@ -863,7 +863,7 @@ async function submitPick(teamName = gameState.selectedTeam){
 
 
 function renderTeams(){
-  // Absent on the home page since the lineup moved to victims.html.
+  // Absent on the home page since the lineup moved to victims/.
   const teamGridEl = document.getElementById('teamGrid');
   if (!teamGridEl) return;
   teamGridEl.innerHTML = '';

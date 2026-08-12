@@ -94,7 +94,7 @@ Voice and set pieces:
 - Player names in the pool are Law & Order character names (e.g. `munch`), so treat
   usernames as part of the bit.
 
-See [BRAINSTORMING.MD](BRAINSTORMING.MD) for theming ideas not yet built — notably
+See [ideas/brainstorming.md](ideas/brainstorming.md) for theming ideas not yet built — notably
 running live scores with L&O character/team names layered over real NFL teams, and
 keeping the base game skinnable so a league can pick a different theme on top.
 
@@ -106,11 +106,11 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 
 - [index.html](index.html) — **the Precinct**, the home page. Now little more than
   the QR code and the share strip; the game itself lives on the other pages.
-- [victims.html](victims.html) — the Victims page: all 32 teams, and where a
+- [victims/index.html](victims/index.html) — the Victims page: all 32 teams, and where a
   pick is made. Takes `?week=N`.
 - [suspects/index.html](suspects/index.html) — the players, as mugshot cards.
-- [law.html](law.html) — the rules.
-- [report.html](report.html) — the **Case File**: status bar, League Timeline, Pick
+- [law/index.html](law/index.html) — the rules.
+- [reports/index.html](reports/index.html) — the **Case File**: status bar, League Timeline, Pick
   Ticker, Evidence Locker. Its nav button is currently disabled ("Coming Soon"), so
   the page is reachable only by URL.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
@@ -161,7 +161,7 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - `src/` — images plus old working copies of index.html; the `index_*.html` files
   are dead snapshots.
 - `index copy.html` — stale backup, not served.
-- [BRAINSTORMING.MD](BRAINSTORMING.MD) — running idea list for future features.
+- [ideas/brainstorming.md](ideas/brainstorming.md) — running idea list for future features.
 
 Excluded via [.gitignore](.gitignore): `archived_db/`, `.tmp/`. Note the rule
 `admin.html` does **not** match `admin/index.html`, so the admin page is in fact

@@ -57,17 +57,9 @@
           <li>If your victim goes down then you keep playing. If they win, the
             case closes on you. <strong>Dun dun.</strong></li>
           <li>You can only name a victim once per season.</li>
-          <li>It costs <strong>$5</strong> to join, paid to
-            <strong>@KevinMKolb</strong> on Venmo.</li>
+          <li>It&rsquo;s <strong>free</strong>. No buy-in, no pot, nothing to
+            pay.</li>
         </ul>
-
-        <!-- Where the money goes, said plainly and up front. Nobody should have
-             to ask, and "not-for-profit" is the whole reason the $5 is not a
-             red flag on a link someone got in a text. -->
-        <p class="welcome-note">
-          Not-for-profit: the entire pot goes to the winner. The first suspect
-          out &mdash; or everyone tied for first out &mdash; gets their $5 back.
-        </p>
 
 
         <div class="modal-actions welcome-actions">
@@ -86,12 +78,17 @@
 
     document.getElementById('btnCloseWelcome')?.addEventListener('click', closeWelcome);
     document.getElementById('btnWelcomeBrowse')?.addEventListener('click', closeWelcome);
-    // Straight to the booking form. It used to open the Identify Yourself
-    // popup, which is the right door for someone who already has an account and
-    // the wrong one for a stranger who followed the QR code — the people this
-    // card exists for. Signing in is still one tap away in the header.
+    // Straight to the booking form, as a popup in place of this one. It used to
+    // open the Identify Yourself popup, which is the right door for someone who
+    // already has an account and the wrong one for a stranger who followed the
+    // QR code — the people this card exists for. Falls back to the join page on
+    // the one page that is the join page.
     document.getElementById('btnWelcomeJoin')?.addEventListener('click', () => {
       closeWelcome();
+      if (window.openJoinModal) {
+        window.openJoinModal();
+        return;
+      }
       window.location.href = `${pagePrefix()}join/index.html`;
     });
 

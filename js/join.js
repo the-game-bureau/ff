@@ -1,3 +1,14 @@
+// ===== JOIN =====
+// The booking form. It lives in two places from one copy: join/index.html
+// renders it inline, and js/join-modal.js injects the same markup into a popup
+// on every other page. Same ids either way, so everything below binds to
+// whichever one is on the page.
+//
+// Wrapped in an IIFE because it is now loaded site-wide, and its top-level
+// names would otherwise collide with another page script's — suspects.js
+// declares its own DEFAULT_MUGSHOT_URL, and two top-level consts of one name
+// is a parse error that kills both files.
+(function () {
 const JOIN_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
 const JOIN_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
 const JOIN_PROFILES_TABLE = 'ff_profiles';
@@ -16,7 +27,22 @@ const MUGSHOT_JPEG_QUALITY = 0.82;
 const MUGSHOT_AI_TIMEOUT_MS = 70000;
 const MUGSHOT_AI_ENABLED = false;
 const MUGSHOT_FUNCTION_URL = `${JOIN_SUPABASE_URL}/functions/v1/ff-mugshotify`;
-const DEFAULT_MUGSHOT_URL = new URL('../src/generated/mugshot-placeholder.svg', window.location.href).href;
+// Every page's nav mount carries the hop back to the site root; the form can
+// now open from any depth, so paths are resolved through it rather than
+// assuming this file is one directory down.
+function joinPagePrefix(){
+  return document.getElementById('siteNav')?.dataset.prefix || '';
+}
+
+function joinRootUrl(path){
+  return new URL(`${joinPagePrefix()}${path}`, window.location.href).href;
+}
+
+// Resolved on use, not at load: the nav mount is read for the prefix and this
+// file can run before it exists.
+function defaultMugshotUrl(){
+  return joinRootUrl('src/generated/mugshot-placeholder.svg');
+}
 
 let renderedAvatarDataUrl = '';
 let renderedAvatarFileKey = '';
@@ -76,20 +102,13 @@ function setAvatarStatus(message, kind){
 
 function redirectToSuspects(delay = 800){
   window.setTimeout(() => {
-    window.location.href = new URL('../suspects/index.html', window.location.href).href;
+    window.location.href = joinRootUrl('suspects/index.html');
   }, delay);
 }
 
-function validateJoin({ email, username, firstName, lastName, password, passwordConfirm, bailPaid }){
+function validateJoin({ email, username, firstName, lastName, password, passwordConfirm }){
   if(!email || !username || !firstName || !lastName || !password || !passwordConfirm){
     return 'Fill every required booking field.';
-  }
-
-  // An attestation, not a receipt: nothing here can see Venmo. It is checked
-  // first so a player who has not paid is told that before filling anything
-  // else in, rather than after.
-  if(!bailPaid){
-    return 'Bail is $5 to @KevinMKolb on Venmo. Send it, then tick the box to confirm.';
   }
 
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
@@ -415,7 +434,7 @@ function paintEmptyAvatarPreview(){
   const previewButton = document.getElementById('avatarPreviewButton');
   if(!canvas) return;
 
-  if(previewButton) previewButton.dataset.mugshotSrc = DEFAULT_MUGSHOT_URL;
+  if(previewButton) previewButton.dataset.mugshotSrc = defaultMugshotUrl();
 
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
@@ -443,7 +462,7 @@ function paintEmptyAvatarPreview(){
     ctx.lineWidth = 4;
     ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
   };
-  placeholder.src = DEFAULT_MUGSHOT_URL;
+  placeholder.src = defaultMugshotUrl();
 }
 
 function copyCanvasToPreview(sourceCanvas){
@@ -461,7 +480,7 @@ function setPreviewLightboxSource(dataUrl){
   const previewButton = document.getElementById('avatarPreviewButton');
   if(!previewButton) return;
 
-  previewButton.dataset.mugshotSrc = dataUrl || DEFAULT_MUGSHOT_URL;
+  previewButton.dataset.mugshotSrc = dataUrl || defaultMugshotUrl();
 }
 
 function loadImageFromFile(file){
@@ -787,7 +806,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastName = document.getElementById('joinLastName').value.trim();
     const password = document.getElementById('joinPassword').value;
     const passwordConfirm = document.getElementById('joinPasswordConfirm').value;
-    const bailPaid = Boolean(document.getElementById('joinBailPaid')?.checked);
     const avatarFile = avatarInput?.files?.[0] || null;
 
     const validationError = validateJoin({
@@ -796,8 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
       firstName,
       lastName,
       password,
-      passwordConfirm,
-      bailPaid
+      passwordConfirm
     });
     if(validationError){
       setJoinStatus(validationError, 'bad');
@@ -846,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: new URL('../suspects/index.html', window.location.href).href
+          emailRedirectTo: joinRootUrl('suspects/index.html')
         }
       });
 
@@ -909,3 +926,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+})();

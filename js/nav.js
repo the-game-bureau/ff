@@ -9,15 +9,15 @@ const NAV_ITEMS = [
   { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'Home' },
   // Land on the open week so the page and the header badge agree.
   { label: 'Victims',    key: 'victims',
-    href: () => `victims.html?week=${window.CURRENT_WEEK || 1}`,
+    href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,
     sublabel: 'Make Your Pick' },
-  // Not wired up yet. report.html still exists and still works if you visit it
+  // Not wired up yet. reports/ still exists and still works if you visit it
   // directly; this button just doesn't lead there until the numbers are real.
-  { label: 'Case File',  key: 'report',  href: 'report.html', sublabel: 'Stats & Picks',
+  { label: 'Case File',  key: 'report',  href: 'reports/index.html', sublabel: 'Stats & Picks',
     disabled: true, title: 'Coming Soon' },
   { label: 'Suspects',   key: 'suspects', href: 'suspects/index.html', sublabel: 'FF Players' },
   // Sublabel instead of a title: the gloss shows without needing a hover.
-  { label: 'The Law',    key: 'law',     href: 'law.html', sublabel: 'Rules' },
+  { label: 'The Law',    key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
   // New tab: the archive is a different season with its own gate, and leaving
   // it in place means you come back to the live site rather than back through
   // it. external drives target="_blank" in the renderer below.

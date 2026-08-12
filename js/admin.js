@@ -395,67 +395,66 @@
   }
 
   // ===== 2025 COLD CASES =====
-  // The frozen archive, not the database: the 2025 Supabase project is gone.
-  // Read-only by nature — there is nothing behind these names to edit.
+  // A closed season, so this is a record rather than a tool: nothing here can
+  // be edited and the project that served it no longer exists.
+  //
+  // It comes from the database, not from 2025/data/profiles.json, even though
+  // that file is right there. The names and addresses used to live in it, and a
+  // file under the served root is public no matter which page fetches it —
+  // publishing 32 people's emails to fill in one admin table is not a trade
+  // worth making. They sit in ff_archive_players now, behind RLS with no
+  // policies and an admin-checked function.
+  // See supabase/sql/ff_archive_2025_roster.sql.
   async function loadArchivePlayers() {
-    if (!els.archiveBody) return;
+    if (!adminDb || !els.archiveBody) return;
 
     setArchiveStatus('Loading 2025 roster.', 'note');
 
-    try {
-      const [profilesResponse, picksResponse] = await Promise.all([
-        fetch('../2025/data/profiles.json'),
-        fetch('../2025/data/picks.json')
-      ]);
+    const { data, error } = await adminDb.rpc('ff_admin_list_archive_players', {
+      target_season: 2025
+    });
 
-      if (!profilesResponse.ok) throw new Error(`profiles.json ${profilesResponse.status}`);
-
-      const profiles = await profilesResponse.json();
-      // Pick counts are a nicety; a failure here should not cost the roster.
-      const picks = picksResponse.ok ? await picksResponse.json() : [];
-
-      const counts = new Map();
-      for (const pick of picks) {
-        const name = pick.username || '';
-        counts.set(name, (counts.get(name) || 0) + 1);
-      }
-
-      renderArchivePlayers(profiles, counts);
-      setArchiveStatus(`${profiles.length} player${profiles.length === 1 ? '' : 's'} in the 2025 season.`, 'good');
-    } catch (error) {
-      // Opening the page off disk rather than over http is the usual cause,
-      // same as it is for the archive page itself.
-      setArchiveStatus(`2025 roster unavailable: ${error.message}. Serve the site over http.`, 'bad');
+    if (error) {
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      setArchiveStatus(
+        missing
+          ? '2025 roster unavailable: run supabase/sql/ff_archive_2025_roster.sql in the SQL editor first.'
+          : `2025 roster failed: ${error.message}${error.code ? ` (${error.code})` : ''}`,
+        'bad'
+      );
+      console.error('ff_admin_list_archive_players failed:', error);
       els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">Not loaded.</td></tr>';
+      return;
     }
+
+    const players = data || [];
+    renderArchivePlayers(players);
+    setArchiveStatus(`${players.length} player${players.length === 1 ? '' : 's'} in the 2025 season.`, 'good');
   }
 
-  function renderArchivePlayers(profiles, counts) {
-    if (!profiles.length) {
+  function renderArchivePlayers(players) {
+    if (!players.length) {
       els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">No 2025 players.</td></tr>';
       return;
     }
 
-    els.archiveBody.innerHTML = [...profiles]
-      .sort((a, b) => String(a.username || '').localeCompare(String(b.username || '')))
-      .map((player, index) => {
-        const joined = player.created_at ? String(player.created_at).slice(0, 10) : '';
-        // The committed profiles.json predates these two fields. Rather than
-        // print empty cells that look like missing people, say which build the
-        // file came from — rerun build-archive-json.mjs and they fill in.
-        const name = player.name || '<span class="admin-cell-note">NOT IN EXPORT</span>';
-        const email = player.email || '<span class="admin-cell-note">NOT IN EXPORT</span>';
+    // Already ordered by the function; the index is just a line number.
+    els.archiveBody.innerHTML = players.map((player, index) => {
+      const joined = player.joined_at ? String(player.joined_at).slice(0, 10) : '';
+      // A blank cell reads as a missing person rather than a missing field.
+      const gap = '<span class="admin-cell-note">NOT ON FILE</span>';
 
-        return `
+      return `
         <tr>
           <td>${index + 1}</td>
           <td>${escapeAdminHtml(player.username || '')}</td>
-          <td>${player.name ? escapeAdminHtml(name) : name}</td>
-          <td>${player.email ? escapeAdminHtml(email) : email}</td>
-          <td>${counts.get(player.username) || 0}</td>
+          <td>${player.name ? escapeAdminHtml(player.name) : gap}</td>
+          <td>${player.email ? escapeAdminHtml(player.email) : gap}</td>
+          <td>${Number(player.pick_count || 0)}</td>
           <td>${escapeAdminHtml(joined)}</td>
         </tr>`;
-      }).join('');
+    }).join('');
   }
 
   function setArchiveStatus(message, kind) {

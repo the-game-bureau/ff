@@ -152,11 +152,10 @@
     <section class="game-info admin-panel" id="adminArchivePanel" aria-labelledby="adminArchiveTitle" hidden>
       <h2 id="adminArchiveTitle">2025 Cold Cases</h2>
       <p class="gate-help">
-        The 2025 roster, straight from <code>2025/data/profiles.json</code>.
-        Nothing here is editable: the season is frozen and its backend no longer
-        exists. Name and email arrive only after
-        <code>build-archive-json.mjs</code> is re-run against the CSV export;
-        until then those cells read NOT IN EXPORT.
+        The 2025 roster. Nothing here is editable: the season is frozen and the
+        project that served it no longer exists. Names and addresses are held in
+        <code>ff_archive_players</code>, admin-only &mdash; the public archive
+        files carry usernames and nothing else.
       </p>
 
       <div id="adminArchiveStatus" class="join-status" role="status" aria-live="polite"></div>
@@ -215,6 +214,8 @@
   <script src="../js/nav.js"></script>
   <script src="../js/auth-corner.js"></script>
   <script src="../js/admin.js"></script>
+  <script src="../js/join-modal.js"></script>
+  <script src="../js/join.js"></script>
   <script src="../js/password-reset.js"></script>
 </body>
 </html>
