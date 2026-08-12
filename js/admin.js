@@ -54,6 +54,12 @@
     els.refreshUsers?.addEventListener('click', loadUsers);
     els.refreshRecords?.addEventListener('click', loadRecords);
 
+    // Delegated: the archive rows are rebuilt on every load.
+    els.archiveBody?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-copy-invite]');
+      if (button) copyInvite(button);
+    });
+
     // Delegated for the same reason as the roster below: rows are rebuilt on
     // every load, and each row carries three controls.
     els.recordsBody?.addEventListener('click', (event) => {
@@ -424,7 +430,7 @@
         'bad'
       );
       console.error('ff_admin_list_archive_players failed:', error);
-      els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">Not loaded.</td></tr>';
+      els.archiveBody.innerHTML = '<tr><td colspan="7" class="table-empty">Not loaded.</td></tr>';
       return;
     }
 
@@ -435,7 +441,7 @@
 
   function renderArchivePlayers(players) {
     if (!players.length) {
-      els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">No 2025 players.</td></tr>';
+      els.archiveBody.innerHTML = '<tr><td colspan="7" class="table-empty">No 2025 players.</td></tr>';
       return;
     }
 
@@ -453,8 +459,95 @@
           <td>${player.email ? escapeAdminHtml(player.email) : gap}</td>
           <td>${Number(player.pick_count || 0)}</td>
           <td>${escapeAdminHtml(joined)}</td>
+          <td>
+            <button class="btn btn-secondary btn-mini" type="button"
+                    data-copy-invite="${attrText(inviteFor(player))}">Copy</button>
+          </td>
         </tr>`;
     }).join('');
+  }
+
+  // ===== INVITES =====
+  // One text message per 2025 player, ready to paste. Written to be sent from a
+  // phone, so it is short, has one link, and leads with the thing that will
+  // make them read the rest: how they did.
+  const INVITE_URL = 'https://thegamebureau.com/ff/#welcome';
+  // The 2025 winner. Their message says so instead of counting weeks — telling
+  // the champion how long they lasted would be a strange way to invite them.
+  const WINNER_2025 = 'munch';
+
+  function inviteFor(player) {
+    // Weeks survived is one fewer than picks made: the last pick is the one
+    // that ended it. The winner never lost, so the arithmetic does not apply.
+    const weeks = Math.max(0, Number(player.pick_count || 0) - 1);
+    const first = String(player.name || player.username || '').trim().split(/\s+/)[0];
+    const hello = first ? `${first}, ` : '';
+
+    // Their 2025 handle, offered back to them: it is the name their whole
+    // record is under, and half the fun of the bit is the alias.
+    const alias = String(player.username || '').trim();
+
+    // The link goes on its own line after a blank one, so every messaging app
+    // gives it a preview card instead of burying it mid-sentence.
+    if (String(player.username).toLowerCase() === WINNER_2025) {
+      return `${hello}it's time to defend your championship. Law & Order: ` +
+        `Special Victory Unit, 2026 is here. Everyone has studied the tape and ` +
+        `they are coming for you. Defend it as ${alias} or enter witness ` +
+        `protection under a new name. Either way, your title is on the line!` +
+        `\n\n${INVITE_URL}`;
+    }
+
+    // One-pick players would otherwise be told they survived zero weeks, which
+    // is both true and unnecessary.
+    const record = weeks === 0
+      ? 'Last year Week 1 got you, which we have all agreed never to speak of again.'
+      : `Last year you lasted ${weeks} week${weeks === 1 ? '' : 's'} before a team ` +
+        `you accused had the nerve to win.`;
+
+    return `${hello}you have been summoned. It's time for Law & Order: Special ` +
+      `Victory Unit, 2026. ${record} Join as ${alias} or build yourself a whole ` +
+      `new persona. Either way it's time for revenge!\n\n${INVITE_URL}`;
+  }
+
+  // The invite carries a blank line before the link. Attribute parsing keeps a
+  // literal newline, but only by the letter of the spec — encoding it is one
+  // character and removes the doubt.
+  function attrText(value) {
+    return escapeAdminHtml(value).replace(/\n/g, '&#10;');
+  }
+
+  async function copyInvite(button) {
+    const text = button.dataset.copyInvite || '';
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      // Clipboard access needs a secure context, which rules out plain http on
+      // anything but localhost. Fall back to the old selection trick rather
+      // than leaving the button doing nothing.
+      const scratch = document.createElement('textarea');
+      scratch.value = text;
+      scratch.setAttribute('readonly', '');
+      scratch.style.position = 'fixed';
+      scratch.style.opacity = '0';
+      document.body.appendChild(scratch);
+      scratch.select();
+      try {
+        document.execCommand('copy');
+      } catch (fallbackError) {
+        setArchiveStatus('Copy failed. Select the text by hand.', 'bad');
+        scratch.remove();
+        return;
+      }
+      scratch.remove();
+    }
+
+    // On the button itself, because a status line at the top of a 32-row table
+    // is nowhere near the thing that was clicked.
+    const original = button.textContent;
+    button.textContent = 'Copied';
+    window.setTimeout(() => { button.textContent = original; }, 1200);
   }
 
   function setArchiveStatus(message, kind) {
