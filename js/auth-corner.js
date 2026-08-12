@@ -5,10 +5,6 @@
   const AUTH_PROFILES_TABLE = 'ff_profiles';
   // Must match a Redirect URL configured in Supabase Auth.
   const RESET_REDIRECT_URL = 'https://thegamebureau.com/ff/';
-  // Hands whatever was typed into the sign-in box over to the join page.
-  // sessionStorage rather than a query string: it keeps an email address out
-  // of the URL bar, history, and any referrer.
-  const JOIN_PREFILL_KEY = 'ff-join-prefill';
 
   const authDb = window.supabase ? window.supabase.createClient(AUTH_SUPABASE_URL, AUTH_SUPABASE_ANON_KEY, {
     auth: {
@@ -26,7 +22,6 @@
     ensureSignInModal();
     cacheElements();
     bindAuthCorner();
-    applyJoinPrefill();
     refreshAuthCorner();
 
     if (authDb) {
@@ -61,21 +56,17 @@
       corner.appendChild(row);
     }
 
-    // Username + Escape as one two-segment badge, built the same way as the
-    // week badge above it, with a caption under each half.
-    if (!document.getElementById('headerUser')) {
+    // Escape on its own. The username is the third cell of the week badge on
+    // the left, built by season.js — which is why this checks for the stack
+    // rather than for #headerUser, an id that now always exists.
+    if (!document.getElementById('headerIdStack')) {
       const stack = document.createElement('span');
       stack.className = 'header-id';
       stack.id = 'headerIdStack';
       stack.hidden = true;
 
       const badge = document.createElement('span');
-      badge.className = 'header-id-badge';
-
-      const userEl = document.createElement('span');
-      userEl.id = 'headerUser';
-      userEl.className = 'header-id-name';
-      userEl.setAttribute('aria-live', 'polite');
+      badge.className = 'header-id-badge header-id-badge-single';
 
       const signOutBtn = document.createElement('button');
       signOutBtn.id = 'btnSignOut';
@@ -83,20 +74,10 @@
       signOutBtn.type = 'button';
       signOutBtn.textContent = 'Escape';
 
-      badge.appendChild(userEl);
       badge.appendChild(signOutBtn);
 
-      const captions = document.createElement('span');
-      captions.className = 'header-id-captions';
-      for (const text of ['Username', 'Logout']) {
-        const caption = document.createElement('span');
-        caption.className = 'header-sublabel';
-        caption.textContent = text;
-        captions.appendChild(caption);
-      }
-
+      // No caption: "Escape" carries its own meaning here.
       stack.appendChild(badge);
-      stack.appendChild(captions);
       row.appendChild(stack);
     }
 
@@ -136,7 +117,7 @@
         <input id="authPass" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
 
         <div class="modal-actions">
-          <button id="btnSignIn" class="btn btn-primary" type="button">Sign In</button>
+          <button id="btnSignIn" class="btn btn-primary" type="button">Login</button>
           <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
           <a id="btnJoinFromSignIn" class="btn btn-secondary" href="${pagePrefix()}join/index.html">Join</a>
         </div>
@@ -163,7 +144,6 @@
     els.headerUser = document.getElementById('headerUser');
     els.headerSignIn = document.getElementById('headerSignIn');
     els.authStack = document.getElementById('headerAuthStack');
-    els.joinLink = document.getElementById('btnJoinFromSignIn');
   }
 
   function bindAuthCorner() {
@@ -172,7 +152,6 @@
     els.signIn?.addEventListener('click', signIn);
     els.signOut?.addEventListener('click', signOut);
     els.reset?.addEventListener('click', resetPassword);
-    els.joinLink?.addEventListener('click', stashJoinPrefill);
 
     els.modal?.addEventListener('click', (event) => {
       if (event.target === els.modal) closeSignInModal();
@@ -260,6 +239,9 @@
 
     if (els.headerUser) {
       els.headerUser.textContent = signedIn ? username : '';
+      els.headerUser.hidden = !signedIn;
+      // Sized after the text lands, never before.
+      window.fitHeaderUser?.();
     }
 
     if (els.idStack) els.idStack.hidden = !signedIn;
@@ -303,7 +285,7 @@
     const email = await resolveLoginEmail(identifier);
     const { error } = await authDb.auth.signInWithPassword({ email, password });
     if (error) {
-      alert(`Sign in error: ${error.message}`);
+      alert(`Login error: ${error.message}`);
       return;
     }
 
@@ -348,48 +330,6 @@
     }
 
     alert('Password reset email sent. Check your inbox and follow the instructions.');
-  }
-
-  // Someone who typed their name or email, then realised they need an account,
-  // shouldn't have to type it a second time. Stashed on the way out of the
-  // popup, spent once on arrival at the join page.
-  function stashJoinPrefill() {
-    const identifier = els.email?.value.trim() || '';
-    try {
-      if (identifier) {
-        sessionStorage.setItem(JOIN_PREFILL_KEY, identifier);
-      } else {
-        sessionStorage.removeItem(JOIN_PREFILL_KEY);
-      }
-    } catch (err) {
-      // Storage can be blocked outright (private mode, cookie policy). The
-      // prefill is a convenience, so a failure here just means typing it again.
-    }
-  }
-
-  function applyJoinPrefill() {
-    let identifier = '';
-    try {
-      identifier = sessionStorage.getItem(JOIN_PREFILL_KEY) || '';
-      // One shot: a later visit to the join page shouldn't resurrect it.
-      sessionStorage.removeItem(JOIN_PREFILL_KEY);
-    } catch (err) {
-      return;
-    }
-
-    if (!identifier) return;
-
-    // Same test sign-in uses to tell an email from a username.
-    const field = document.getElementById(
-      identifier.includes('@') ? 'joinEmail' : 'joinUsername'
-    );
-
-    // Not the join page, or the field is already filled in.
-    if (!field || field.value) return;
-
-    field.value = identifier;
-    // So anything watching the field for validation sees the new value.
-    field.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   function pagePrefix() {

@@ -30,8 +30,37 @@
     els.diffBody = document.getElementById('adminDiffBody');
     els.prompt = document.getElementById('reconcilePrompt');
 
+    els.usersPanel = document.getElementById('adminUsersPanel');
+    els.usersStatus = document.getElementById('adminUsersStatus');
+    els.usersBody = document.getElementById('adminUsersBody');
+    els.refreshUsers = document.getElementById('btnRefreshUsers');
+    els.deleteModal = document.getElementById('adminDeleteModal');
+    els.deleteSummary = document.getElementById('adminDeleteSummary');
+    els.deleteWord = document.getElementById('adminDeleteWord');
+    els.deleteConfirm = document.getElementById('adminDeleteConfirm');
+    els.deleteError = document.getElementById('adminDeleteError');
+    els.confirmDelete = document.getElementById('btnConfirmDelete');
+
     els.reconcile?.addEventListener('click', reconcileSchedule);
     els.copyPrompt?.addEventListener('click', copyReconcilePrompt);
+    els.refreshUsers?.addEventListener('click', loadUsers);
+
+    // Delegated: the rows are rebuilt on every load.
+    els.usersBody?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-delete-user]');
+      if (button) openDeleteModal(button.dataset.deleteUser, button.dataset.deleteLabel);
+    });
+
+    els.confirmDelete?.addEventListener('click', confirmDelete);
+    els.deleteConfirm?.addEventListener('input', syncDeleteButton);
+    document.getElementById('btnCancelDelete')?.addEventListener('click', closeDeleteModal);
+    document.getElementById('btnAbortDelete')?.addEventListener('click', closeDeleteModal);
+    els.deleteModal?.addEventListener('click', (event) => {
+      if (event.target === els.deleteModal) closeDeleteModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && els.deleteModal && !els.deleteModal.hidden) closeDeleteModal();
+    });
 
     guardAdmin();
 
@@ -83,8 +112,143 @@
     }
 
     els.tools.hidden = false;
+    if (els.usersPanel) els.usersPanel.hidden = false;
     setAdminStatus('Admin access granted. Schedule audit tools are ready.', 'good');
     await ensurePrompt();
+    await loadUsers();
+  }
+
+  // ===== ROSTER =====
+  // Everything here goes through RPCs that re-check the caller server-side.
+  // The publishable key cannot read auth.users directly, and should not be
+  // able to; see supabase/sql/ff_admin_delete_user.sql.
+  let pendingDelete = null;
+
+  async function loadUsers() {
+    if (!adminDb || !els.usersBody) return;
+
+    setUsersStatus('Loading roster.', 'note');
+
+    const { data, error } = await adminDb.rpc('ff_admin_list_users');
+
+    if (error) {
+      // A missing function is the common case on a project where the SQL has
+      // not been run yet, and it deserves a message that says so.
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      setUsersStatus(
+        missing
+          ? 'Roster unavailable: run supabase/sql/ff_admin_delete_user.sql in the SQL editor first.'
+          : `Roster failed: ${error.message}${error.code ? ` (${error.code})` : ''}`,
+        'bad'
+      );
+      console.error('ff_admin_list_users failed:', error);
+      renderUsers([]);
+      return;
+    }
+
+    renderUsers(data || []);
+    setUsersStatus(`${(data || []).length} league member${(data || []).length === 1 ? '' : 's'}.`, 'good');
+  }
+
+  function renderUsers(users) {
+    if (!els.usersBody) return;
+
+    if (!users.length) {
+      els.usersBody.innerHTML = '<tr><td colspan="5" class="table-empty">No league members.</td></tr>';
+      return;
+    }
+
+    els.usersBody.innerHTML = users.map((user) => {
+      // Every row is a league member: the roster is driven from ff_profiles,
+      // so accounts belonging to other sites on this shared project never
+      // reach here and cannot be removed by accident.
+      const label = user.username || '(no username)';
+      const joined = user.created_at ? String(user.created_at).slice(0, 10) : '';
+
+      return `
+        <tr>
+          <td>${escapeAdminHtml(label)}</td>
+          <td>${escapeAdminHtml(user.email || '')}</td>
+          <td>${Number(user.pick_count || 0)}</td>
+          <td>${escapeAdminHtml(joined)}</td>
+          <td>
+            <button class="btn btn-secondary btn-mini" type="button"
+              data-delete-user="${escapeAdminHtml(user.id)}"
+              data-delete-label="${escapeAdminHtml(label)}">Remove</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function openDeleteModal(userId, label) {
+    if (!els.deleteModal) return;
+
+    pendingDelete = { id: userId, label };
+
+    // Confirm by typing the username. A plain OK button gets clicked through;
+    // typing the name forces you to read which record you are destroying.
+    els.deleteWord.textContent = label;
+    els.deleteSummary.textContent =
+      `This removes ${label} from the league: their profile and every pick they made. ` +
+      `Their login is kept, so anything they have on another site sharing this project is untouched. ` +
+      `The picks cannot be recovered.`;
+    els.deleteConfirm.value = '';
+    els.deleteError.textContent = '';
+    syncDeleteButton();
+
+    els.deleteModal.hidden = false;
+    els.deleteConfirm.focus();
+  }
+
+  function closeDeleteModal() {
+    if (els.deleteModal) els.deleteModal.hidden = true;
+    pendingDelete = null;
+  }
+
+  function syncDeleteButton() {
+    if (!els.confirmDelete || !pendingDelete) return;
+    const typed = (els.deleteConfirm?.value || '').trim().toLowerCase();
+    els.confirmDelete.disabled = typed !== String(pendingDelete.label).trim().toLowerCase();
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete || !adminDb) return;
+
+    els.confirmDelete.disabled = true;
+    els.deleteError.textContent = '';
+
+    const { data, error } = await adminDb.rpc('ff_admin_remove_member', {
+      target_user_id: pendingDelete.id
+    });
+
+    if (error) {
+      els.deleteError.textContent = `${error.message}${error.code ? ` (${error.code})` : ''}`;
+      console.error('ff_admin_remove_member failed:', error);
+      syncDeleteButton();
+      return;
+    }
+
+    const label = data?.username || data?.email || pendingDelete.label;
+    closeDeleteModal();
+    setUsersStatus(`Removed ${label} from the league. ${Number(data?.picks_deleted || 0)} pick(s) deleted. Login kept.`, 'good');
+    await loadUsers();
+  }
+
+  function setUsersStatus(message, kind) {
+    if (!els.usersStatus) return;
+    els.usersStatus.textContent = message;
+    els.usersStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
+    if (kind) els.usersStatus.classList.add(`join-status-${kind}`);
+  }
+
+  function escapeAdminHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   async function reconcileSchedule() {
@@ -448,6 +612,12 @@
     if (els.tools) {
       els.tools.hidden = true;
     }
+    // The roster carries emails, so it goes away with everything else the
+    // moment the guard stops passing.
+    if (els.usersPanel) {
+      els.usersPanel.hidden = true;
+    }
+    closeDeleteModal();
   }
 
   function setWorking(isWorking) {

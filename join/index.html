@@ -43,7 +43,7 @@
 
   <div class="container">
     <section class="game-info join-panel" aria-labelledby="joinTitle">
-      <h2 id="joinTitle">&#128110; Enter the Lineup</h2>
+      <h2 id="joinTitle">Person of Interest</h2>
 
       <form class="join-form" id="joinForm">
         <div class="join-field">
@@ -68,7 +68,7 @@
         </div>
 
         <div class="join-field">
-          <label for="joinFirstName">First Name <span class="privacy-tag privacy-tag-players">Players Only</span></label>
+          <label for="joinFirstName">First Name <span class="privacy-tag privacy-tag-players">Seen by Players Only</span></label>
           <input id="joinFirstName" name="first_name" type="text" autocomplete="given-name" required/>
         </div>
 
@@ -93,7 +93,7 @@
         </div>
 
         <div class="action-buttons join-actions">
-          <button id="btnCreateAccount" class="btn btn-primary" type="submit">Enter the Lineup</button>
+          <button id="btnCreateAccount" class="btn btn-primary" type="submit">Join</button>
         </div>
 
         <div id="joinStatus" class="join-status" role="status" aria-live="polite"></div>
@@ -113,5 +113,7 @@
   <script src="../js/mugshot-lightbox.js"></script>
   <script src="../js/join.js"></script>
   <script src="../js/password-reset.js"></script>
+  <script src="../js/join-prefill.js"></script>
+  <script src="../js/welcome.js"></script>
 </body>
 </html>

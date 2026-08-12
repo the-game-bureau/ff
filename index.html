@@ -33,7 +33,9 @@
 <link rel="stylesheet" href="css/site.css"/>
 </head>
 
-<body>
+<!-- data-page drives the tighter desktop spacing in site.css: this page is one
+     screen of content and should not ask to be scrolled. -->
+<body data-page="home">
   <header class="header" role="banner">
     <div class="header-logo-text">
       <div class="law-text">LAW<span class="ampersand">&</span></div>
@@ -48,14 +50,11 @@
            app.js swaps them in setHeaderUser(). -->
       <div class="header-user-row">
         <!-- Joined two-segment badge, same construction as the week badge. -->
+        <!-- Just Escape here now: the username moved into the week badge on
+             the left, where it forms the third cell of that block. -->
         <span class="header-id" id="headerIdStack" hidden>
-          <span class="header-id-badge">
-            <span id="headerUser" class="header-id-name" aria-live="polite"></span>
+          <span class="header-id-badge header-id-badge-single">
             <button id="btnSignOut" class="header-id-escape" type="button">Escape</button>
-          </span>
-          <span class="header-id-captions">
-            <span class="header-sublabel">Username</span>
-            <span class="header-sublabel">Logout</span>
           </span>
         </span>
         <!-- Signed out: the same joined badge shape as username/Escape. -->
@@ -84,7 +83,7 @@
              autocomplete="current-password" />
 
       <div class="modal-actions">
-        <button id="btnSignIn" class="btn btn-primary" type="button">Sign In</button>
+        <button id="btnSignIn" class="btn btn-primary" type="button">Login</button>
         <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
         <a id="btnJoinFromSignIn" class="btn btn-secondary" href="join/index.html">Join</a>
       </div>
@@ -125,17 +124,7 @@
         <div id="usernameError" class="field-error" role="alert"></div>
       </div>
 
-      <section class="status-bar status-bar-hidden" id="statusBar" aria-label="Game status overview">
-        <div class="status-line" id="playerStatusCard">
-          <span>Week <strong id="currentWeek">—</strong></span><!-- Auto-updated by JavaScript -->
-          <span class="separator">·</span>
-          <span>Victims Named: <strong id="teamsUsedCount">0</strong></span>
-          <span class="separator">·</span>
-          <span>Still Breathing: <strong id="teamsRemaining">32</strong></span>
-          <span class="separator">·</span>
-          <span>Status: <strong id="playerStatus">-</strong></span>
-        </div>
-      </section>
+      <!-- The status bar now lives on report.html. -->
     </section>
 
     <!-- Scan-to-sign-in. The SVG is generated from the URL below and committed,
@@ -145,10 +134,13 @@
          side by side without the code and its URL chip coming apart. -->
     <section class="share-strip" aria-label="Share the game">
       <div class="share-qr">
-        <a class="qr-code" href="#signin" aria-label="Open the sign-in window">
-          <img src="src/qr-signin.svg" width="220" height="220"
-               alt="QR code linking to thegamebureau.com/ff sign-in" />
-        </a>
+        <!-- Not a link: it is meant to be pointed at with someone else's
+             camera, and clicking it on the device already showing it does
+             nothing useful. -->
+        <span class="qr-code">
+          <img src="src/qr-welcome.svg" width="220" height="220"
+               alt="QR code linking to thegamebureau.com/ff" />
+        </span>
         <span class="qr-url">thegamebureau.com/ff</span>
       </div>
 
@@ -191,5 +183,7 @@
 
   <script src="js/share.js"></script>
   <script src="js/password-reset.js"></script>
+  <script src="js/join-prefill.js"></script>
+  <script src="js/welcome.js"></script>
 </body>
 </html>

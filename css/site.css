@@ -282,11 +282,15 @@ body{
 
 /* Upcoming week, stamped in the top-left corner of every page's header. The
    auth controls own the top-right. */
+/* One frame, three cells: week and season on the top row, the signed-in
+   handle across the bottom. Signed out, the third cell is absent and this is
+   the same two-square badge as before. */
 .week-badge{
   position: absolute;
   top: 16px;
   left: 16px;
   display: inline-flex;
+  flex-direction: column;
   align-items: stretch;
   border: var(--rule);
   box-shadow: var(--shadow-sm);
@@ -298,7 +302,14 @@ body{
 
 .week-badge:empty{ display: none; }
 
-.week-badge span{ padding: 8px 12px; display: flex; align-items: center; }
+.week-badge-row{ display: flex; align-items: stretch; }
+
+.week-badge-row > span,
+.week-badge-user{
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+}
 
 .week-badge-week{
   background: var(--primary-red);
@@ -314,6 +325,33 @@ body{
   font-size: 0.8125rem;
   font-family: var(--font-mono);
 }
+
+/* The rule belongs to this cell, so it only appears when the cell does.
+   Width is pinned in JS to the row above and the type shrinks to fit, which
+   is why overflow is clipped here rather than allowed to stretch the frame. */
+/* Blue, so the three cells read as week / season / you rather than blurring
+   into the season cell they sit under. */
+.week-badge-user{
+  justify-content: center;
+  /* width:0 keeps this cell out of the frame's intrinsic width, so a long
+     handle can never widen the block; min-width then stretches it back to
+     whatever the row above decided. Without the pair, a 20-character name
+     pushes the badge wider instead of shrinking to fit. */
+  width: 0;
+  min-width: 100%;
+  border-top: var(--rule);
+  background: var(--primary-blue);
+  color: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.week-badge-user[hidden]{ display: none; }
 
 .tagline{
   font-family: var(--font-mono);
@@ -404,6 +442,47 @@ body{
   box-shadow: 0 0 0 var(--ink);
   outline: none;
 }
+
+/* Not wired up yet: reads as present but inert. It keeps its frame so the row
+   still balances, but it does not press in and it does not go yellow, because
+   nothing happens when you click it. The tooltip explains why. */
+.nav-btn-disabled,
+.nav-btn-disabled:hover,
+.nav-btn-disabled:focus-visible{
+  --nav-btn-bg: var(--paper-raised);
+  color: #8A8578;
+  border-color: #8A8578;
+  box-shadow: 3px 3px 0 #8A8578;
+  transform: none;
+  cursor: not-allowed;
+  position: relative;
+}
+
+/* Sits above the button, on yellow so it reads against both the white nav bar
+   and the black header it overlaps. */
+.nav-btn-disabled::after{
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: var(--accent-yellow);
+  color: var(--ink);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s linear;
+  z-index: 5;
+}
+
+.nav-btn-disabled:hover::after{ opacity: 1; }
 
 .nav-btn-current{
   --nav-btn-bg: var(--primary-blue);
@@ -1082,14 +1161,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   box-shadow: var(--shadow-lg);
   padding: 6px;
   line-height: 0;
-  transition: transform 0.08s linear, box-shadow 0.08s linear;
-}
-
-.qr-code:hover,
-.qr-code:focus-visible{
-  transform: translate(5px, 5px);
-  box-shadow: 0 0 0 var(--ink);
-  outline: none;
 }
 
 .qr-code img{
@@ -1143,8 +1214,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 52px;
-    padding: 76px 24px 84px;
+    gap: 44px;
+    padding: 40px 24px 44px;
     text-align: left;
   }
 
@@ -1156,20 +1227,95 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     align-items: flex-start;
     max-width: min(28rem, 40vw);
     border-left: var(--rule-fat);
-    padding-left: 52px;
+    padding-left: 44px;
   }
 
   /* The gap above the caption belonged to the stacked layout. */
   .share-strip .qr-caption{
     margin-top: 0;
     max-width: none;
-    font-size: clamp(1.875rem, 2.6vw, 2.625rem);
+    font-size: clamp(1.5rem, 2.1vw, 2.125rem);
     line-height: 1.05;
   }
 
-  .share-strip .btn{ margin-top: 26px; }
+  .share-strip .btn{ margin-top: 20px; }
 
-  .qr-code img{ width: 248px; height: 248px; }
+  .qr-code img{ width: 184px; height: 184px; }
+
+  /* The home page is a single screen — a QR code and one button — so it should
+     not ask to be scrolled on a desktop. These trims are all vertical padding,
+     and they are scoped to the home page: every other page has real content to
+     scroll through and keeps the roomier spacing. Nothing changes below 768px. */
+  [data-page="home"] .share-strip{ padding: 28px 24px 32px; }
+  [data-page="home"] .container{ padding: 20px 16px 28px; }
+  [data-page="home"] .header{ padding: 20px 16px 16px; }
+  [data-page="home"] .header-logo-text{ margin-bottom: 8px; }
+  [data-page="home"] .svu-subtitle{ margin-bottom: 10px; }
+  [data-page="home"] .footer{ padding: 28px 16px 32px; }
+}
+
+/* ===== WELCOME =====
+   The first thing a stranger sees, so it reads top-down: who this is from,
+   what it is, the three rules, then the two ways out. */
+.welcome-card{ max-width: 480px; text-align: left; }
+
+.welcome-card h2{ margin: 0 0 14px; }
+
+.welcome-lede{
+  margin: 0 0 16px;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* Custom markers: the default disc is the one round thing in a design that
+   has no round things. */
+.welcome-facts{
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+
+.welcome-facts li{
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.welcome-facts li::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 9px;
+  height: 9px;
+  background: var(--ink);
+}
+
+.welcome-close-line{
+  margin: 0 0 20px;
+  padding-top: 14px;
+  border-top: var(--rule);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Side by side: neither option should look like the afterthought. */
+.welcome-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.welcome-actions .btn{ flex: 1 1 auto; }
+
+@media (max-width: 480px){
+  .welcome-actions{ flex-direction: column; }
 }
 
 /* ===== SECTION HEAD WITH A CONTROL ON THE RIGHT ===== */
@@ -1560,22 +1706,70 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   min-width: 0;
 }
 
+/* The whole card is the mugshot now: photo, two-tone edge sampled from that
+   photo, and the name plate laid over the bottom of it. */
 .suspect-avatar-frame{
+  position: relative;
   width: min(152px, 100%);
   aspect-ratio: 1;
   display: grid;
-  place-items: center;
+  place-items: stretch;
+  overflow: hidden;
   background: var(--paper-raised);
   border: var(--rule);
   box-shadow: var(--shadow-sm);
+  /* suspects.js overwrites these per card from the photo's own colours. */
+  --stripe-a: var(--ink);
+  --stripe-b: var(--accent-yellow);
+}
+
+/* Full-height stripe down the left edge, over the photo. */
+.suspect-avatar-frame::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14px;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    var(--stripe-a) 0 9px,
+    var(--stripe-b) 9px 14px
+  );
+}
+
+.suspect-avatar-button{
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
 .suspect-avatar{
-  width: 128px;
-  height: 128px;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border: 2px solid var(--ink);
   background: var(--paper-raised);
+}
+
+/* Name plate over the photo. Starts clear of the stripe so neither covers the
+   other, and carries a solid ground so the text survives any photo under it. */
+.suspect-caption{
+  position: absolute;
+  left: 14px;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px;
+  background: var(--paper-raised);
+  border-top: var(--rule);
+  text-align: center;
+  pointer-events: none;
 }
 
 /* ===== MUGSHOT LIGHTBOX ===== */
@@ -1651,55 +1845,31 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   outline: none;
 }
 
-.suspect-placard{
-  width: 100%;
-  min-height: 104px;
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  background-color: var(--paper-raised);
-  background-image: linear-gradient(
-    90deg,
-    var(--ink) 0 9px,
-    var(--accent-yellow) 9px 14px,
-    transparent 14px
-  );
-  border: var(--rule);
-  box-shadow: var(--shadow-sm);
-  padding: 12px 10px 12px 24px;
-  text-align: center;
-}
-
-.suspect-name{
+/* One line, always. suspects.js steps the size down until it fits, so this
+   must never wrap — and the clip is a backstop for the case where even the
+   smallest size is too small. */
+.suspect-team{
   display: block;
-  overflow-wrap: anywhere;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
   font-family: var(--font-display);
-  font-size: 1.0625rem;
-  line-height: 1.05;
+  font-size: 0.9375rem;
+  line-height: 1.1;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
-.suspect-username,
-.suspect-status{
+.suspect-first{
   display: block;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.25;
+  font-size: 0.625rem;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
-.suspect-username{ color: var(--text-secondary); }
-
-.suspect-status{
-  margin-top: 6px;
-  border-top: 2px solid var(--ink);
-  padding-top: 7px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--ink);
-}
+.suspect-first{ color: var(--text-secondary); }
 
 .suspect-empty,
 .suspect-notice{
@@ -1858,9 +2028,8 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   }
   .lineup-measure{ display: none; }
   .suspect-grid{ grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+  /* The avatar fills its frame now, so only the frame needs sizing. */
   .suspect-avatar-frame{ width: 132px; }
-  .suspect-avatar{ width: 112px; height: 112px; }
-  .suspect-placard{ min-height: 112px; padding-left: 22px; }
   .victim-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .team-grid{ grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); }
   .helmet{ width: 62px; height: 55px; }

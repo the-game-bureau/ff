@@ -32,7 +32,10 @@
     return '';
   }
 
-  function openMugshotLightbox(src, alt = 'Mugshot preview'){
+  // The caption and the alt text are not the same thing. The caption is read
+  // next to a picture that is already on screen, so it only needs the name;
+  // the alt text stands in for the picture entirely and has to say what it is.
+  function openMugshotLightbox(src, alt = 'Mugshot preview', captionText = ''){
     if(!src) return;
 
     const box = ensureLightbox();
@@ -43,7 +46,7 @@
     previousFocus = document.activeElement;
     image.src = src;
     image.alt = alt;
-    caption.textContent = alt;
+    caption.textContent = captionText || alt;
     box.hidden = false;
     document.body.classList.add('mugshot-lightbox-open');
     closeButton.focus();
@@ -77,7 +80,8 @@
     event.preventDefault();
     openMugshotLightbox(
       mugshotSourceFromTrigger(trigger),
-      trigger.dataset.mugshotAlt || trigger.getAttribute('aria-label') || 'Mugshot preview'
+      trigger.dataset.mugshotAlt || trigger.getAttribute('aria-label') || 'Mugshot preview',
+      trigger.dataset.mugshotCaption || ''
     );
   });
 

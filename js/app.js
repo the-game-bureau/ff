@@ -217,17 +217,21 @@ async function resolveLoginEmail(identifier){
 // The username under the week badge, top-right. Hidden entirely when signed
 // out or before a username has been chosen.
 function setHeaderUser(username){
+  // Signed in shows the name in the week badge plus the Escape badge on the
+  // right; signed out shows Login / Join.
   const el = document.getElementById('headerUser');
-  if(!el) return;
-
-  // Signed in shows the name + Escape badge; signed out shows Identify Yourself.
   const idStack = document.getElementById('headerIdStack');
   const signInBtn = document.getElementById('headerSignIn');
   const signedIn = Boolean(username);
 
-  el.textContent = signedIn ? username : '';
+  if(el){
+    el.textContent = signedIn ? username : '';
+    el.hidden = !signedIn;
+    // Sized after the text lands, never before.
+    window.fitHeaderUser?.();
+  }
+
   if(idStack) idStack.hidden = !signedIn;
-  else el.hidden = !signedIn;
 
   const authStack = document.getElementById('headerAuthStack');
   if(authStack) authStack.hidden = signedIn;
@@ -274,9 +278,12 @@ async function refreshAuthUI(){
     // DEBUG: Log the profile fetch attempt
     console.log('🔍 Fetching profile for user ID:', currentUser.id);
     
+    // Ask for the one column this code actually reads. "*" demands every
+    // column, so a single field the role is not granted fails the whole
+    // request — and it pulls the email down to the browser for nothing.
     const { data: profile, error } = await db
       .from(PROFILES_TABLE)
-      .select('*')
+      .select('username')
       .eq('id', currentUser.id)
       .maybeSingle();
 
@@ -285,8 +292,12 @@ async function refreshAuthUI(){
     
     if(error && error.code !== 'PGRST116') {
       console.error('❌ Profile fetch error:', error);
-      // Show more details about the error
-      alert(`Profile fetch error: ${error.message} (Code: ${error.code})`);
+      // Not every failure carries a PostgREST code: when the error body is not
+      // JSON, supabase-js falls back to the HTTP status text ("Bad Request")
+      // and leaves code undefined. Print only the parts that exist so the
+      // message never trails a literal "undefined".
+      const detail = [error.code, error.status, error.hint].filter(Boolean).join(' · ');
+      alert(`Profile fetch error: ${error.message}${detail ? ` (${detail})` : ''}`);
       return;
     }
 
@@ -346,8 +357,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSignInEl = document.getElementById('btnSignIn');
   const btnSignOutEl = document.getElementById('btnSignOut');
 
-  // Popup open/close: the inline prompt, the nav's Sign Up button, the X,
-  // the backdrop, and Escape.
+  // Popup open/close: the header's Login / Join button, any #signin link, the
+  // X, the backdrop, and Escape. #btnOpenSignIn is a leftover from the old
+  // in-page prompt and no longer exists on any page; the lookup is harmless
+  // and stays only so an older page dropped back in would still work.
   const btnOpenSignInEl = document.getElementById('btnOpenSignIn');
   const btnCloseSignInEl = document.getElementById('btnCloseSignIn');
   const signInModalEl = document.getElementById('signInModal');
@@ -404,9 +417,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if(error) {
-          alert('Sign in error: ' + error.message);
+          alert('Login error: ' + error.message);
         } else {
-          console.log('✅ Sign in successful');
+          console.log('✅ Login successful');
           await refreshAuthUI();
         }
       } catch(error) {

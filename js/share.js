@@ -3,12 +3,13 @@
 // the QR encodes, so however someone passes the game along they land on the
 // squad room with the sign-in window already open.
 (function () {
-  // What actually gets shared: the trailing "#signin" is what opens the
-  // sign-in window on arrival, so every copy/email/text/native share carries it.
-  const SHARE_URL = 'https://thegamebureau.com/ff/#signin';
-  // What gets shown. The fragment is machinery, not something anyone needs to
-  // read, and the short form matches the chip under the QR code.
-  const SHARE_URL_DISPLAY = 'https://thegamebureau.com/ff';
+  // What actually gets shared: the trailing "#welcome" opens the introduction
+  // on arrival, so every copy/email/native share carries it. People reaching
+  // this link have been handed it by a friend and know nothing about the game.
+  const SHARE_URL = 'https://thegamebureau.com/ff/#welcome';
+  // What gets shown. The fragment is machinery and the scheme is noise; the
+  // short form is what people read out loud, and it matches the QR chip.
+  const SHARE_URL_DISPLAY = 'thegamebureau.com/ff';
   const COPY_LABEL = 'Copy Link';
   const COPY_DONE_LABEL = 'Link Copied to Clipboard';
   const SHARE_TITLE = 'Law & Order: Special Victory Unit';

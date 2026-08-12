@@ -70,6 +70,64 @@
         <textarea id="reconcilePrompt" class="admin-prompt" readonly spellcheck="false"></textarea>
       </div>
     </section>
+
+    <!-- Hidden behind the same guard as the tools above. The real check is in
+         the database function; this only decides what is shown. -->
+    <section class="game-info admin-panel" id="adminUsersPanel" aria-labelledby="adminUsersTitle" hidden>
+      <h2 id="adminUsersTitle">Remove From League</h2>
+      <p class="gate-help">
+        Deletes the player's profile and every pick they made. Their login is
+        kept &mdash; this Supabase project is shared with another site, so
+        removing the login here would revoke their access there too. Only
+        league members are listed.
+      </p>
+
+      <div id="adminUsersStatus" class="join-status" role="status" aria-live="polite"></div>
+
+      <div class="table-wrap">
+        <table id="adminUsersTable" aria-label="Registered accounts">
+          <thead>
+            <tr>
+              <th scope="col">Username</th>
+              <th scope="col">Email</th>
+              <th scope="col">Picks</th>
+              <th scope="col">Joined</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersBody">
+            <tr><td colspan="5" class="table-empty">Not loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btnRefreshUsers" class="btn btn-secondary" type="button">Reload Roster</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Deleting is irreversible, so it is confirmed by typing the username
+       rather than by an OK button someone can click through on reflex. -->
+  <div id="adminDeleteModal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adminDeleteTitle">
+      <button class="modal-close" id="btnCancelDelete" type="button" aria-label="Close">&times;</button>
+      <h2 id="adminDeleteTitle">Remove From League</h2>
+
+      <p id="adminDeleteSummary"></p>
+
+      <label class="admin-prompt-label" for="adminDeleteConfirm">
+        Type <strong id="adminDeleteWord"></strong> to confirm
+      </label>
+      <input id="adminDeleteConfirm" type="text" autocomplete="off" spellcheck="false"/>
+
+      <div id="adminDeleteError" class="field-error" role="alert"></div>
+
+      <div class="modal-actions">
+        <button id="btnConfirmDelete" class="btn btn-primary" type="button" disabled>Remove</button>
+        <button id="btnAbortDelete" class="btn btn-secondary" type="button">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <footer class="footer" role="contentinfo">

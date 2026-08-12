@@ -27,7 +27,7 @@ function setSuspectsTitle(count){
   const el = document.getElementById('currentSuspectsTitle');
   if(!el) return;
 
-  el.textContent = `${count} Current Suspect${count === 1 ? '' : 's'}`;
+  el.textContent = `${count} Suspect${count === 1 ? '' : 's'}`;
 }
 
 function escapeHtml(value){
@@ -42,15 +42,6 @@ function escapeHtml(value){
 function safeAvatarSrc(value){
   const src = String(value || '');
   return /^data:image\/(?:png|jpeg|webp);base64,/i.test(src) ? src : '';
-}
-
-function missingRelationError(error){
-  const text = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase();
-  return error?.code === 'PGRST205' ||
-    error?.code === '42P01' ||
-    text.includes('schema cache') ||
-    text.includes('could not find the table') ||
-    text.includes('does not exist');
 }
 
 function optionalColumnError(error, columnName){
@@ -130,25 +121,130 @@ function renderSuspects(suspects){
 
   grid.innerHTML = suspects.map((suspect) => {
     const username = suspect.username || 'unknown';
+    // Second line only exists for signed-in visitors: first_name is withheld
+    // from the public view, so it arrives empty when signed out and the line
+    // is dropped rather than left blank.
+    const firstName = (suspect.first_name || '').trim();
     const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || DEFAULT_MUGSHOT_URL;
-    const status = gameStatusForSuspect(suspect);
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
     return `
       <li class="suspect-card">
         <div class="suspect-avatar-frame">
-          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" aria-label="${escapeHtml(avatarLabel)}">
+          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
           </button>
-        </div>
-        <div class="suspect-placard">
-          <strong class="suspect-name">${escapeHtml(displayNameForSuspect(suspect))}</strong>
-          <span class="suspect-username">${escapeHtml(username)}</span>
-          <span class="suspect-status">${escapeHtml(status)}</span>
+          <!-- The name plate sits on the photo, the way a booking board does. -->
+          <div class="suspect-caption">
+            <strong class="suspect-team">${escapeHtml(username)}</strong>
+            ${firstName ? `<span class="suspect-first">${escapeHtml(firstName)}</span>` : ''}
+          </div>
         </div>
       </li>
     `;
   }).join('');
+
+  fitTeamNames(grid);
+  paintPlacardStripes(grid);
+}
+
+// ===== STRIPE COLOURS FROM THE MUGSHOT =====
+// Each placard's two-tone edge is sampled from that suspect's own photo, so
+// the lineup reads as a set of individual case files rather than 32 copies of
+// the same card. Falls back silently to the house colours: a placard with the
+// default stripe is not a bug worth reporting to the player.
+const STRIPE_SAMPLE_SIZE = 24;
+
+function paintPlacardStripes(grid){
+  for(const card of grid.querySelectorAll('.suspect-card')){
+    const img = card.querySelector('.suspect-avatar');
+    // The stripes are drawn on the mugshot frame itself now.
+    const placard = card.querySelector('.suspect-avatar-frame');
+    if(!img || !placard) continue;
+
+    // decode() resolves once the pixels are actually available, including for
+    // an image already in cache, where load may never fire again.
+    const ready = img.complete && img.naturalWidth
+      ? Promise.resolve()
+      : img.decode().catch(() => null);
+
+    ready.then(() => {
+      const colors = dominantPair(img);
+      if(!colors) return;
+      placard.style.setProperty('--stripe-a', colors[0]);
+      placard.style.setProperty('--stripe-b', colors[1]);
+    }).catch(() => {});
+  }
+}
+
+// Two colours: the most common one in the photo, then the most common one that
+// is far enough away from it to read as a separate band.
+function dominantPair(img){
+  let pixels;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = STRIPE_SAMPLE_SIZE;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, STRIPE_SAMPLE_SIZE, STRIPE_SAMPLE_SIZE);
+    pixels = ctx.getImageData(0, 0, STRIPE_SAMPLE_SIZE, STRIPE_SAMPLE_SIZE).data;
+  } catch(error) {
+    // A cross-origin image taints the canvas and getImageData throws. Mugshots
+    // are data: URLs so this should not happen, but the default stripe is a
+    // perfectly good answer if it does.
+    return null;
+  }
+
+  // Buckets of 32 per channel: fine enough to tell a shirt from a background,
+  // coarse enough that shading does not split one colour into twenty.
+  const buckets = new Map();
+  for(let i = 0; i < pixels.length; i += 4){
+    if(pixels[i + 3] < 128) continue;
+    const r = pixels[i] >> 5, g = pixels[i + 1] >> 5, b = pixels[i + 2] >> 5;
+    const key = (r << 10) | (g << 5) | b;
+    const entry = buckets.get(key) || { count: 0, r: 0, g: 0, b: 0 };
+    entry.count++;
+    entry.r += pixels[i];
+    entry.g += pixels[i + 1];
+    entry.b += pixels[i + 2];
+    buckets.set(key, entry);
+  }
+
+  const ranked = [...buckets.values()]
+    .map(e => ({ count: e.count, r: Math.round(e.r / e.count), g: Math.round(e.g / e.count), b: Math.round(e.b / e.count) }))
+    .sort((a, b) => b.count - a.count);
+
+  if(!ranked.length) return null;
+
+  const first = ranked[0];
+  // Far enough apart to be two bands rather than one thick one.
+  const MIN_DISTANCE = 60;
+  const second = ranked.find(c => colorDistance(c, first) > MIN_DISTANCE) || ranked[1] || first;
+
+  return [toCssRgb(first), toCssRgb(second)];
+}
+
+function colorDistance(a, b){
+  return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+}
+
+function toCssRgb(c){
+  return `rgb(${c.r}, ${c.g}, ${c.b})`;
+}
+
+// The team name holds one line whatever its length: it gives up type size
+// rather than wrapping or being clipped, so every placard keeps the same
+// three-line shape. Measured after the markup lands, since the available
+// width is not known until then.
+function fitTeamNames(grid){
+  const MAX_PX = 17;
+  const MIN_PX = 8;
+
+  for(const el of grid.querySelectorAll('.suspect-team')){
+    for(let size = MAX_PX; size >= MIN_PX; size -= 0.5){
+      el.style.fontSize = `${size}px`;
+      if(el.scrollWidth <= el.clientWidth) break;
+    }
+  }
 }
 
 async function fetchProfiles(showFirstNames){
@@ -188,13 +284,18 @@ async function fetchSuspectsFromBaseTables(showFirstNames){
 }
 
 async function fetchSuspectsFromView(showFirstNames){
-  const result = await suspectsDb
+  let result = await suspectsDb
     .from(SUSPECTS_VIEW)
     .select(viewSelect(showFirstNames))
     .order('username', { ascending: true });
 
-  if(result.error && showFirstNames && optionalColumnError(result.error, 'first_name')){
-    return await suspectsDb
+  // first_name is the only optional column in this select, and it can fail in
+  // more ways than "column missing": the view grants it per role, so a role
+  // without it gets 42501 "permission denied for view", which names no column
+  // at all. Retrying on any error rather than on a recognised one keeps the
+  // lineup loading instead of failing the whole page over a nice-to-have field.
+  if(result.error && showFirstNames){
+    result = await suspectsDb
       .from(SUSPECTS_VIEW)
       .select(viewSelect(false))
       .order('username', { ascending: true });
@@ -224,12 +325,23 @@ async function loadCurrentSuspects(){
   setSuspectsStatus('Loading lineup...', '');
 
   let { data, error } = await fetchSuspectsFromView(showFirstNames);
-  if(error && missingRelationError(error)){
+
+  // The view is a convenience, not the source of truth: ff_profiles holds the
+  // same rows. It used to fall back only when the view was missing, which left
+  // the page dead whenever the view existed but refused the query — a grant
+  // the current role lacks, a column that moved. Any failure now falls through
+  // to the table, and only a failure of both is reported.
+  if(error){
+    console.warn('Suspects view failed, falling back to ff_profiles:', error);
     ({ data, error } = await fetchSuspectsFromBaseTables(showFirstNames));
   }
 
   if(error){
-    setSuspectsStatus(`Lineup fetch failed: ${error.message}`, 'bad');
+    // Include the code: PostgREST messages like "Bad Request" say nothing on
+    // their own, and the code is what identifies the actual problem.
+    const code = error.code ? ` (${error.code})` : '';
+    setSuspectsStatus(`Lineup fetch failed: ${error.message}${code}`, 'bad');
+    console.error('Lineup fetch failed:', error);
     return;
   }
 

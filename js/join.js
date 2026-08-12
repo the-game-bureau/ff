@@ -6,6 +6,13 @@ const AVATAR_PROCESS_SIZE = 192;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MUGSHOT_UPLOAD_SIZE = 1024;
 const MUGSHOT_STORAGE_SIZE = 256;
+// Mugshots are photographs, which PNG stores badly — the same 256px image is
+// roughly 12x smaller as JPEG. Every stored mugshot is fetched again for each
+// player in the lineup, so the saving is per row, per visitor. Both mugshot
+// canvases paint an opaque white ground first, so there is no transparency for
+// JPEG to lose. 0.82 is the usual sweet spot before artefacts show on faces.
+const MUGSHOT_JPEG_TYPE = 'image/jpeg';
+const MUGSHOT_JPEG_QUALITY = 0.82;
 const MUGSHOT_AI_TIMEOUT_MS = 70000;
 const MUGSHOT_AI_ENABLED = false;
 const MUGSHOT_FUNCTION_URL = `${JOIN_SUPABASE_URL}/functions/v1/ff-mugshotify`;
@@ -29,6 +36,33 @@ function setJoinStatus(message, kind){
   statusEl.textContent = message;
   statusEl.classList.remove('join-status-good', 'join-status-bad');
   if(kind) statusEl.classList.add(`join-status-${kind}`);
+}
+
+// "Already booked" would claim they are in this league, which is not something
+// this error proves: the login may have been created on another site sharing
+// this Supabase project. Logging in is the right next step either way — the
+// join form fills in the league record afterwards for an account that has none.
+const EMAIL_TAKEN_MESSAGE =
+  'That email already has a login. Log in, then come back here to finish joining ' +
+  'the league. Reset your password if you have forgotten it.';
+
+// Report what actually happened. Only the already-registered case gets its own
+// wording, because that one is common and actionable; everything else passes
+// the real message through rather than hiding it behind "unexpected error".
+function bookingErrorMessage(error){
+  // Only a real message or a plain string; anything else stringifies to
+  // "[object Object]", which is no more use than "unexpected error".
+  const message = String(error?.message || (typeof error === 'string' ? error : '')).trim();
+  const lower = message.toLowerCase();
+
+  if(error?.code === 'user_already_exists' ||
+     lower.includes('already registered') ||
+     lower.includes('already been registered') ||
+     lower.includes('user already exists')){
+    return EMAIL_TAKEN_MESSAGE;
+  }
+
+  return message ? `Booking error: ${message}` : 'Booking error.';
 }
 
 function setAvatarStatus(message, kind){
@@ -147,13 +181,19 @@ async function createProfileForSession(user, profileDetails){
 async function updateSignedInUserMugshot(user, profileDetails){
   if(!user || !profileDetails.avatarDataUrl) return { error: null };
 
+  // Spreading the existing metadata would carry a previously stored mugshot
+  // straight back into the JWT, so the fields are listed explicitly and
+  // avatar_data_url is deliberately absent. See the note in the signUp call:
+  // anything in here ends up in the Authorization header of every request.
+  const existing = { ...(user.user_metadata || {}) };
+  delete existing.avatar_data_url;
+
   const { error: metadataError } = await joinDb.auth.updateUser({
     data: {
-      ...(user.user_metadata || {}),
+      ...existing,
       username: profileDetails.username,
       first_name: profileDetails.firstName,
-      last_name: profileDetails.lastName,
-      avatar_data_url: profileDetails.avatarDataUrl
+      last_name: profileDetails.lastName
     }
   });
 
@@ -197,7 +237,7 @@ async function finishProfileForSignedInUser(profileDetails){
     }
 
     const savedCopy = profileDetails.avatarDataUrl ? ' Mugshot saved.' : '';
-    setJoinStatus(`Already booked as ${profile.username}.${savedCopy} Taking you to Current Suspects.`, 'good');
+    setJoinStatus(`Already booked as ${profile.username}.${savedCopy} Taking you to Suspects.`, 'good');
     return 'redirect';
   }
 
@@ -214,7 +254,7 @@ async function finishProfileForSignedInUser(profileDetails){
     return 'handled';
   }
 
-  setJoinStatus('Booking complete. Taking you to Current Suspects.', 'good');
+  setJoinStatus('Booking complete. Taking you to Suspects.', 'good');
   return 'redirect';
 }
 
@@ -527,7 +567,7 @@ async function normalizeGeneratedMugshot(dataUrl){
 
   return {
     canvas,
-    dataUrl: canvas.toDataURL('image/png')
+    dataUrl: canvas.toDataURL(MUGSHOT_JPEG_TYPE, MUGSHOT_JPEG_QUALITY)
   };
 }
 
@@ -641,7 +681,7 @@ async function renderCartoonMugshot(file){
 
   return {
     canvas,
-    dataUrl: canvas.toDataURL('image/png')
+    dataUrl: canvas.toDataURL(MUGSHOT_JPEG_TYPE, MUGSHOT_JPEG_QUALITY)
   };
 }
 
@@ -681,7 +721,9 @@ async function prepareAvatarUpload(file){
   renderedAvatarFileKey = key;
   copyCanvasToPreview(rendered.canvas);
   setPreviewLightboxSource(rendered.dataUrl);
-  setAvatarStatus(renderedMode === 'ai' ? 'MUGSHOT READY.' : 'MUGSHOT READY. RAW PHOTO USED.', 'good');
+  // Same message either way: whether the AI pass ran or the photo went through
+  // as-is is our business, not the player's.
+  setAvatarStatus('MUGSHOT READY.', 'good');
   return rendered.dataUrl;
 }
 
@@ -777,22 +819,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const { data, error } = await joinDb.auth.join({
+      // signUp is the Supabase method name; it is not ours to rename.
+      const { data, error } = await joinDb.auth.signUp({
         email,
         password,
         options: {
+          // The mugshot must NOT go in here. Everything in `data` becomes
+          // user_metadata, which Supabase embeds in the JWT, which then rides
+          // in the Authorization header of every authenticated request. A
+          // 256px PNG data URL is around 234 KB — roughly 29x the ~8 KB header
+          // limit — so the gateway rejects every request with a bodyless 400
+          // "Bad Request" before PostgREST is ever reached, and the whole site
+          // breaks for that account the moment it signs in. The mugshot lives
+          // in ff_profiles.avatar_data_url, which is a column, not a header.
           data: {
             username,
             first_name: firstName,
-            last_name: lastName,
-            avatar_data_url: avatarDataUrl
+            last_name: lastName
           },
           emailRedirectTo: new URL('../suspects/index.html', window.location.href).href
         }
       });
 
       if(error){
-        setJoinStatus(`Booking error: ${error.message}`, 'bad');
+        // The raw error, verbatim: the friendly message below deliberately
+        // collapses several causes into one sentence, and when that sentence
+        // looks wrong this is the only way to see which cause actually fired.
+        console.error('signUp error (raw):', {
+          message: error.message,
+          code: error.code,
+          status: error.status,
+          name: error.name
+        });
+        setJoinStatus(bookingErrorMessage(error), 'bad');
+        return;
+      }
+
+      // With email confirmation switched on, Supabase will not admit that an
+      // address is taken — it returns a normal-looking user with an empty
+      // identities array and no error, so this is the only way to spot it.
+      //
+      // Only in that flow, though: the tell is a user with no session. This
+      // project currently has confirmations off, where a real signup comes back
+      // with a session attached, and treating an empty identities array as
+      // "taken" there would reject brand new accounts.
+      if(data?.user && !data?.session &&
+         Array.isArray(data.user.identities) && data.user.identities.length === 0){
+        setJoinStatus(EMAIL_TAKEN_MESSAGE, 'bad');
         return;
       }
 
@@ -808,18 +881,20 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        setJoinStatus('Booking complete. Taking you to Current Suspects.', 'good');
+        setJoinStatus('Booking complete. Taking you to Suspects.', 'good');
         resetJoinForm(form);
         redirectToSuspects();
         return;
       }
 
-      setJoinStatus('Booking filed. Check your email, then report to Current Suspects.', 'good');
+      setJoinStatus('Booking filed. Check your email, then report to Suspects.', 'good');
       resetJoinForm(form);
       redirectToSuspects(1200);
     } catch(error) {
       console.error('Join error:', error);
-      setJoinStatus('An unexpected booking error occurred.', 'bad');
+      // Say what actually went wrong. A blanket "unexpected error" hid a real
+      // bug here for as long as it was the message.
+      setJoinStatus(bookingErrorMessage(error), 'bad');
     } finally {
       submitButton.disabled = false;
     }
