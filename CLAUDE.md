@@ -28,7 +28,7 @@ The mapping in use:
 | The team you pick to lose | **VICTIM** — the one you expect to go down |
 | The players in the pool | **SUSPECTS** — they are booked, mugshotted, and put in a lineup |
 | Submitting a pick | "Name Your Victim" |
-| The team grid | **Victim Registry** page |
+| The team grid | **Victims** page |
 | The player grid | **Suspects** page |
 | Signing out | **ESCAPE** |
 | The rules | 🏛️ **The Law** |
@@ -106,7 +106,7 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 
 - [index.html](index.html) — **the Precinct**, the home page. Now little more than
   the QR code and the share strip; the game itself lives on the other pages.
-- [victims.html](victims.html) — the Victim Registry: all 32 teams, and where a
+- [victims.html](victims.html) — the Victims page: all 32 teams, and where a
   pick is made. Takes `?week=N`.
 - [suspects/index.html](suspects/index.html) — the players, as mugshot cards.
 - [law.html](law.html) — the rules.

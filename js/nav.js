@@ -18,8 +18,11 @@ const NAV_ITEMS = [
   { label: 'Suspects',   key: 'suspects', href: 'suspects/index.html', sublabel: 'FF Players' },
   // Sublabel instead of a title: the gloss shows without needing a hover.
   { label: 'The Law',    key: 'law',     href: 'law.html', sublabel: 'Rules' },
+  // New tab: the archive is a different season with its own gate, and leaving
+  // it in place means you come back to the live site rather than back through
+  // it. external drives target="_blank" in the renderer below.
   { label: 'Cold Cases', key: 'archive', href: '2025/index.html',
-    sublabel: 'League Archive' }];
+    sublabel: 'League Archive', external: true }];
 
 function renderSiteNav(){
   const mount = document.getElementById('siteNav');

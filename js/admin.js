@@ -30,6 +30,14 @@
     els.diffBody = document.getElementById('adminDiffBody');
     els.prompt = document.getElementById('reconcilePrompt');
 
+    els.recordsPanel = document.getElementById('adminRecordsPanel');
+    els.recordsStatus = document.getElementById('adminRecordsStatus');
+    els.recordsBody = document.getElementById('adminRecordsBody');
+    els.refreshRecords = document.getElementById('btnRefreshRecords');
+    els.archivePanel = document.getElementById('adminArchivePanel');
+    els.archiveStatus = document.getElementById('adminArchiveStatus');
+    els.archiveBody = document.getElementById('adminArchiveBody');
+
     els.usersPanel = document.getElementById('adminUsersPanel');
     els.usersStatus = document.getElementById('adminUsersStatus');
     els.usersBody = document.getElementById('adminUsersBody');
@@ -44,6 +52,26 @@
     els.reconcile?.addEventListener('click', reconcileSchedule);
     els.copyPrompt?.addEventListener('click', copyReconcilePrompt);
     els.refreshUsers?.addEventListener('click', loadUsers);
+    els.refreshRecords?.addEventListener('click', loadRecords);
+
+    // Delegated for the same reason as the roster below: rows are rebuilt on
+    // every load, and each row carries three controls.
+    els.recordsBody?.addEventListener('click', (event) => {
+      const save = event.target.closest('[data-save-record]');
+      if (save) { saveRecord(save.dataset.saveRecord); return; }
+
+      const mugshot = event.target.closest('[data-record-mugshot]');
+      if (mugshot) pickRecordMugshot(mugshot.dataset.recordMugshot);
+    });
+
+    // Enter saves the row you are in, so a one-field fix does not need a mouse.
+    els.recordsBody?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      const field = event.target.closest('[data-record-field]');
+      if (!field) return;
+      event.preventDefault();
+      saveRecord(field.closest('tr')?.dataset.recordId);
+    });
 
     // Delegated: the rows are rebuilt on every load.
     els.usersBody?.addEventListener('click', (event) => {
@@ -113,9 +141,328 @@
 
     els.tools.hidden = false;
     if (els.usersPanel) els.usersPanel.hidden = false;
+    if (els.recordsPanel) els.recordsPanel.hidden = false;
+    if (els.archivePanel) els.archivePanel.hidden = false;
     setAdminStatus('Admin access granted. Schedule audit tools are ready.', 'good');
     await ensurePrompt();
     await loadUsers();
+    await loadRecords();
+    await loadArchivePlayers();
+  }
+
+  // ===== SUSPECT RECORDS =====
+  // Every field on a member's profile except the password, which is a hash and
+  // is nobody's business but its owner's. Reads and writes both go through
+  // SECURITY DEFINER functions: supabase/sql/ff_own_mugshot_only.sql leaves the
+  // browser role able to update one column of its own row and nothing else, so
+  // an admin edit cannot go through the table at all.
+  // See supabase/sql/ff_admin_edit_profiles.sql.
+  const RECORD_FIELDS = ['username', 'first_name', 'last_name', 'email'];
+  const MUGSHOT_SIZE = 256;
+  const MAX_MUGSHOT_BYTES = 5 * 1024 * 1024;
+
+  // What the server last told us each row holds, so a save can send only what
+  // actually changed. Sending everything would rewrite fields nobody touched
+  // and turn one careless keystroke into a whole-record edit.
+  let recordSnapshot = new Map();
+  let recordPicker = null;
+  let pendingMugshotId = '';
+
+  async function loadRecords() {
+    if (!adminDb || !els.recordsBody) return;
+
+    setRecordsStatus('Loading records.', 'note');
+
+    const { data, error } = await adminDb.rpc('ff_admin_list_profiles');
+
+    if (error) {
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      setRecordsStatus(
+        missing
+          ? 'Records unavailable: run supabase/sql/ff_admin_edit_profiles.sql in the SQL editor first.'
+          : `Records failed: ${error.message}${error.code ? ` (${error.code})` : ''}`,
+        'bad'
+      );
+      console.error('ff_admin_list_profiles failed:', error);
+      renderRecords([]);
+      return;
+    }
+
+    renderRecords(data || []);
+    setRecordsStatus(`${(data || []).length} record${(data || []).length === 1 ? '' : 's'} on file.`, 'good');
+  }
+
+  function renderRecords(rows) {
+    if (!els.recordsBody) return;
+
+    recordSnapshot = new Map();
+
+    if (!rows.length) {
+      els.recordsBody.innerHTML = '<tr><td colspan="8" class="table-empty">No records.</td></tr>';
+      return;
+    }
+
+    els.recordsBody.innerHTML = rows.map((row) => {
+      recordSnapshot.set(row.id, {
+        username: row.username || '',
+        first_name: row.first_name || '',
+        last_name: row.last_name || '',
+        // The profile copy is what the site reads; login_email is shown only
+        // when the two have drifted apart, because that is a fault worth
+        // seeing rather than hiding behind one tidy value.
+        email: row.email || row.login_email || '',
+        avatar_data_url: row.avatar_data_url || ''
+      });
+
+      const drifted = row.email && row.login_email &&
+        row.email.toLowerCase() !== row.login_email.toLowerCase();
+      const joined = row.created_at ? String(row.created_at).slice(0, 10) : '';
+      const mugshot = safeMugshot(row.avatar_data_url);
+
+      return `
+        <tr data-record-id="${escapeAdminHtml(row.id)}">
+          <td>
+            <button class="admin-mugshot" type="button"
+                    data-record-mugshot="${escapeAdminHtml(row.id)}"
+                    title="Replace mugshot">
+              ${mugshot
+                ? `<img src="${escapeAdminHtml(mugshot)}" alt="" width="44" height="44"/>`
+                : '<span class="admin-mugshot-empty">NONE</span>'}
+            </button>
+          </td>
+          ${RECORD_FIELDS.map((field) => `
+          <td><input class="admin-cell-input" type="${field === 'email' ? 'email' : 'text'}"
+                     data-record-field="${field}"
+                     value="${escapeAdminHtml(recordSnapshot.get(row.id)[field])}"
+                     aria-label="${field.replace('_', ' ')} for ${escapeAdminHtml(row.username || 'member')}"/></td>`).join('')}
+          <td>${Number(row.pick_count || 0)}</td>
+          <td>${escapeAdminHtml(joined)}</td>
+          <td>
+            <button class="btn btn-secondary btn-mini" type="button"
+                    data-save-record="${escapeAdminHtml(row.id)}">Save</button>
+            ${drifted ? `<span class="admin-cell-note" title="Login email is ${escapeAdminHtml(row.login_email)}">LOGIN DIFFERS</span>` : ''}
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function safeMugshot(value) {
+    const src = String(value || '');
+    return /^data:image\/(?:png|jpeg|webp);base64,/i.test(src) ? src : '';
+  }
+
+  function recordRow(userId) {
+    return els.recordsBody?.querySelector(`tr[data-record-id="${userId}"]`) || null;
+  }
+
+  // Only the fields that differ from what was loaded. null means "leave alone"
+  // to the function, so an untouched field is never rewritten.
+  function changedFields(userId) {
+    const row = recordRow(userId);
+    const before = recordSnapshot.get(userId);
+    if (!row || !before) return null;
+
+    const changes = {};
+    let count = 0;
+
+    for (const field of RECORD_FIELDS) {
+      const input = row.querySelector(`[data-record-field="${field}"]`);
+      if (!input) continue;
+      const value = input.value.trim();
+      if (value === String(before[field] || '').trim()) continue;
+      changes[field] = value;
+      count++;
+    }
+
+    return count ? changes : null;
+  }
+
+  async function saveRecord(userId, extra = {}) {
+    if (!adminDb || !userId) return;
+
+    const changes = changedFields(userId) || {};
+    Object.assign(changes, extra);
+
+    if (!Object.keys(changes).length) {
+      setRecordsStatus('Nothing changed on that record.', 'note');
+      return;
+    }
+
+    setRecordsStatus('Saving record.', 'note');
+
+    const { data, error } = await adminDb.rpc('ff_admin_update_profile', {
+      target_user_id: userId,
+      new_username: changes.username ?? null,
+      new_first_name: changes.first_name ?? null,
+      new_last_name: changes.last_name ?? null,
+      new_email: changes.email ?? null,
+      new_avatar_data_url: changes.avatar_data_url ?? null
+    });
+
+    if (error) {
+      setRecordsStatus(`Save failed: ${error.message}${error.code ? ` (${error.code})` : ''}`, 'bad');
+      console.error('ff_admin_update_profile failed:', error);
+      return;
+    }
+
+    // Reload rather than patch the row in place: the function normalises what
+    // it stores (trims, lowercases the email), and the table should show what
+    // is actually on file, not what was typed.
+    setRecordsStatus(`Saved ${data?.username || 'record'}.`, 'good');
+    await loadRecords();
+    await loadUsers();
+  }
+
+  function pickRecordMugshot(userId) {
+    if (!userId) return;
+    pendingMugshotId = userId;
+
+    if (!recordPicker) {
+      recordPicker = document.createElement('input');
+      recordPicker.type = 'file';
+      recordPicker.accept = 'image/*';
+      recordPicker.style.display = 'none';
+      recordPicker.addEventListener('change', async () => {
+        const file = recordPicker.files?.[0];
+        recordPicker.value = '';
+        if (!file || !pendingMugshotId) return;
+
+        try {
+          if (!file.type || !file.type.startsWith('image/')) {
+            throw new Error('Mugshot must be an image file.');
+          }
+          if (file.size > MAX_MUGSHOT_BYTES) {
+            throw new Error('Mugshot image must be 5 MB or smaller.');
+          }
+          const dataUrl = await fileToMugshotDataUrl(file);
+          await saveRecord(pendingMugshotId, { avatar_data_url: dataUrl });
+        } catch (error) {
+          setRecordsStatus(error?.message || 'Mugshot could not be read.', 'bad');
+        }
+      });
+      document.body.appendChild(recordPicker);
+    }
+
+    recordPicker.click();
+  }
+
+  // Same 256px square-on-white the players' own retake produces, so an admin
+  // replacement is indistinguishable from one they took themselves.
+  function fileToMugshotDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const image = new Image();
+
+      image.onload = () => {
+        URL.revokeObjectURL(url);
+
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        const crop = Math.min(width, height);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = MUGSHOT_SIZE;
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, MUGSHOT_SIZE, MUGSHOT_SIZE);
+        ctx.drawImage(
+          image,
+          Math.floor((width - crop) / 2),
+          Math.floor((height - crop) / 2),
+          crop, crop, 0, 0, MUGSHOT_SIZE, MUGSHOT_SIZE
+        );
+
+        resolve(canvas.toDataURL('image/jpeg', 0.88));
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Mugshot image could not be read.'));
+      };
+
+      image.src = url;
+    });
+  }
+
+  function setRecordsStatus(message, kind) {
+    if (!els.recordsStatus) return;
+    els.recordsStatus.textContent = message;
+    els.recordsStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
+    if (kind) els.recordsStatus.classList.add(`join-status-${kind}`);
+  }
+
+  // ===== 2025 COLD CASES =====
+  // The frozen archive, not the database: the 2025 Supabase project is gone.
+  // Read-only by nature — there is nothing behind these names to edit.
+  async function loadArchivePlayers() {
+    if (!els.archiveBody) return;
+
+    setArchiveStatus('Loading 2025 roster.', 'note');
+
+    try {
+      const [profilesResponse, picksResponse] = await Promise.all([
+        fetch('../2025/data/profiles.json'),
+        fetch('../2025/data/picks.json')
+      ]);
+
+      if (!profilesResponse.ok) throw new Error(`profiles.json ${profilesResponse.status}`);
+
+      const profiles = await profilesResponse.json();
+      // Pick counts are a nicety; a failure here should not cost the roster.
+      const picks = picksResponse.ok ? await picksResponse.json() : [];
+
+      const counts = new Map();
+      for (const pick of picks) {
+        const name = pick.username || '';
+        counts.set(name, (counts.get(name) || 0) + 1);
+      }
+
+      renderArchivePlayers(profiles, counts);
+      setArchiveStatus(`${profiles.length} player${profiles.length === 1 ? '' : 's'} in the 2025 season.`, 'good');
+    } catch (error) {
+      // Opening the page off disk rather than over http is the usual cause,
+      // same as it is for the archive page itself.
+      setArchiveStatus(`2025 roster unavailable: ${error.message}. Serve the site over http.`, 'bad');
+      els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">Not loaded.</td></tr>';
+    }
+  }
+
+  function renderArchivePlayers(profiles, counts) {
+    if (!profiles.length) {
+      els.archiveBody.innerHTML = '<tr><td colspan="6" class="table-empty">No 2025 players.</td></tr>';
+      return;
+    }
+
+    els.archiveBody.innerHTML = [...profiles]
+      .sort((a, b) => String(a.username || '').localeCompare(String(b.username || '')))
+      .map((player, index) => {
+        const joined = player.created_at ? String(player.created_at).slice(0, 10) : '';
+        // The committed profiles.json predates these two fields. Rather than
+        // print empty cells that look like missing people, say which build the
+        // file came from — rerun build-archive-json.mjs and they fill in.
+        const name = player.name || '<span class="admin-cell-note">NOT IN EXPORT</span>';
+        const email = player.email || '<span class="admin-cell-note">NOT IN EXPORT</span>';
+
+        return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeAdminHtml(player.username || '')}</td>
+          <td>${player.name ? escapeAdminHtml(name) : name}</td>
+          <td>${player.email ? escapeAdminHtml(email) : email}</td>
+          <td>${counts.get(player.username) || 0}</td>
+          <td>${escapeAdminHtml(joined)}</td>
+        </tr>`;
+      }).join('');
+  }
+
+  function setArchiveStatus(message, kind) {
+    if (!els.archiveStatus) return;
+    els.archiveStatus.textContent = message;
+    els.archiveStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
+    if (kind) els.archiveStatus.classList.add(`join-status-${kind}`);
   }
 
   // ===== ROSTER =====
@@ -223,7 +570,13 @@
     });
 
     if (error) {
-      els.deleteError.textContent = `${error.message}${error.code ? ` (${error.code})` : ''}`;
+      // Same treatment as the roster load: a missing function means the SQL has
+      // not been run on this project, and saying so beats a PostgREST code.
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      els.deleteError.textContent = missing
+        ? 'Removal unavailable: run supabase/sql/ff_admin_delete_user.sql in the SQL editor, then reload.'
+        : `${error.message}${error.code ? ` (${error.code})` : ''}`;
       console.error('ff_admin_remove_member failed:', error);
       syncDeleteButton();
       return;

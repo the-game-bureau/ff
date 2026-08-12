@@ -102,7 +102,7 @@ function renderVictimIntro(){
     `Your ${week} victim: <strong>${escapeHtml(activePick.team)}</strong>. ${change}`;
 }
 
-// The "View Full Schedule" link follows the week in the dropdown.
+// The "View Full NFL Schedule" link follows the week in the dropdown.
 function renderScheduleLink(){
   const link = document.getElementById('weekScheduleLink');
   if(!link) return;
@@ -404,21 +404,37 @@ function cardStatus(teamName, info){
   const usedPick = usedInOtherWeek(teamName);
 
   if(activePick?.team === teamName) return 'Your Current Selection';
-  // Named further down the schedule. Still selectable: taking it here releases
-  // the later week. Reads as Future Selection even when that week has already
-  // kicked off and the swap is off the table, because that is what it is — the
-  // card just goes disabled with it.
-  if(usedPick && Number(usedPick.week) > Number(viewWeek())) return 'Future Selection';
   // Burned in an earlier week: one team per season, so it is off the board.
   // isCardDisabled() covers this too, so the card is unclickable as well.
-  if(usedPick) return 'Previous Selection';
-  // An unfilled earlier week closes the whole board, so this outranks the
-  // per-team reasons below: the gap is why you cannot pick, not the schedule.
+  if(usedPick && Number(usedPick.week) < Number(viewWeek())) return 'Previous Selection';
+
+  // Everything that closes this card comes before Future Selection, because the
+  // badge has to name the reason you cannot click. A team parked in Week 12 and
+  // on a bye in Week 8 is not takeable in Week 8, and reading "Future Selection"
+  // on a dead card just looks broken. The tooltip still says where it is parked.
+  //
+  // An unfilled earlier week closes the whole board, so it outranks the
+  // per-team reasons: the gap is why you cannot pick, not the schedule.
   const missingWeek = firstMissingWeekBefore();
   if(missingWeek) return `Week ${missingWeek} First`;
   if(info.isBye) return 'Not Playing';
   if(info.locked) return 'Past Kickoff';
+
+  // Named further down the schedule, and this week is otherwise open — so it
+  // really is takeable, and taking it releases the later week.
+  if(usedPick) return 'Future Selection';
   return 'Available';
+}
+
+// Which week the badge is talking about. "Previous Selection" and "Future
+// Selection" both mean "you already named this team somewhere else" without
+// ever saying where, and the tooltip that does say only exists on a mouse. So
+// the badge alternates: the label fades out, "Week N" fades in, and back. The
+// swap is pure CSS (see .victim-status-face) — this only supplies the number.
+function cardStatusWeek(status, teamName){
+  if(status !== 'Previous Selection' && status !== 'Future Selection') return '';
+  const usedPick = usedInOtherWeek(teamName);
+  return usedPick ? `Week ${usedPick.week}` : '';
 }
 
 // The badge has room for two words, and "Future Selection" does not say which
@@ -458,8 +474,17 @@ function renderVictims(){
     const disabled = isCardDisabled(team.name, info);
     const isActivePick = activePick?.team === team.name;
     const status = cardStatus(team.name, info);
+    const statusWeek = cardStatusWeek(status, team.name);
     const hint = cardHint(team.name);
-    const ariaLabel = `${team.name}, ${matchupText(info)}, ${status}${hint ? `. ${hint}` : ''}`;
+    const ariaLabel = `${team.name}, ${matchupText(info)}, ${status}${statusWeek ? `, ${statusWeek}` : ''}${hint ? `. ${hint}` : ''}`;
+
+    // Both faces are in the flow of one grid cell, stacked, so the badge sizes
+    // to the wider of the two and nothing shifts as they cross-fade. The card's
+    // aria-label already carries both, so neither face is read out.
+    const statusFaces = statusWeek
+      ? `<span class="victim-status-face" aria-hidden="true">${escapeHtml(status)}</span>
+         <span class="victim-status-face victim-status-face-alt" aria-hidden="true">${escapeHtml(statusWeek)}</span>`
+      : escapeHtml(status);
 
     return `
     <li class="victim-card${disabled ? ' disabled' : ''}${isActivePick ? ' current-pick' : ''}"
@@ -479,7 +504,7 @@ function renderVictims(){
         <span class="victim-nickname">${escapeHtml(nickname)}</span>
         <span class="victim-matchup-line" title="${escapeHtml(info.line || matchupText(info))}">${escapeHtml(matchupText(info))}</span>
       </div>
-      <div class="victim-status${statusModifier(status)}">${escapeHtml(status)}</div>
+      <div class="victim-status${statusModifier(status)}${statusWeek ? ' victim-status-swap' : ''}">${statusFaces}</div>
     </li>
   `;
   }).join('');

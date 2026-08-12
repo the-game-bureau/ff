@@ -30,6 +30,16 @@ function setSuspectsTitle(count){
   el.textContent = `${count} Suspect${count === 1 ? '' : 's'}`;
 }
 
+// The header line is the officer working the lineup, calling the next man up:
+// one past the number of suspects on the wall. So a 12-suspect lineup is called
+// as "Number 13", and it moves on its own as the league fills.
+function setLineupCall(count){
+  const el = document.getElementById('lineupCall');
+  if(!el) return;
+
+  el.textContent = `"Number ${Number(count || 0) + 1} step forward and turn to your right."`;
+}
+
 function escapeHtml(value){
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -92,6 +102,10 @@ function addCurrentUserProfileData(suspect, user, showFirstNames){
 
   return {
     ...suspect,
+    // The one card whose photo the viewer is allowed to replace. Everything
+    // downstream keys off this flag, so there is a single place that decides
+    // whose card is theirs. js/mugshot-edit.js does the replacing.
+    is_self: true,
     first_name: showFirstNames ? suspect.first_name || metadata.firstName : '',
     display_name: showFirstNames && (suspect.first_name || metadata.firstName) ?
       (suspect.first_name || metadata.firstName) :
@@ -128,8 +142,16 @@ function renderSuspects(suspects){
     const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || DEFAULT_MUGSHOT_URL;
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
+    // Only your own card carries the control. It is not rendered-and-hidden on
+    // the others: there is nothing to hide, because there is nothing anyone
+    // else is allowed to do here.
+    const selfEdit = suspect.is_self
+      ? `<button class="suspect-mugshot-edit" type="button" data-mugshot-edit
+                 aria-label="Replace your mugshot">Retake Mugshot</button>`
+      : '';
+
     return `
-      <li class="suspect-card">
+      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}">
         <div class="suspect-avatar-frame">
           <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
@@ -140,6 +162,7 @@ function renderSuspects(suspects){
             ${firstName ? `<span class="suspect-first">${escapeHtml(firstName)}</span>` : ''}
           </div>
         </div>
+        ${selfEdit}
       </li>
     `;
   }).join('');
@@ -349,6 +372,7 @@ async function loadCurrentSuspects(){
   // The count lives in the heading now, so the status line has nothing left to
   // say on success and clears itself. It still carries loading and errors.
   setSuspectsTitle(suspects.length);
+  setLineupCall(suspects.length);
   setSuspectsStatus('', '');
   renderSuspects(suspects);
 }

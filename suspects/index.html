@@ -28,7 +28,10 @@
     <div class="svu-subtitle">Suspects</div>
     <div id="weekBadge" class="week-badge" aria-live="polite"></div>
     <h1>Law &amp; Order: Special Victory Unit</h1>
-    <p class="tagline">"Step forward. Face the glass. Try not to blink."</p>
+    <!-- The number is the next one in the lineup — one past however many
+         suspects are booked — and is filled in by js/suspects.js once the
+         count is known. The fallback text stands in until then. -->
+    <p class="tagline" id="lineupCall">"Step forward and turn to your right."</p>
   </header>
 
   <div id="siteNav" data-current="suspects" data-prefix="../"></div>
@@ -54,7 +57,7 @@
 
   <footer class="footer" role="contentinfo">
     <p class="credit-role">Executive Producer</p>
-    <p class="credit-name">Dick Wolf</p>
+    <p class="credit-name">Kevin Kolb</p>
   </footer>
 
   <script src="../js/nfl-schedule.js"></script>
@@ -64,6 +67,7 @@
   <script src="../js/auth-corner.js"></script>
   <script src="../js/mugshot-lightbox.js"></script>
   <script src="../js/suspects.js"></script>
+  <script src="../js/mugshot-edit.js"></script>
   <script src="../js/password-reset.js"></script>
   <script src="../js/join-prefill.js"></script>
   <script src="../js/welcome.js"></script>

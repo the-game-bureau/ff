@@ -141,19 +141,31 @@ body{
   text-shadow: 5px 5px 0 var(--primary-red);
 }
 
+/* The subtitle is the SVU line under the logo, and every page fills it with its
+   own name: Special Victory Unit, Victims, Suspects, Case File. It is
+   the show's title card wherever it appears, so it wears the 2025 season's
+   treatment on all of them — white type with a gold neon bloom, no plaque.
+   Copied from 2025/index.html, glow and all: this line is deliberately the one
+   place the no-glow house rule is set aside, because the header is quoting a
+   title sequence rather than presenting a control. */
 .svu-subtitle{
   display: inline-block;
   font-family: var(--font-display);
-  font-size: clamp(0.9rem, 3.4vw, 1.2rem);
+  /* 2025 stepped this up 1.2 / 1.4 / 1.6 / 1.8rem across its breakpoints; the
+     clamp covers the same span without four more media queries. */
+  font-size: clamp(1.2rem, 3.6vw, 1.8rem);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--ink);
-  background: var(--accent-yellow);
-  border: var(--rule);
-  box-shadow: var(--shadow-sm);
-  padding: 6px 16px;
+  letter-spacing: 0.1em;
+  color: #FFFFFF;
   margin-bottom: 16px;
+  text-shadow:
+    0 0 3px #FFFFFF,
+    0 0 8px #FFD700,
+    0 0 15px #FFD700,
+    0 0 25px #FFA500,
+    0 0 35px #FF8C00,
+    2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .header h1{ display: none; }
@@ -508,6 +520,14 @@ body{
   color: var(--paper-raised);
 }
 
+/* Escape / Login-Join, appended to the list by js/auth-corner.js. They belong to
+   the phone menu only: at desktop widths the same controls sit in the header
+   corner, so these stay out of the button bar entirely.
+   Selector carries the list on purpose. A bare .nav-auth-item is one class and
+   loses to .main-nav-list li above, which is a class plus a type, so the rows
+   showed up in the desktop row anyway. */
+.main-nav-list .nav-auth-item{ display: none; }
+
 /* ===== NAV TOGGLE (phone only) =====
    Hidden above 767px, where the whole row fits. Built like every other control
    in here: hard rule, zero-blur offset shadow, and it presses into the page. */
@@ -602,6 +622,32 @@ body{
 .game-over{ border-top: 10px solid var(--ink); }
 
 .used-teams{ background: var(--bg-secondary); }
+
+/* The Law, as a charge sheet: one clause per line, each behind a hard black
+   tick. No disc bullets anywhere in this theme. */
+.law-list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.law-list li{
+  position: relative;
+  padding-left: 26px;
+  line-height: 1.5;
+}
+
+.law-list li::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 14px;
+  height: 4px;
+  background: var(--ink);
+}
 
 .game-info h2,
 .team-selection h2,
@@ -1077,6 +1123,79 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .admin-table-wrap table{ min-width: 860px; }
 
+/* ===== SUSPECT RECORDS =====
+   An editable table, so the cells have to read as fields without turning each
+   row into a stack of boxes. Flat inputs with a single hairline underneath: the
+   frame arrives on focus, when it means something. */
+#adminRecordsTable{ min-width: 900px; }
+
+.admin-cell-input{
+  width: 100%;
+  min-width: 96px;
+  padding: 5px 6px;
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.18);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.admin-cell-input:focus{
+  outline: none;
+  background: var(--accent-yellow);
+  border-bottom-color: var(--ink);
+}
+
+/* The mugshot is a control too: click it to replace the photo. */
+.admin-mugshot{
+  display: block;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+
+.admin-mugshot img{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-mugshot:hover,
+.admin-mugshot:focus-visible{
+  outline: none;
+  background: var(--accent-yellow);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.admin-mugshot-empty{
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+}
+
+/* Only appears when the profile email and the login email have drifted apart,
+   which is a fault to notice rather than a state to live with. */
+.admin-cell-note{
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--error);
+}
+
 .admin-prompt-label{
   display: block;
   font-family: var(--font-display);
@@ -1505,7 +1624,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   outline: none;
 }
 
-/* ===== VICTIM REGISTRY ===== */
+/* ===== VICTIMS ===== */
 .victim-grid{
   list-style: none;
   /* Sits below the intro copy in the same card. */
@@ -1683,6 +1802,38 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding: 2px 8px;
 }
 
+/* A badge saying "Previous Selection" never says which week, and the tooltip
+   that does only exists on a mouse. So the two selection badges carry both and
+   cross-fade between them. The faces share one grid cell, so the badge is as
+   wide as the longer of the two and holds still while they swap. */
+.victim-status-swap{
+  display: inline-grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.victim-status-face{
+  grid-area: 1 / 1;
+  animation: victim-status-swap 7s linear infinite;
+}
+
+/* Half a cycle out of phase, so one is always up. */
+.victim-status-face-alt{ animation-delay: -3.5s; }
+
+/* Long holds, short fades: this is a label to read, not an effect to watch. */
+@keyframes victim-status-swap{
+  0%, 43%  { opacity: 1; }
+  50%, 93% { opacity: 0; }
+  100%     { opacity: 1; }
+}
+
+/* Nothing blinking for anyone who has asked motion to stop. The label wins and
+   the week is left to the tooltip and the screen-reader label. */
+@media (prefers-reduced-motion: reduce){
+  .victim-status-face{ animation: none; }
+  .victim-status-face-alt{ display: none; }
+}
+
 /* ===== PICK TICKER ===== */
 /* Inline section on the home page. The heading and the week stepper share a
    row and wrap onto two lines when there isn't space. */
@@ -1781,43 +1932,65 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .suspects-status-good{ color: var(--success); }
 .suspects-status-bad{ color: var(--error); }
 
+/* The wall behind the lineup is a height chart, so it is drawn like one: a
+   ruled foot line every --foot, a lighter half-foot tick between each pair, and
+   faint vertical joints where the panels meet. One grid, one spacing, drawn
+   once — the old wall laid a second grid at a different pitch over the bottom
+   third, and the two crossing rhythms were what made it read as noise.
+   --chart-top is where the 7 FT line sits; the measure column hangs its labels
+   off the same two numbers, so the type lands on the lines instead of near
+   them. */
 .lineup-room{
+  --foot: 58px;
+  --chart-top: 38px;
+  --floor: 78px;
   position: relative;
   overflow: hidden;
   min-height: 420px;
   border: var(--rule-fat);
-  background-color: #D9D6CC;
+  background-color: #E7E3D8;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.18) 3px, transparent 3px),
-    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(0, 0, 0, 0.12) calc(100% - 1px)),
-    linear-gradient(#EEEAE0 0 65%, #C8C3B7 65% 100%);
-  background-size: 100% 58px, 48px 100%, 100% 100%;
-  padding: 78px 20px 28px 74px;
+    linear-gradient(rgba(0, 0, 0, 0.20) 2px, transparent 2px),
+    linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, #F3EFE5 0%, #E7E3D8 62%, #DAD5C8 100%);
+  background-size:
+    100% var(--foot),
+    100% calc(var(--foot) / 2),
+    calc(var(--foot) * 1.5) 100%,
+    100% 100%;
+  background-position:
+    0 var(--chart-top),
+    0 var(--chart-top),
+    0 0,
+    0 0;
+  background-repeat: repeat, repeat, repeat, no-repeat;
+  padding: 78px 20px 30px 74px;
 }
 
+/* The floor. A single hard line where it meets the wall, in the flat style the
+   rest of the site uses, so the suspects are standing on something instead of
+   floating in the middle of a grid. */
 .lineup-room::after{
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 30%;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.16) 3px, transparent 3px),
-    linear-gradient(rgba(0, 0, 0, 0.13) 3px, transparent 3px);
-  background-size: 64px 100%, 100% 34px;
+  height: var(--floor);
+  background: #CFC9BA;
+  border-top: 3px solid rgba(0, 0, 0, 0.42);
   pointer-events: none;
 }
 
 .lineup-measure{
   position: absolute;
-  top: 38px;
+  top: var(--chart-top);
   left: 12px;
-  bottom: 124px;
+  /* Three feet of chart: 7 down to 4. Fixed rather than stretched to the room,
+     because the lines it labels are a fixed distance apart. */
+  height: calc(var(--foot) * 3);
   width: 46px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -1825,6 +1998,20 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   text-align: right;
   opacity: 0.76;
 }
+
+/* Each label straddles its own foot line rather than sitting in the gap. */
+.lineup-measure span{
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  padding-right: 2px;
+  background: transparent;
+}
+
+.lineup-measure span:nth-child(1){ top: 0; }
+.lineup-measure span:nth-child(2){ top: var(--foot); }
+.lineup-measure span:nth-child(3){ top: calc(var(--foot) * 2); }
+.lineup-measure span:nth-child(4){ top: calc(var(--foot) * 3); }
 
 .suspect-grid{
   position: relative;
@@ -1844,13 +2031,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   align-content: end;
   gap: 12px;
   min-width: 0;
+  /* One width for the whole card: the photo sets it, and anything sitting
+     under the photo (the retake button) lines up with its edges. */
+  --mugshot-width: min(152px, 100%);
 }
 
 /* The whole card is the mugshot now: photo, two-tone edge sampled from that
    photo, and the name plate laid over the bottom of it. */
 .suspect-avatar-frame{
   position: relative;
-  width: min(152px, 100%);
+  width: var(--mugshot-width);
   aspect-ratio: 1;
   display: grid;
   place-items: stretch;
@@ -1910,6 +2100,34 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-top: var(--rule);
   text-align: center;
   pointer-events: none;
+}
+
+/* Under your own card only, so the lineup reads the same for everyone else.
+   Deliberately small and quiet: it is a housekeeping control sitting in a grid
+   of photographs, not a call to action. */
+.suspect-mugshot-edit{
+  width: var(--mugshot-width);
+  padding: 5px 8px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.08s linear, box-shadow 0.08s linear,
+              background 0.08s linear;
+}
+
+.suspect-mugshot-edit:hover,
+.suspect-mugshot-edit:focus-visible{
+  background: var(--accent-yellow);
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--ink);
+  outline: none;
 }
 
 /* ===== MUGSHOT LIGHTBOX ===== */
@@ -2102,6 +2320,12 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     margin-bottom: 16px;
   }
 
+  /* Unless the same two controls made it into the hamburger, in which case the
+     corner is just a duplicate. The class is set by ensureNavAuthItems in
+     js/auth-corner.js, so index.html — which carries its own auth markup and
+     doesn't load that file — keeps the centred corner above. */
+  .has-nav-auth .header-corner{ display: none; }
+
   .week-badge{
     position: static;
     display: flex;
@@ -2188,7 +2412,13 @@ body.mugshot-lightbox-open{ overflow: hidden; }
      stays legible, so the row folds into a toggle and a stacked panel. The
      panel is display:none rather than a height transition: a collapsed row of
      bordered boxes still catches taps on some browsers, and this theme has no
-     animation anywhere else. */
+     animation anywhere else.
+
+     On a phone the buttons stop being buttons. Six boxes stacked, each with its
+     own rule and its own offset shadow, read as clutter; the panel is instead
+     one bordered card and the items are plain rows divided by hairlines — a
+     docket, not a toolbar. The gloss sits under each name on its own line,
+     so nothing has to be shortened to fit beside it. */
   .main-nav{ padding: 12px; }
 
   .nav-toggle{ display: flex; }
@@ -2198,50 +2428,111 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 8px;
+    gap: 0;
     margin-top: 12px;
+    background: var(--paper-raised);
+    border: var(--rule);
+    box-shadow: var(--shadow-sm);
   }
 
   .nav-open .main-nav-list{ display: flex; }
 
-  /* One row per item: the themed name on the left in its own box, the plain
-     English gloss on the right, like a docket line. */
+  /* One row per item, stacked name over gloss. The hairline is on the item, so
+     the first row sits flush against the panel's own top rule. */
   .main-nav-list li{
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 11px 14px;
+    border-top: 2px solid var(--ink);
   }
 
-  .nav-btn{
-    flex: 1 1 auto;
-    justify-content: flex-start;
-    min-height: 48px;
-    padding: 11px 14px;
-    font-size: 0.9375rem;
+  .main-nav-list li:first-child{ border-top: 0; }
+
+  /* Plain text, not a box: no frame, no shadow, no press. The row is the target
+     and it spans the full panel width, so the whole line is tappable. */
+  .nav-btn,
+  .nav-btn:hover,
+  .nav-btn:focus-visible{
+    display: block;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    transform: none;
+    font-size: 1rem;
     letter-spacing: 0.06em;
   }
 
-  /* Fixed width, not shrink-to-fit: the glosses are different lengths, and
-     sizing each to its own text left every button ending at a different x.
-     Wide enough for the longest one ("League Archive") on one line. */
-  .nav-sublabel{
-    flex: 0 0 106px;
-    text-align: right;
-    font-size: 0.5625rem;
+  /* Yellow is still the interaction colour; with no box to fill it goes behind
+     the word instead. */
+  .nav-btn:focus-visible{
+    outline: none;
+    background: var(--accent-yellow);
+    box-shadow: 0 0 0 4px var(--accent-yellow);
   }
 
-  .main-nav-list li:nth-last-child(2){ margin-left: 0; }
+  .nav-sublabel{
+    flex: none;
+    text-align: left;
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+  }
+
+  /* The current page is marked by a yellow bar to the left of the name rather
+     than a filled blue button — the only mark in the panel, so it's
+     unmistakable. On the row itself it would need :has(), so it hangs off the
+     link with a negative margin instead. */
+  .nav-btn-current,
+  .nav-btn-current:hover,
+  .nav-btn-current:focus-visible{
+    background: transparent;
+    color: var(--ink);
+    margin-left: -14px;
+    padding-left: 10px;
+    border-left: 4px solid var(--accent-yellow);
+  }
+
+  /* Inert items grey out in place; nothing about them should read as pressable. */
+  .nav-btn-disabled,
+  .nav-btn-disabled:hover,
+  .nav-btn-disabled:focus-visible{
+    border: 0;
+    box-shadow: none;
+    color: #8A8578;
+  }
+
+  .nav-btn-disabled + .nav-sublabel{ color: #8A8578; }
+
+  /* The auth pair joins the docket as two more rows, under a fat rule so it
+     reads as its own section rather than as two more pages. Only one of the two
+     is ever visible, so the fat rule lands in the same place either way. */
+  /* Same two-class weight as the desktop hide above, or it would not win here. */
+  .main-nav-list .nav-auth-item{ display: flex; }
+  .main-nav-list .nav-auth-item[hidden]{ display: none; }
+  #navEscapeItem,
+  #navEscapeItem[hidden] + #navSignInItem{ border-top: var(--rule-fat); }
+
+  /* Buttons, not links: give them a link's alignment and a pointer. */
+  .nav-auth-item .nav-btn{
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
 
   /* No hover on a touch screen, so the reason a button is inert has to be on
-     screen. The tooltip drops out of its bubble and sits in the row. */
+     screen. The tooltip drops out of its bubble and runs on after the gloss. */
   .nav-btn-disabled::after{
     position: static;
     transform: none;
     opacity: 1;
-    margin-left: auto;
-    padding: 3px 7px;
+    margin-left: 8px;
+    padding: 0;
+    background: none;
+    border: 0;
     box-shadow: none;
-    border-width: 2px;
+    color: #8A8578;
     font-size: 0.5625rem;
     letter-spacing: 0.08em;
   }
@@ -2250,22 +2541,15 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 @media (max-width: 480px){
   .main-nav{ padding: 10px 8px; }
   .main-nav-list{ width: 100%; }
-  /* Narrowest phones: the gloss goes under the button rather than beside it,
-     so neither half has to shrink below reading size. */
-  .main-nav-list li{
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-  }
+  /* Narrowest phones: same docket rows, a little tighter. The stacked layout
+     already came from the phone breakpoint, so there's nothing to undo here. */
+  .main-nav-list li{ padding: 10px 12px; }
   .nav-btn{
-    width: 100%;
-    padding: 10px 12px;
-    gap: 5px;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     letter-spacing: 0.04em;
     white-space: normal;
   }
-  .nav-sublabel{ text-align: left; font-size: 0.5625rem; }
+  .nav-btn-current{ margin-left: -12px; }
   .avatar-upload-row{ grid-template-columns: 1fr; }
   .avatar-preview-frame{ margin: 0 auto; }
   .lineup-room{
@@ -2273,8 +2557,9 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   }
   .lineup-measure{ display: none; }
   .suspect-grid{ grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
-  /* The avatar fills its frame now, so only the frame needs sizing. */
-  .suspect-avatar-frame{ width: 132px; }
+  /* The avatar fills its frame now, so only the card's width token needs
+     setting — the frame and the retake button both read it. */
+  .suspect-card{ --mugshot-width: 132px; }
   .victim-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .team-grid{ grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); }
   .helmet{ width: 62px; height: 55px; }

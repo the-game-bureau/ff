@@ -71,6 +71,46 @@
       </div>
     </section>
 
+    <!-- Every league member, with every field they have that is safe to edit.
+         Hidden behind the same guard as the tools above; the real check is in
+         ff_admin_update_profile, which re-tests the caller server-side. -->
+    <section class="game-info admin-panel" id="adminRecordsPanel" aria-labelledby="adminRecordsTitle" hidden>
+      <h2 id="adminRecordsTitle">Suspect Records</h2>
+      <p class="gate-help">
+        Every field on file except the password, which nobody can change but its
+        owner &mdash; it is stored as a hash, and the reset-by-email link is the
+        only way through. <strong>Email is the login</strong>, and these logins
+        are shared with another site on this project, so changing one here
+        changes how that person signs in there too.
+      </p>
+
+      <div id="adminRecordsStatus" class="join-status" role="status" aria-live="polite"></div>
+
+      <div class="table-wrap">
+        <table id="adminRecordsTable" aria-label="League member records">
+          <thead>
+            <tr>
+              <th scope="col">Mugshot</th>
+              <th scope="col">Username</th>
+              <th scope="col">First</th>
+              <th scope="col">Last</th>
+              <th scope="col">Email</th>
+              <th scope="col">Picks</th>
+              <th scope="col">Joined</th>
+              <th scope="col">Save</th>
+            </tr>
+          </thead>
+          <tbody id="adminRecordsBody">
+            <tr><td colspan="8" class="table-empty">Not loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btnRefreshRecords" class="btn btn-secondary" type="button">Reload Records</button>
+      </div>
+    </section>
+
     <!-- Hidden behind the same guard as the tools above. The real check is in
          the database function; this only decides what is shown. -->
     <section class="game-info admin-panel" id="adminUsersPanel" aria-labelledby="adminUsersTitle" hidden>
@@ -105,6 +145,40 @@
         <button id="btnRefreshUsers" class="btn btn-secondary" type="button">Reload Roster</button>
       </div>
     </section>
+
+    <!-- The closed 2025 season, read from the frozen archive rather than from
+         the database: that Supabase project is gone, and these players have no
+         accounts left to edit. Reference only. -->
+    <section class="game-info admin-panel" id="adminArchivePanel" aria-labelledby="adminArchiveTitle" hidden>
+      <h2 id="adminArchiveTitle">2025 Cold Cases</h2>
+      <p class="gate-help">
+        The 2025 roster, straight from <code>2025/data/profiles.json</code>.
+        Nothing here is editable: the season is frozen and its backend no longer
+        exists. Name and email arrive only after
+        <code>build-archive-json.mjs</code> is re-run against the CSV export;
+        until then those cells read NOT IN EXPORT.
+      </p>
+
+      <div id="adminArchiveStatus" class="join-status" role="status" aria-live="polite"></div>
+
+      <div class="table-wrap">
+        <table id="adminArchiveTable" aria-label="2025 season players">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Username</th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Picks</th>
+              <th scope="col">Joined</th>
+            </tr>
+          </thead>
+          <tbody id="adminArchiveBody">
+            <tr><td colspan="6" class="table-empty">Not loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <!-- Deleting is irreversible, so it is confirmed by typing the username
@@ -132,7 +206,7 @@
 
   <footer class="footer" role="contentinfo">
     <p class="credit-role">Executive Producer</p>
-    <p class="credit-name">Dick Wolf</p>
+    <p class="credit-name">Kevin Kolb</p>
   </footer>
 
   <script src="../js/nfl-schedule.js"></script>

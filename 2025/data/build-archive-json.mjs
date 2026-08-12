@@ -5,7 +5,15 @@
 // Defaults to ../../../archived_db (the gitignored export folder). Writes
 // picks.json and profiles.json next to this script.
 //
-// user_id and email are dropped on purpose — these files ship to a public site.
+// user_id is dropped on purpose. Name and email are NOT: the admin page lists
+// the 2025 roster with both, and this file is where they come from.
+//
+// Know what that means. profiles.json is served as a static file, so anyone who
+// knows the URL can fetch it — the case-file gate on the archive page does not
+// cover it. These addresses are published, in effect. That was a deliberate
+// call; if it is ever reconsidered, the fix is to move the roster behind an
+// admin-only RPC on the live project rather than to trim the file and hope
+// nobody kept a copy.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -61,8 +69,50 @@ const picks = parseCsv(readFileSync(join(srcDir, 'picks_rows.csv'), 'utf8'))
   .filter(p => Number.isFinite(p.week) && p.team)
   .sort((a, b) => a.week - b.week || a.created_at.localeCompare(b.created_at));
 
+// The export's name columns have changed shape over the years, so take the
+// first spelling that is actually present rather than assuming one.
+const pickFirst = (row, ...keys) => {
+  for (const key of keys) {
+    const value = clean(row[key]);
+    if (value) return value;
+  }
+  return '';
+};
+
+// Names are NOT in the export — the 2025 profiles table was id, username,
+// created_at, email and nothing else — so every name in profiles.json was typed
+// in by hand. Rebuilding from the CSV would therefore wipe all 32 of them,
+// which is why the existing file is read first and its names carried over. The
+// CSV still wins when it has a name to give, in case a later export gains the
+// column.
+let existingNames = new Map();
+try {
+  existingNames = new Map(
+    JSON.parse(readFileSync(join(here, 'profiles.json'), 'utf8'))
+      .filter(p => p.name)
+      .map(p => [p.username, p.name])
+  );
+} catch {
+  // No previous file, or an unreadable one. Nothing to preserve.
+}
+
 const profiles = parseCsv(readFileSync(join(srcDir, 'profiles_rows.csv'), 'utf8'))
-  .map(r => ({ username: clean(r.username), created_at: toIso(r.created_at) }))
+  .map(r => {
+    const first = pickFirst(r, 'first_name', 'firstname', 'given_name');
+    const last = pickFirst(r, 'last_name', 'lastname', 'family_name', 'surname');
+    const whole = pickFirst(r, 'full_name', 'name', 'display_name');
+
+    return {
+      username: clean(r.username),
+      // One field, not two: this is a record of who played, and the admin page
+      // prints it as written. Falls back to a whole-name column when the export
+      // has one instead of a split pair.
+      name: [first, last].filter(Boolean).join(' ') || whole ||
+            existingNames.get(clean(r.username)) || '',
+      email: clean(r.email).toLowerCase(),
+      created_at: toIso(r.created_at),
+    };
+  })
   .filter(p => p.username)
   .sort((a, b) => a.username.toLowerCase().localeCompare(b.username.toLowerCase()));
 
