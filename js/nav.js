@@ -90,6 +90,91 @@ function renderSiteNav(){
     </nav>`;
 
   wireNavToggle(mount);
+  renderNavAuth(mount);
+}
+
+// ===== ESCAPE / LOGIN-JOIN IN THE PHONE MENU =====
+// On a phone the header corner is hidden and these two rows take its place at
+// the foot of the hamburger. CSS keeps them out of the desktop button bar.
+//
+// They are proxies, not a second implementation. Two different modules build
+// the header corner — js/auth-corner.js injects it on most pages, index.html
+// carries it in markup and drives it from js/app.js — but both end up with the
+// same ids, and both mark signed-in state by toggling `hidden` on the two
+// stacks. So this reads that state and forwards clicks, which is why it works
+// the same on every page including the Precinct. It used to live in
+// auth-corner.js, which is exactly why the Precinct was the one page it never
+// appeared on.
+const NAV_AUTH_ITEMS = [
+  { id: 'navEscapeItem', stack: 'headerIdStack',   source: 'btnSignOut',
+    label: 'Escape',       sublabel: 'Sign Out' },
+  { id: 'navSignInItem', stack: 'headerAuthStack', source: 'headerSignIn',
+    label: 'Login / Join', sublabel: 'Get In The Game' }
+];
+
+function renderNavAuth(mount){
+  const list = mount.querySelector('.main-nav-list');
+  if(!list) return;
+
+  for(const item of NAV_AUTH_ITEMS){
+    const li = document.createElement('li');
+    li.id = item.id;
+    li.className = 'nav-auth-item';
+    // Hidden until the state is known, so neither flashes up before the auth
+    // module has decided which of the two belongs on screen.
+    li.hidden = true;
+    li.innerHTML =
+      `<button class="nav-btn" type="button">${item.label}</button>` +
+      `<span class="nav-sublabel">${item.sublabel}</span>`;
+
+    li.querySelector('button').addEventListener('click', () => {
+      closeNavPanel(mount);
+      // Click the real control rather than re-implementing sign-out: whichever
+      // module owns this page has already wired it.
+      document.getElementById(item.source)?.click();
+    });
+
+    list.appendChild(li);
+  }
+
+  // Tells the stylesheet the phone header corner is now a duplicate.
+  document.body.classList.add('has-nav-auth');
+
+  syncNavAuth();
+
+  // The corner may not exist yet (auth-corner.js builds it on the same
+  // DOMContentLoaded, and the stacks flip later once the session resolves), so
+  // watch for both rather than reading once and hoping.
+  new MutationObserver(syncNavAuth).observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['hidden', 'disabled']
+  });
+
+  window.addEventListener('ff-auth-changed', syncNavAuth);
+}
+
+// Mirror the header corner: each row is visible exactly when its counterpart
+// is. No corner on the page at all means no rows.
+function syncNavAuth(){
+  for(const item of NAV_AUTH_ITEMS){
+    const row = document.getElementById(item.id);
+    if(!row) continue;
+
+    const stack = document.getElementById(item.stack);
+    const source = document.getElementById(item.source);
+    const shown = Boolean(stack) && !stack.hidden && Boolean(source);
+
+    if(row.hidden === !shown) continue;
+    row.hidden = !shown;
+  }
+}
+
+function closeNavPanel(mount){
+  const nav = mount.querySelector('.main-nav');
+  nav?.classList.remove('nav-open');
+  mount.querySelector('.nav-toggle')?.setAttribute('aria-expanded', 'false');
 }
 
 // Open/close for the phone menu. Nothing runs on a desktop width beyond the

@@ -80,9 +80,16 @@ function redirectToSuspects(delay = 800){
   }, delay);
 }
 
-function validateJoin({ email, username, firstName, lastName, password, passwordConfirm }){
+function validateJoin({ email, username, firstName, lastName, password, passwordConfirm, bailPaid }){
   if(!email || !username || !firstName || !lastName || !password || !passwordConfirm){
     return 'Fill every required booking field.';
+  }
+
+  // An attestation, not a receipt: nothing here can see Venmo. It is checked
+  // first so a player who has not paid is told that before filling anything
+  // else in, rather than after.
+  if(!bailPaid){
+    return 'Bail is $5 to @KevinMKolb on Venmo. Send it, then tick the box to confirm.';
   }
 
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
@@ -780,6 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastName = document.getElementById('joinLastName').value.trim();
     const password = document.getElementById('joinPassword').value;
     const passwordConfirm = document.getElementById('joinPasswordConfirm').value;
+    const bailPaid = Boolean(document.getElementById('joinBailPaid')?.checked);
     const avatarFile = avatarInput?.files?.[0] || null;
 
     const validationError = validateJoin({
@@ -788,7 +796,8 @@ document.addEventListener('DOMContentLoaded', () => {
       firstName,
       lastName,
       password,
-      passwordConfirm
+      passwordConfirm,
+      bailPaid
     });
     if(validationError){
       setJoinStatus(validationError, 'bad');

@@ -92,6 +92,35 @@
           <input id="joinPasswordConfirm" name="password_confirm" type="password" autocomplete="new-password" minlength="6" required/>
         </div>
 
+        <!-- The buy-in, themed as posting bail. Nothing here talks to Venmo:
+             the link opens their app prefilled, and the checkbox is an
+             attestation, not a receipt. Nobody is in the league until the
+             payment actually lands, which is checked by a human. -->
+        <div class="join-field bail-field">
+          <label for="joinBailPaid">Bail &mdash; $5 <span class="privacy-tag privacy-tag-required">Mandatory</span></label>
+          <p class="gate-help">
+            Bail is set at <strong>$5</strong>, payable to
+            <strong>@KevinMKolb</strong> on Venmo. Send it before you book
+            yourself in, and put your username in the note so the payment can be
+            matched to your file.
+          </p>
+
+          <p class="gate-help">
+            <strong>Not-for-profit.</strong> The entire pot goes to the winner,
+            and nobody takes a cut. The first suspect out &mdash; or everyone
+            tied for first out &mdash; gets their $5 back.
+          </p>
+
+          <a class="btn btn-secondary bail-pay"
+             href="https://venmo.com/KevinMKolb?txn=pay&amp;amount=5&amp;note=Special%20Victory%20Unit%20buy-in"
+             target="_blank" rel="noopener noreferrer">Post Bail on Venmo</a>
+
+          <label class="bail-confirm" for="joinBailPaid">
+            <input id="joinBailPaid" name="bail_paid" type="checkbox" required/>
+            <span>I have sent $5 to @KevinMKolb on Venmo.</span>
+          </label>
+        </div>
+
         <div class="action-buttons join-actions">
           <button id="btnCreateAccount" class="btn btn-primary" type="submit">Join</button>
         </div>

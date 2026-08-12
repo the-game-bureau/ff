@@ -19,7 +19,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     ensureHeaderCorner();
-    ensureNavAuthItems();
     ensureSignInModal();
     cacheElements();
     bindAuthCorner();
@@ -102,39 +101,6 @@
     }
   }
 
-  // The same two controls again, as rows at the foot of the phone menu. On a
-  // phone the header corner is out of the way (CSS hides it there), so this is
-  // where you sign in or escape — and the hamburger stops being the one menu
-  // that can't do the two things you most often want from it.
-  //
-  // Runs after nav.js: both bind DOMContentLoaded and nav.js is loaded first on
-  // every page, so the list exists by the time this appends to it. If it ever
-  // doesn't, the header corner is still there and nothing here is required.
-  function ensureNavAuthItems() {
-    const list = document.getElementById('mainNavList');
-    if (!list || document.getElementById('navSignInItem')) return;
-
-    const escapeItem = document.createElement('li');
-    escapeItem.id = 'navEscapeItem';
-    escapeItem.className = 'nav-auth-item';
-    escapeItem.hidden = true;
-    escapeItem.innerHTML =
-      '<button class="nav-btn" id="navSignOut" type="button">Escape</button>' +
-      '<span class="nav-sublabel">Sign Out</span>';
-
-    const signInItem = document.createElement('li');
-    signInItem.id = 'navSignInItem';
-    signInItem.className = 'nav-auth-item';
-    signInItem.innerHTML =
-      '<button class="nav-btn" id="navSignIn" type="button">Login / Join</button>' +
-      '<span class="nav-sublabel">Get In The Game</span>';
-
-    list.appendChild(escapeItem);
-    list.appendChild(signInItem);
-    // Tells the stylesheet the phone header corner is now redundant.
-    document.body.classList.add('has-nav-auth');
-  }
-
   function ensureSignInModal() {
     if (document.getElementById('signInModal')) return;
 
@@ -178,28 +144,10 @@
     els.headerUser = document.getElementById('headerUser');
     els.headerSignIn = document.getElementById('headerSignIn');
     els.authStack = document.getElementById('headerAuthStack');
-    els.navSignIn = document.getElementById('navSignIn');
-    els.navSignOut = document.getElementById('navSignOut');
-    els.navSignInItem = document.getElementById('navSignInItem');
-    els.navEscapeItem = document.getElementById('navEscapeItem');
-  }
-
-  // nav.js closes the phone panel on link taps only; these two are buttons.
-  function closeNavPanel() {
-    document.querySelector('.main-nav.nav-open')?.classList.remove('nav-open');
-    document.getElementById('navToggle')?.setAttribute('aria-expanded', 'false');
   }
 
   function bindAuthCorner() {
     els.headerSignIn?.addEventListener('click', () => openSignInModal(true));
-    els.navSignIn?.addEventListener('click', () => {
-      closeNavPanel();
-      openSignInModal(true);
-    });
-    els.navSignOut?.addEventListener('click', () => {
-      closeNavPanel();
-      signOut();
-    });
     els.close?.addEventListener('click', closeSignInModal);
     els.signIn?.addEventListener('click', signIn);
     els.signOut?.addEventListener('click', signOut);
@@ -245,7 +193,6 @@
     if (!authDb) {
       setHeaderUser('');
       if (els.headerSignIn) els.headerSignIn.disabled = true;
-      if (els.navSignIn) els.navSignIn.disabled = true;
       return;
     }
 
@@ -300,10 +247,6 @@
     if (els.idStack) els.idStack.hidden = !signedIn;
     if (els.authStack) els.authStack.hidden = signedIn;
     if (els.headerSignIn) els.headerSignIn.disabled = false;
-
-    // The phone menu carries the same pair and flips with it.
-    if (els.navEscapeItem) els.navEscapeItem.hidden = !signedIn;
-    if (els.navSignInItem) els.navSignInItem.hidden = signedIn;
   }
 
   // Supabase only authenticates by email, so a username has to be traded for

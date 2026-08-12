@@ -57,7 +57,17 @@
           <li>If your victim goes down then you keep playing. If they win, the
             case closes on you. <strong>Dun dun.</strong></li>
           <li>You can only name a victim once per season.</li>
+          <li>It costs <strong>$5</strong> to join, paid to
+            <strong>@KevinMKolb</strong> on Venmo.</li>
         </ul>
+
+        <!-- Where the money goes, said plainly and up front. Nobody should have
+             to ask, and "not-for-profit" is the whole reason the $5 is not a
+             red flag on a link someone got in a text. -->
+        <p class="welcome-note">
+          Not-for-profit: the entire pot goes to the winner. The first suspect
+          out &mdash; or everyone tied for first out &mdash; gets their $5 back.
+        </p>
 
 
         <div class="modal-actions welcome-actions">
@@ -76,9 +86,13 @@
 
     document.getElementById('btnCloseWelcome')?.addEventListener('click', closeWelcome);
     document.getElementById('btnWelcomeBrowse')?.addEventListener('click', closeWelcome);
+    // Straight to the booking form. It used to open the Identify Yourself
+    // popup, which is the right door for someone who already has an account and
+    // the wrong one for a stranger who followed the QR code — the people this
+    // card exists for. Signing in is still one tap away in the header.
     document.getElementById('btnWelcomeJoin')?.addEventListener('click', () => {
       closeWelcome();
-      openSignIn();
+      window.location.href = `${pagePrefix()}join/index.html`;
     });
 
     modal.addEventListener('click', (event) => {
@@ -114,20 +128,10 @@
     }
   }
 
-  // The sign-in popup is owned by app.js on the home page and auth-corner.js
-  // everywhere else. Rather than depend on either, click the control they both
-  // bind — and fall back to unhiding the modal directly if it is not there.
-  function openSignIn() {
-    const trigger = document.getElementById('headerSignIn');
-    if (trigger) {
-      trigger.click();
-      return;
-    }
-
-    const modal = document.getElementById('signInModal');
-    if (modal) {
-      modal.hidden = false;
-      document.getElementById('authEmail')?.focus();
-    }
+  // This card can open on any page, and the pages are not all at the same
+  // depth. Every page's nav mount carries the hop back to the root, so read it
+  // from there rather than guessing from the URL.
+  function pagePrefix() {
+    return document.getElementById('siteNav')?.dataset.prefix || '';
   }
 })();

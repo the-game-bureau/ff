@@ -68,10 +68,17 @@
    area past the footer shows this, so it matches the footer rather than
    flashing paper. */
 /* text-size-adjust: iOS Safari inflates body text in landscape unless it is
-   pinned, which breaks every measure tuned above. */
+   pinned, which breaks every measure tuned above.
+   All three spellings, which is the only combination that actually covers every
+   engine: WebKit's prefix for Safari, Mozilla's for Firefox, and the unprefixed
+   standard for Chrome/Edge, which support that one and not the prefixes.
+   Dropping any one of the three loses a browser, so the editor warning about
+   whichever line it is looking at is unavoidable and wrong to act on — it is
+   silenced for this property alone in .hintrc at the repo root. */
 html{
   background: var(--ink);
   -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
@@ -649,6 +656,17 @@ body{
   background: var(--ink);
 }
 
+/* Where the weekly rules stop and the endgame rules start. The tick moves down
+   with the text, since top is measured from the padding box and the rule adds
+   space above it. */
+.law-list li.law-break{
+  border-top: var(--rule);
+  margin-top: 6px;
+  padding-top: 18px;
+}
+
+.law-list li.law-break::before{ top: calc(0.45em + 18px); }
+
 .game-info h2,
 .team-selection h2,
 .game-over h2,
@@ -777,6 +795,43 @@ body{
 
 .privacy-tag-public{ background: var(--accent-yellow); }
 .privacy-tag-players{ background: var(--primary-blue); color: var(--paper-raised); }
+.privacy-tag-required{ background: var(--primary-red); color: var(--paper-raised); }
+
+/* ===== BAIL =====
+   The buy-in. Boxed off from the identity fields above it because it is the one
+   thing on this form that has to happen somewhere else first. */
+.bail-field{
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 14px;
+  background: var(--bg-secondary);
+}
+
+.bail-pay{ display: inline-block; margin-bottom: 14px; }
+
+/* The whole line is the target, and the box does not shrink when the label
+   wraps on a phone. */
+.bail-confirm{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.bail-confirm input{
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
 
 .join-actions{ margin-top: 6px; }
 
@@ -1391,7 +1446,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 220px;
   height: 220px;
   image-rendering: pixelated;
-  -webkit-user-drag: none;
+  /* Dragging is blocked by draggable="false" on the <img> itself, which every
+     browser honours. The -webkit-user-drag declaration that used to sit here
+     did the same job for WebKit only and nothing for Firefox. */
 }
 
 /* Tucked under the code's bottom edge so the two read as one object. */
@@ -1519,6 +1576,18 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 9px;
   height: 9px;
   background: var(--ink);
+}
+
+/* Where the money goes. Set apart from the rules above it — it is the answer to
+   a question a stranger is entitled to ask before paying anyone $5. */
+.welcome-note{
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.45;
 }
 
 /* Side by side: neither option should look like the afterthought. */
