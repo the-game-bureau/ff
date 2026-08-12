@@ -25,7 +25,6 @@
     const nativeBtn = document.getElementById('btnShareNative');
     const copyBtn = document.getElementById('btnShareCopy');
     const emailLink = document.getElementById('btnShareEmail');
-    const smsLink = document.getElementById('btnShareSms');
     const urlEl = document.getElementById('shareUrl');
     const statusEl = document.getElementById('shareStatus');
 
@@ -38,24 +37,10 @@
       (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     const isAndroid = /Android/.test(ua);
     const isMobile = isIOS || isAndroid;
-    const canText = isMobile;
 
     const body = `${SHARE_TEXT}\n\n${SHARE_URL}`;
     if (emailLink) {
       emailLink.href = `mailto:?subject=${encodeURIComponent(SHARE_TITLE)}&body=${encodeURIComponent(body)}`;
-    }
-
-    if (smsLink) {
-      // The two platforms disagree on the separator: iOS wants "sms:&body=",
-      // Android wants "sms:?body=". The wrong one opens the messaging app with
-      // an empty message. On a desktop there is no handler at all, so the row
-      // comes out rather than dead-ending.
-      smsLink.hidden = !canText;
-      if (canText) {
-        smsLink.href = isIOS
-          ? `sms:&body=${encodeURIComponent(body)}`
-          : `sms:?body=${encodeURIComponent(body)}`;
-      }
     }
 
     // The OS share sheet is a phone affordance. Chrome and Edge on Windows do
