@@ -58,19 +58,18 @@
       });
     }
 
-    // Each platform gets its own lineup, in its own order. On a phone the OS
-    // sheet leads because it reaches every app at once; on a desktop it is
-    // email first, then the link, and nothing that needs a phone.
-    // Email is not offered on a phone: the OS share sheet already lists the
-    // mail app, so a separate row was doing the same job twice.
+    // Each platform gets its own lineup, in its own order. A phone leads with
+    // the OS sheet, which already reaches Messages and Mail, so no row here
+    // duplicates it. A desktop has no sheet worth opening, so it gets the two
+    // channels that work there: email, then the link.
     const lineup = (isMobile
-      ? [nativeAvailable ? nativeBtn : null, smsLink, copyBtn]
+      ? [nativeAvailable ? nativeBtn : null, copyBtn]
       : [emailLink, copyBtn]
     ).filter(Boolean);
 
     // Everything starts hidden so a button missing from this platform's lineup
     // stays out, then the survivors are re-appended in lineup order.
-    for (const el of [nativeBtn, copyBtn, emailLink, smsLink]) {
+    for (const el of [nativeBtn, copyBtn, emailLink]) {
       if (el) el.hidden = true;
     }
 
