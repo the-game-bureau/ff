@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Law &mdash; Law &amp; Order: Special Victory Unit</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="src/lawandorder.jpg"/>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lawandorder-svu.app/law.html"/>
+  <meta property="og:title" content="The Law &mdash; Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:description" content="The rules of survival for Special Victory Unit."/>
+  <meta property="og:image" content="src/lawandorder.jpg"/>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+
+<link rel="stylesheet" href="css/site.css"/>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">The Law</div>
+    <div id="weekBadge" class="week-badge" aria-live="polite"></div>
+    <h1>Law &amp; Order: Special Victory Unit</h1>
+    <p class="tagline"><strong>Detective Briscoe:</strong> "We're betting on losers? Easy! I pick losers at the track every weekend."</p>
+  </header>
+
+  <div id="siteNav" data-current="law"></div>
+
+  <div class="container">
+    <section class="game-info" aria-labelledby="gameInfoTitle">
+      <h2 id="gameInfoTitle">&#127963;&#65039; The Law</h2>
+      <p>Each week, you name one NFL team as your <em>victim</em>. One team you believe will <em>lose</em> their game. If your victim loses, you advance. If they win or tie, you're arrested, convicted, out, DUN DUN. Each victim can only be named once per season.</p>
+    </section>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p class="credit-role">Executive Producer</p>
+    <p class="credit-name">Dick Wolf</p>
+  </footer>
+
+  <script src="js/nfl-schedule.js"></script>
+  <script src="js/season.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/auth-corner.js"></script>
+  <script src="js/password-reset.js"></script>
+</body>
+</html>

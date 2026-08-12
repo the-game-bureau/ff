@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report &mdash; Law &amp; Order: Special Victory Unit</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="src/lawandorder.jpg"/>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lawandorder-svu.app/report.html"/>
+  <meta property="og:title" content="Report &mdash; Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:description" content="Week by week, how many prosecutors are left standing."/>
+  <meta property="og:image" content="src/lawandorder.jpg"/>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+
+<link rel="stylesheet" href="css/site.css"/>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Squad Report</div>
+    <div id="weekBadge" class="week-badge" aria-live="polite"></div>
+    <h1>Law &amp; Order: Special Victory Unit</h1>
+    <p class="tagline">"The numbers don't lie. People do."</p>
+  </header>
+
+  <div id="siteNav" data-current="report"></div>
+
+  <div class="container">
+    <section class="game-info" id="eliminationChart" aria-labelledby="eliminationChartTitle">
+      <h3 id="eliminationChartTitle" class="section-heading">
+        &#9878;&#65039; League Timeline
+      </h3>
+      <div id="chartContainer" class="chart-container"></div>
+    </section>
+
+    <section class="game-info" id="pickTicker" aria-labelledby="pickTickerTitle">
+      <div class="ticker-head">
+        <h3 id="pickTickerTitle" class="section-heading">&#128203; Pick Ticker</h3>
+        <div class="ticker-weeknav">
+          <button id="prevPickWeekBtn" class="week-nav-btn" type="button" aria-label="Previous week">&#9664;</button>
+          <span id="pickTickerWeek" class="ticker-week">Week 1</span>
+          <button id="nextPickWeekBtn" class="week-nav-btn" type="button" aria-label="Next week">&#9654;</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="floatingPicksTable" role="table" aria-label="User picks for selected week">
+          <caption class="sr-only">Picks made by users for the selected week</caption>
+          <thead>
+            <tr>
+              <th scope="col">User</th>
+              <th scope="col">Victim</th>
+              <th scope="col">Picked At</th>
+            </tr>
+          </thead>
+          <tbody id="floatingPicksBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="game-info" id="leagueStats" aria-labelledby="leagueStatsTitle">
+      <h3 id="leagueStatsTitle" class="section-heading">&#128274; Evidence Locker</h3>
+
+      <div id="statsSummary" class="stats-summary" aria-live="polite"></div>
+
+      <div class="table-wrap">
+        <table id="userSummaryTable" role="table" aria-label="User summary statistics">
+          <caption class="sr-only">Summary of all users' picks and activity</caption>
+          <thead>
+            <tr>
+              <th scope="col">Status</th>
+              <th scope="col">User</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody id="userSummaryBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p class="credit-role">Executive Producer</p>
+    <p class="credit-name">Dick Wolf</p>
+  </footer>
+
+  <script src="js/nfl-schedule.js"></script>
+  <script src="js/season.js"></script>
+  <script src="js/teams.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth-corner.js"></script>
+  <script src="js/password-reset.js"></script>
+</body>
+</html>

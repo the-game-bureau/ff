@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin &mdash; Law &amp; Order: Special Victory Unit</title>
+
+  <link rel="icon" type="image/x-icon" href="../src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="../src/lawandorder.jpg"/>
+
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lawandorder-svu.app/admin/"/>
+  <meta property="og:title" content="Admin &mdash; Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:description" content="Schedule reconciliation for Special Victory Unit."/>
+  <meta property="og:image" content="../src/lawandorder.jpg"/>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+
+  <link rel="stylesheet" href="../css/site.css"/>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Admin</div>
+    <div id="weekBadge" class="week-badge" aria-live="polite"></div>
+    <h1>Law &amp; Order: Special Victory Unit</h1>
+    <p class="tagline">"Trust, but verify the schedule."</p>
+  </header>
+
+  <div id="siteNav" data-current="admin" data-prefix="../"></div>
+
+  <div class="container">
+    <section class="game-info admin-panel" aria-labelledby="adminTitle">
+      <h2 id="adminTitle">Schedule Reconciliation</h2>
+      <div id="adminStatus" class="join-status" role="status" aria-live="polite">Checking credentials...</div>
+
+      <div id="adminTools" class="admin-tools" hidden>
+        <div class="admin-actions">
+          <button id="btnReconcileSchedule" class="btn btn-primary" type="button">Reconcile Schedule</button>
+          <button id="btnCopyReconcilePrompt" class="btn btn-secondary" type="button">Copy Prompt</button>
+          <a class="btn btn-secondary" href="https://plaintextsports.com/nfl/2026/schedule" target="_blank" rel="noopener noreferrer">Open Source</a>
+          <a class="btn btn-secondary" href="https://supabase.com/dashboard/project/qmaafbncpzrdmqapkkgr/editor/table/ff_nfl_schedule?schema=public" target="_blank" rel="noopener noreferrer">Open Table</a>
+        </div>
+
+        <div class="admin-summary" id="adminSummary"></div>
+
+        <div class="table-wrap admin-table-wrap">
+          <table aria-label="Schedule reconciliation differences">
+            <thead>
+              <tr>
+                <th scope="col">Week</th>
+                <th scope="col">Team</th>
+                <th scope="col">Type</th>
+                <th scope="col">Field</th>
+                <th scope="col">Table</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody id="adminDiffBody">
+              <tr><td colspan="6" class="table-empty">No reconciliation run yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <label class="admin-prompt-label" for="reconcilePrompt">Copy/Paste Prompt</label>
+        <textarea id="reconcilePrompt" class="admin-prompt" readonly spellcheck="false"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p class="credit-role">Executive Producer</p>
+    <p class="credit-name">Dick Wolf</p>
+  </footer>
+
+  <script src="../js/nfl-schedule.js"></script>
+  <script src="../js/season.js"></script>
+  <script src="../js/teams.js"></script>
+  <script src="../js/nav.js"></script>
+  <script src="../js/auth-corner.js"></script>
+  <script src="../js/admin.js"></script>
+  <script src="../js/password-reset.js"></script>
+</body>
+</html>

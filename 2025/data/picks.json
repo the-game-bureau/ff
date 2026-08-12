@@ -1,0 +1,1274 @@
+[
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "AuntMooney",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T19:47:27.851905Z"
+  },
+  {
+    "week": 1,
+    "team": "Cleveland Browns",
+    "username": "PrincessChiara",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T19:53:40.793575Z"
+  },
+  {
+    "week": 1,
+    "team": "Los Angeles Chargers",
+    "username": "EspeciallyHeinous",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-04T19:56:09.539188Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "Wine_Ninja",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T19:56:25.641572Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "CouchCoachConnie",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:00:40.635237Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "TampaBayHawkeye",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:03:21.381815Z"
+  },
+  {
+    "week": 1,
+    "team": "Green Bay Packers",
+    "username": "ViKens",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:04:14.046449Z"
+  },
+  {
+    "week": 1,
+    "team": "Cleveland Browns",
+    "username": "Case1974",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:06:28.651826Z"
+  },
+  {
+    "week": 1,
+    "team": "New York Jets",
+    "username": "RLMACJR",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:07:59.010972Z"
+  },
+  {
+    "week": 1,
+    "team": "Tampa Bay Buccaneers",
+    "username": "Dang_Brah",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:09:21.261414Z"
+  },
+  {
+    "week": 1,
+    "team": "Washington Commanders",
+    "username": "Adammay5",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:09:59.828678Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:13:26.668961Z"
+  },
+  {
+    "week": 1,
+    "team": "Carolina Panthers",
+    "username": "4thewin",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:15:01.674882Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:31:21.121986Z"
+  },
+  {
+    "week": 1,
+    "team": "Cleveland Browns",
+    "username": "SurvivorVictimsUnit",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:35:42.340689Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "Katnola",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:35:55.512215Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "Jacobm14",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:42:04.844887Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:44:18.332325Z"
+  },
+  {
+    "week": 1,
+    "team": "New York Giants",
+    "username": "RadioactiveShrimp",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:45:32.678444Z"
+  },
+  {
+    "week": 1,
+    "team": "Seattle Seahawks",
+    "username": "GoodellBlows",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T20:48:09.10264Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T21:02:35.114112Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T21:15:49.474Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "DEH501",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T21:59:31.273152Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "CrispyPigSkin",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T22:09:41.584476Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T22:34:43.916963Z"
+  },
+  {
+    "week": 1,
+    "team": "New Orleans Saints",
+    "username": "LogansHeroes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T23:28:54.422806Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-04T23:35:30.553786Z"
+  },
+  {
+    "week": 1,
+    "team": "Indianapolis Colts",
+    "username": "rammerbammer",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-04T23:51:10.084138Z"
+  },
+  {
+    "week": 1,
+    "team": "New Orleans Saints",
+    "username": "WhoDatScot",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-05T00:21:04.714197Z"
+  },
+  {
+    "week": 1,
+    "team": "Dallas Cowboys",
+    "username": "WastinTme",
+    "result": "DUN DUN WK1 OK BUT NO PICK WK2",
+    "perpetrator": "",
+    "created_at": "2025-09-05T01:23:52.732817Z"
+  },
+  {
+    "week": 1,
+    "team": "Tennessee Titans",
+    "username": "Bucephalus",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-05T17:53:56.730206Z"
+  },
+  {
+    "week": 1,
+    "team": "Atlanta Falcons",
+    "username": "StablersStallions",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-05T21:59:05.504138Z"
+  },
+  {
+    "week": 2,
+    "team": "New York Jets",
+    "username": "SurvivorVictimsUnit",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T17:52:34.184684Z"
+  },
+  {
+    "week": 2,
+    "team": "New York Giants",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T18:33:47.747049Z"
+  },
+  {
+    "week": 2,
+    "team": "New Orleans Saints",
+    "username": "AuntMooney",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T20:17:30.623516Z"
+  },
+  {
+    "week": 2,
+    "team": "Chicago Bears",
+    "username": "CrispyPigSkin",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T20:28:51.233816Z"
+  },
+  {
+    "week": 2,
+    "team": "New York Jets",
+    "username": "StablersStallions",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:13:23.068352Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "RadioactiveShrimp",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:17:44.053972Z"
+  },
+  {
+    "week": 2,
+    "team": "Tennessee Titans",
+    "username": "GoodellBlows",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:20:54.615047Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Bucephalus",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:23:01.450777Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "DEH501",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:28:48.500443Z"
+  },
+  {
+    "week": 2,
+    "team": "Seattle Seahawks",
+    "username": "Case1974",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:30:57.128097Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-11T23:40:16.79109Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-12T00:06:11.664822Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-12T00:07:29.328986Z"
+  },
+  {
+    "week": 2,
+    "team": "New York Jets",
+    "username": "PrincessChiara",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-12T02:04:59.087288Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-12T03:38:37.29152Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Swaddle",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-12T04:06:21.22664Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Wine_Ninja",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-12T10:04:27.129363Z"
+  },
+  {
+    "week": 2,
+    "team": "Indianapolis Colts",
+    "username": "4thewin",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-12T10:52:52.878236Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-12T14:06:11.191812Z"
+  },
+  {
+    "week": 2,
+    "team": "Atlanta Falcons",
+    "username": "CouchCoachConnie",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-12T17:47:16.547389Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "TampaBayHawkeye",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-12T21:25:24.450854Z"
+  },
+  {
+    "week": 2,
+    "team": "Dallas Cowboys",
+    "username": "LogansHeroes",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-13T05:41:54.314643Z"
+  },
+  {
+    "week": 2,
+    "team": "Jacksonville Jaguars",
+    "username": "RLMACJR",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-13T22:04:00Z"
+  },
+  {
+    "week": 2,
+    "team": "Cleveland Browns",
+    "username": "WhoDatScot",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-14T15:25:47.02903Z"
+  },
+  {
+    "week": 2,
+    "team": "Philadelphia Eagles",
+    "username": "Dang_Brah",
+    "result": "DUN DUN WK1 ELIMINATED BUT WK2 PICK (EAGLES) WOULD HAVE LOST (WON) ANYWAY",
+    "perpetrator": "",
+    "created_at": "2025-09-14T19:31:42.319032Z"
+  },
+  {
+    "week": 2,
+    "team": "Houston Texans",
+    "username": "Katnola",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-15T22:37:24.691363Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-16T05:01:18.362522Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "AuntMooney",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-16T15:06:00.28743Z"
+  },
+  {
+    "week": 3,
+    "team": "New York Giants",
+    "username": "Katnola",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-16T19:05:43.394041Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "SurvivorVictimsUnit",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-17T22:32:16.952234Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "CrispyPigSkin",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T01:39:21.339277Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "GoodellBlows",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T01:41:37.856229Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T01:43:19.846Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "DEH501",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T02:00:18.234275Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "PrincessChiara",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T02:43:25.196639Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T09:46:03.334639Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "RadioactiveShrimp",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T11:17:38.711983Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T12:08:08.304733Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T14:43:15.416654Z"
+  },
+  {
+    "week": 3,
+    "team": "New York Jets",
+    "username": "Wine_Ninja",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T15:40:46.116674Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T16:13:36.072343Z"
+  },
+  {
+    "week": 3,
+    "team": "New York Giants",
+    "username": "TampaBayHawkeye",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T17:29:48.787271Z"
+  },
+  {
+    "week": 3,
+    "team": "Miami Dolphins",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-18T21:46:58.012282Z"
+  },
+  {
+    "week": 3,
+    "team": "New York Jets",
+    "username": "WhoDatScot",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-19T18:26:38.606399Z"
+  },
+  {
+    "week": 3,
+    "team": "Carolina Panthers",
+    "username": "Bucephalus",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-19T19:10:19.12976Z"
+  },
+  {
+    "week": 3,
+    "team": "Chicago Bears",
+    "username": "StablersStallions",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-21T14:11:42.079065Z"
+  },
+  {
+    "week": 3,
+    "team": "Carolina Panthers",
+    "username": "Jacobm14",
+    "result": "DUN DUN WK1 OK BUT NO PICK WK2 BUT WK3 PICK (PANTHERS) WOULD HAVE LOST (WON) ANYWAY",
+    "perpetrator": "",
+    "created_at": "2025-09-21T16:50:17.788179Z"
+  },
+  {
+    "week": 3,
+    "team": "Baltimore Ravens",
+    "username": "4thewin",
+    "result": "DUN DUN - I wrongly told 4thewin that they made it past last week. I guess I thought there was no way the Colts could start the season at least 3 and 0. Their WK3 Ravens pick would have worked. 🫣 Although this website is pretty slick, I'm still manually putting in results. But next year! ...",
+    "perpetrator": "",
+    "created_at": "2025-09-22T20:23:52.426241Z"
+  },
+  {
+    "week": 3,
+    "team": "Detroit Lions",
+    "username": "RLMACJR",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-22T20:35:24.240517Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-23T13:55:34.915308Z"
+  },
+  {
+    "week": 4,
+    "team": "Atlanta Falcons",
+    "username": "Katnola",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-23T19:40:18.271518Z"
+  },
+  {
+    "week": 4,
+    "team": "Cincinnati Bengals",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-23T21:46:39.397569Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-24T15:09:36.094468Z"
+  },
+  {
+    "week": 4,
+    "team": "Atlanta Falcons",
+    "username": "CrispyPigSkin",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-24T20:04:25.607533Z"
+  },
+  {
+    "week": 4,
+    "team": "Tennessee Titans",
+    "username": "WhoDatScot",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-24T21:00:33.775917Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-24T22:41:53.787675Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "PrincessChiara",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T19:34:31.812725Z"
+  },
+  {
+    "week": 4,
+    "team": "Atlanta Falcons",
+    "username": "GoodellBlows",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-25T19:36:28.248455Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Wine_Ninja",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T19:39:21.877031Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "SurvivorVictimsUnit",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T19:48:16.357672Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T20:10:26.717479Z"
+  },
+  {
+    "week": 4,
+    "team": "Chicago Bears",
+    "username": "AuntMooney",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-25T20:26:17.710809Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "TampaBayHawkeye",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T20:59:44.561369Z"
+  },
+  {
+    "week": 4,
+    "team": "Tennessee Titans",
+    "username": "RadioactiveShrimp",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-25T21:06:09.319475Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-26T00:15:27.423719Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-26T08:32:24.301856Z"
+  },
+  {
+    "week": 4,
+    "team": "New Orleans Saints",
+    "username": "DEH501",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-27T11:48:56.856809Z"
+  },
+  {
+    "week": 5,
+    "team": "New York Giants",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-30T10:32:50.804303Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "DEH501",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-30T11:27:32.731623Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-30T11:51:52.076598Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-09-30T12:36:05.01175Z"
+  },
+  {
+    "week": 5,
+    "team": "Denver Broncos",
+    "username": "TampaBayHawkeye",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-09-30T13:49:30.240586Z"
+  },
+  {
+    "week": 5,
+    "team": "Washington Commanders",
+    "username": "SurvivorVictimsUnit",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-01T00:40:38.072204Z"
+  },
+  {
+    "week": 5,
+    "team": "New England Patriots",
+    "username": "RadioactiveShrimp",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-01T14:39:06.238035Z"
+  },
+  {
+    "week": 5,
+    "team": "Las Vegas Raiders",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-01T21:22:08.096174Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "WhoDatScot",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-02T21:00:28.179528Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-02T22:46:49.939364Z"
+  },
+  {
+    "week": 5,
+    "team": "Los Angeles Rams",
+    "username": "GoodellBlows",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-03T00:00:25.733866Z"
+  },
+  {
+    "week": 5,
+    "team": "Las Vegas Raiders",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-03T01:55:49.780251Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-03T15:21:08.908044Z"
+  },
+  {
+    "week": 5,
+    "team": "Cincinnati Bengals",
+    "username": "Wine_Ninja",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-04T15:41:04.893305Z"
+  },
+  {
+    "week": 5,
+    "team": "New England Patriots",
+    "username": "PrincessChiara",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-05T17:15:00Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Jets",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "Broncos beat Jets",
+    "created_at": "2025-10-06T04:33:10.122425Z"
+  },
+  {
+    "week": 6,
+    "team": "Baltimore Ravens",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "Rams beat Ravens",
+    "created_at": "2025-10-06T15:13:23.966858Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Jets",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "Broncos beat Jets",
+    "created_at": "2025-10-07T03:13:07.759693Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Giants",
+    "username": "WhoDatScot",
+    "result": "DUN DUN",
+    "perpetrator": "Giants beat Eagles",
+    "created_at": "2025-10-07T22:53:31.559914Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Giants",
+    "username": "Wine_Ninja",
+    "result": "DUN DUN",
+    "perpetrator": "Giants beat Eagles",
+    "created_at": "2025-10-08T16:09:40.757235Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Giants",
+    "username": "DEH501",
+    "result": "DUN DUN",
+    "perpetrator": "Giants beat Eagles",
+    "created_at": "2025-10-08T20:49:30.758393Z"
+  },
+  {
+    "week": 6,
+    "team": "Arizona Cardinals",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "Colts beat Cardinals",
+    "created_at": "2025-10-08T23:58:25.9266Z"
+  },
+  {
+    "week": 6,
+    "team": "Baltimore Ravens",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "Rams beat Ravens",
+    "created_at": "2025-10-09T17:16:29.804054Z"
+  },
+  {
+    "week": 6,
+    "team": "Cincinnati Bengals",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "Packers beat Bengals",
+    "created_at": "2025-10-09T19:47:37.285533Z"
+  },
+  {
+    "week": 6,
+    "team": "New York Jets",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "Broncos beat Jets",
+    "created_at": "2025-10-10T09:43:37.500626Z"
+  },
+  {
+    "week": 6,
+    "team": "Baltimore Ravens",
+    "username": "GoodellBlows",
+    "result": "SURVIVED",
+    "perpetrator": "Rams beat Ravens",
+    "created_at": "2025-10-12T15:10:10.637437Z"
+  },
+  {
+    "week": 7,
+    "team": "Minnesota Vikings",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "Eagles beat Vikings",
+    "created_at": "2025-10-14T02:09:24.23793Z"
+  },
+  {
+    "week": 7,
+    "team": "Las Vegas Raiders",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "Chiefs beat Raiders",
+    "created_at": "2025-10-15T15:15:43.40985Z"
+  },
+  {
+    "week": 7,
+    "team": "Houston Texans",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "Seahawks beat Texans",
+    "created_at": "2025-10-15T22:38:13.37241Z"
+  },
+  {
+    "week": 7,
+    "team": "New York Giants",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "Broncos beat Giants",
+    "created_at": "2025-10-16T20:44:29.036528Z"
+  },
+  {
+    "week": 7,
+    "team": "Las Vegas Raiders",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "Chiefs beat Raiders",
+    "created_at": "2025-10-16T21:30:24.353987Z"
+  },
+  {
+    "week": 7,
+    "team": "Las Vegas Raiders",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "Chiefs beat Raiders",
+    "created_at": "2025-10-16T21:35:42.415799Z"
+  },
+  {
+    "week": 7,
+    "team": "Cincinnati Bengals",
+    "username": "GoodellBlows",
+    "result": "DUN DUN",
+    "perpetrator": "Bengals beat Steelers",
+    "created_at": "2025-10-16T21:38:11.289556Z"
+  },
+  {
+    "week": 7,
+    "team": "Tennessee Titans",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "Patriots beat Titans",
+    "created_at": "2025-10-19T01:19:01.243236Z"
+  },
+  {
+    "week": 8,
+    "team": "Washington Commanders",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO CHIEFS",
+    "created_at": "2025-10-20T02:11:01.540978Z"
+  },
+  {
+    "week": 8,
+    "team": "Tennessee Titans",
+    "username": "Fuji",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO COLTS",
+    "created_at": "2025-10-21T14:28:30.374258Z"
+  },
+  {
+    "week": 8,
+    "team": "Carolina Panthers",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO BILLS",
+    "created_at": "2025-10-22T08:26:23.879842Z"
+  },
+  {
+    "week": 8,
+    "team": "New York Giants",
+    "username": "Shawn",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO EAGLES",
+    "created_at": "2025-10-22T17:12:38.003075Z"
+  },
+  {
+    "week": 8,
+    "team": "Carolina Panthers",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO BILLS",
+    "created_at": "2025-10-23T14:53:38.221988Z"
+  },
+  {
+    "week": 8,
+    "team": "Washington Commanders",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO CHIEFS",
+    "created_at": "2025-10-23T17:17:55.999322Z"
+  },
+  {
+    "week": 8,
+    "team": "Washington Commanders",
+    "username": "Swaddle",
+    "result": "SURVIVED",
+    "perpetrator": "LOST TO CHIEFS",
+    "created_at": "2025-10-25T00:57:16.186864Z"
+  },
+  {
+    "week": 9,
+    "team": "Houston Texans",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-28T03:35:53.263641Z"
+  },
+  {
+    "week": 9,
+    "team": "Carolina Panthers",
+    "username": "Fuji",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-28T04:00:04.352092Z"
+  },
+  {
+    "week": 9,
+    "team": "Pittsburgh Steelers",
+    "username": "Shawn",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-28T16:45:55.297316Z"
+  },
+  {
+    "week": 9,
+    "team": "Washington Commanders",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-28T17:40:55.617035Z"
+  },
+  {
+    "week": 9,
+    "team": "Tennessee Titans",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-29T03:13:29.203006Z"
+  },
+  {
+    "week": 9,
+    "team": "Carolina Panthers",
+    "username": "Swaddle",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-10-30T19:35:30.085634Z"
+  },
+  {
+    "week": 9,
+    "team": "Atlanta Falcons",
+    "username": "Wholelottalosing",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-10-30T22:46:36.241574Z"
+  },
+  {
+    "week": 10,
+    "team": "Pittsburgh Steelers",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-04T08:00:31.204096Z"
+  },
+  {
+    "week": 10,
+    "team": "Las Vegas Raiders",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "Broncos beat Raiders",
+    "created_at": "2025-11-04T13:23:57.28849Z"
+  },
+  {
+    "week": 10,
+    "team": "Arizona Cardinals",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-04T16:49:55.958239Z"
+  },
+  {
+    "week": 10,
+    "team": "Houston Texans",
+    "username": "Wholelottalosing",
+    "result": "DUN DUN",
+    "perpetrator": "Jaguars beat Texans",
+    "created_at": "2025-11-07T00:37:44.793473Z"
+  },
+  {
+    "week": 11,
+    "team": "Arizona Cardinals",
+    "username": "TheClarinetOfJustice",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-10T19:49:32.358514Z"
+  },
+  {
+    "week": 11,
+    "team": "New York Jets",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-11T14:55:40.686538Z"
+  },
+  {
+    "week": 11,
+    "team": "New York Giants",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-12T07:25:35.458526Z"
+  },
+  {
+    "week": 12,
+    "team": "Atlanta Falcons",
+    "username": "TheClarinetOfJustice",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-11-18T01:35:45.57789Z"
+  },
+  {
+    "week": 12,
+    "team": "Minnesota Vikings",
+    "username": "Fivedollarshakes",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-19T02:01:44.411037Z"
+  },
+  {
+    "week": 12,
+    "team": "Tampa Bay Buccaneers",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-19T02:09:43.181414Z"
+  },
+  {
+    "week": 13,
+    "team": "Chicago Bears",
+    "username": "Fivedollarshakes",
+    "result": "DUN DUN",
+    "perpetrator": "",
+    "created_at": "2025-11-26T22:11:42.056045Z"
+  },
+  {
+    "week": 13,
+    "team": "Minnesota Vikings",
+    "username": "munch",
+    "result": "SURVIVED",
+    "perpetrator": "",
+    "created_at": "2025-11-27T09:34:27.711187Z"
+  }
+]

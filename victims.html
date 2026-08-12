@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Victim Registry — Law &amp; Order: Special Victory Unit</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="src/lawandorder.jpg"/>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lawandorder-svu.app/victims.html"/>
+  <meta property="og:title" content="Victim Registry — Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:description" content="All 32 victims. One of them goes down every week."/>
+  <meta property="og:image" content="src/lawandorder.jpg"/>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+
+<link rel="stylesheet" href="css/site.css"/>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Victim Registry</div>
+    <div id="weekBadge" class="week-badge" aria-live="polite"></div>
+    <h1>Law &amp; Order: Special Victory Unit</h1>
+    <!-- Original line, not dialogue. Unquoted on purpose: the home page reserves
+         quotation marks for the real cold-open narration. Nods to Rollins'
+         gambling arc (S22E7, "Gambler's Fallacy"). -->
+    <p class="tagline">Detective Rollins had a system too. The house still collected.</p>
+  </header>
+
+  <div id="siteNav" data-current="victims"></div>
+
+  <div class="container">
+    <section class="team-selection" aria-labelledby="victimGridTitle">
+      <div class="section-head">
+        <h2 id="victimGridTitle">The Victims</h2>
+        <label class="week-picker">
+          <span class="week-picker-label">Week</span>
+          <select id="weekSelect" class="week-picker-select" aria-label="Choose a week"></select>
+        </label>
+        <a id="weekScheduleLink" class="schedule-link" target="_blank" rel="noopener noreferrer">View Full Schedule</a>
+      </div>
+      <p id="victimIntro">Pick a victim that you believe will lose in week
+      <strong id="victimWeek">1</strong>.</p>
+
+      <div id="victimPickStatus" class="join-status" role="status" aria-live="polite"></div>
+      <ul class="victim-grid" id="victimGrid" aria-label="All 32 teams"></ul>
+    </section>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p class="credit-role">Executive Producer</p>
+    <p class="credit-name">Dick Wolf</p>
+  </footer>
+
+  <script src="js/nfl-schedule.js"></script>
+  <script src="js/season.js"></script>
+  <script src="js/teams.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/auth-corner.js"></script>
+  <script src="js/victims.js"></script>
+  <script src="js/password-reset.js"></script>
+</body>
+</html>
