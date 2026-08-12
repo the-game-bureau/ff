@@ -67,12 +67,21 @@
 /* Painted behind everything: on a short page or an overscroll bounce the
    area past the footer shows this, so it matches the footer rather than
    flashing paper. */
-html{ background: var(--ink); }
+/* text-size-adjust: iOS Safari inflates body text in landscape unless it is
+   pinned, which breaks every measure tuned above. */
+html{
+  background: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body{
   font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.5;
+  /* A long unbroken token — an email, a pasted link — should fold rather than
+     push the page sideways on a phone. */
+  overflow-wrap: break-word;
   color: var(--text-primary);
   background: var(--paper);
   min-height: 100vh;
@@ -497,6 +506,82 @@ body{
 .nav-btn-current:focus-visible{
   --nav-btn-bg: var(--primary-blue);
   color: var(--paper-raised);
+}
+
+/* ===== NAV TOGGLE (phone only) =====
+   Hidden above 767px, where the whole row fits. Built like every other control
+   in here: hard rule, zero-blur offset shadow, and it presses into the page. */
+.nav-toggle{
+  display: none;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.08s linear, box-shadow 0.08s linear,
+              background 0.08s linear, color 0.08s linear;
+}
+
+.nav-toggle:focus-visible{
+  outline: none;
+  background: var(--accent-yellow);
+  color: var(--ink);
+}
+
+/* The three bars, drawn as one element: two are backgrounds on the box, the
+   middle is a border, so there are no child spans for nav.js to emit. */
+.nav-toggle-bars{
+  position: relative;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 18px;
+  border-top: 4px solid currentColor;
+  border-bottom: 4px solid currentColor;
+}
+
+.nav-toggle-bars::before{
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  border-top: 4px solid currentColor;
+}
+
+.nav-open .nav-toggle{
+  background: var(--accent-yellow);
+  color: var(--ink);
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+/* Bars collapse to an X while the panel is open. */
+.nav-open .nav-toggle-bars{
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.nav-open .nav-toggle-bars::before{ transform: translateY(-50%) rotate(45deg); }
+
+.nav-open .nav-toggle-bars::after{
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  border-top: 4px solid currentColor;
+  transform: translateY(-50%) rotate(-45deg);
 }
 
 /* ===== CARDS ===== */
@@ -1026,9 +1111,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   z-index: 20000;
   background: rgba(0, 0, 0, 0.82);
   display: flex;
-  align-items: center;
+  /* flex-start plus margin:auto on the card, not align-items:center: a centred
+     flex item that overflows its scroll container pushes its own top out of
+     reach, so on a short screen — a phone in landscape, or one with the
+     keyboard up — the card's heading could not be scrolled back to. */
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .modal-backdrop[hidden]{ display: none; }
@@ -1042,6 +1132,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 100%;
   max-width: 440px;
   text-align: center;
+  /* Centres in the backdrop while it fits, and stays fully scrollable once it
+     doesn't. See the note on .modal-backdrop. */
+  margin: auto;
 }
 
 .modal-card h2{
@@ -1514,6 +1607,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-color: var(--error);
 }
 
+/* Named in a later week, and still takeable — so it gets the interaction
+   colour rather than the red of a team that is genuinely spent. Solid yellow
+   on a black rule: the tints above borrow their own text colour, and yellow
+   has no readable tint. */
+.victim-status.victim-status-future{
+  color: var(--ink);
+  background: var(--accent-yellow);
+  border-color: var(--ink);
+}
+
 .victim-logo,
 .helmet{
   width: 76px;
@@ -1843,7 +1946,10 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 .mugshot-lightbox-image{
   display: block;
   width: 100%;
+  /* dvh, so a mobile browser's collapsing toolbar doesn't push the caption
+     below the fold. vh first for anything without dvh. */
   max-height: 72vh;
+  max-height: 72dvh;
   object-fit: contain;
   background: var(--paper-raised);
   border: var(--rule);
@@ -2025,39 +2131,141 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     width: 36px;
   }
 
+  /* The heading and its control sit on separate rows once they stop fitting
+     side by side, and the control takes the width so its tap targets grow
+     instead of being squeezed into a corner. */
+  .section-head,
+  .ticker-head{ gap: 10px; }
+
+  .section-head h2,
+  .ticker-head .section-heading{ flex: 1 1 100%; }
+
+  .week-picker,
+  .ticker-weeknav{ width: 100%; }
+
+  .week-picker-select{ flex: 1 1 auto; }
+
+  .ticker-week{ flex: 1 1 auto; min-width: 0; }
+
+  .week-nav-btn{ width: 48px; }
+
+  .schedule-link{ min-height: 44px; }
+
+  /* Everything a thumb has to hit gets 44px of height. These are all controls
+     whose height came from their type size on a desktop, which lands short of
+     a comfortable touch target. */
+  .header-id-escape,
+  .header-id-action,
+  .week-picker-label,
+  .week-picker-select,
+  .week-nav-btn,
+  .ticker-week{ min-height: 44px; }
+
+  /* Full-width buttons: a wrapped row of half-width buttons reads worse than a
+     stack, and a phone has no width to spare for the gaps. */
+  .action-buttons .btn,
+  .join-actions .btn,
+  .admin-actions .btn{ width: 100%; }
+
+  .action-buttons,
+  .admin-actions{ flex-direction: column; align-items: stretch; }
+
+  .modal-backdrop{ padding: 14px; }
+
+  .modal-card{
+    padding: 26px 16px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Clear of the notch/status bar and of the card's own top-right close box. */
+  .modal-close{ top: -3px; right: -3px; }
+
+  .stats-summary,
+  .status-line{ font-size: 0.8125rem; }
+
+  /* ===== HAMBURGER MENU =====
+     Six buttons plus their sublabels don't fit a phone in any arrangement that
+     stays legible, so the row folds into a toggle and a stacked panel. The
+     panel is display:none rather than a height transition: a collapsed row of
+     bordered boxes still catches taps on some browsers, and this theme has no
+     animation anywhere else. */
+  .main-nav{ padding: 12px; }
+
+  .nav-toggle{ display: flex; }
+
   .main-nav-list{
-    display: grid;
-    grid-template-columns: repeat(2, max-content);
-    justify-content: center;
-    gap: 9px;
+    display: none;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .nav-open .main-nav-list{ display: flex; }
+
+  /* One row per item: the themed name on the left in its own box, the plain
+     English gloss on the right, like a docket line. */
+  .main-nav-list li{
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-btn{
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    min-height: 48px;
+    padding: 11px 14px;
+    font-size: 0.9375rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* Fixed width, not shrink-to-fit: the glosses are different lengths, and
+     sizing each to its own text left every button ending at a different x.
+     Wide enough for the longest one ("League Archive") on one line. */
+  .nav-sublabel{
+    flex: 0 0 106px;
+    text-align: right;
+    font-size: 0.5625rem;
   }
 
   .main-nav-list li:nth-last-child(2){ margin-left: 0; }
 
-  .nav-btn{
-    padding: 9px 13px;
-    font-size: 0.875rem;
-    letter-spacing: 0.06em;
+  /* No hover on a touch screen, so the reason a button is inert has to be on
+     screen. The tooltip drops out of its bubble and sits in the row. */
+  .nav-btn-disabled::after{
+    position: static;
+    transform: none;
+    opacity: 1;
+    margin-left: auto;
+    padding: 3px 7px;
+    box-shadow: none;
+    border-width: 2px;
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
   }
 }
 
 @media (max-width: 480px){
-  .main-nav{ padding: 12px 8px; }
-  .main-nav-list{
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+  .main-nav{ padding: 10px 8px; }
+  .main-nav-list{ width: 100%; }
+  /* Narrowest phones: the gloss goes under the button rather than beside it,
+     so neither half has to shrink below reading size. */
+  .main-nav-list li{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
   }
   .nav-btn{
-    justify-content: center;
     width: 100%;
-    padding: 8px 10px;
+    padding: 10px 12px;
     gap: 5px;
-    font-size: 0.8125rem;
-    letter-spacing: 0.03em;
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
     white-space: normal;
-    text-align: center;
   }
+  .nav-sublabel{ text-align: left; font-size: 0.5625rem; }
   .avatar-upload-row{ grid-template-columns: 1fr; }
   .avatar-preview-frame{ margin: 0 auto; }
   .lineup-room{

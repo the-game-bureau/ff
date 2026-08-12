@@ -72,10 +72,66 @@ function renderSiteNav(){
       ${item.label}</a>${sublabel}</li>`;
   }).join('');
 
+  // The toggle is always in the markup and always focusable; CSS hides it above
+  // the phone breakpoint, where the full row of buttons fits on one line. The
+  // list is never removed from the DOM, so nothing here depends on JS to make
+  // the menu readable — a phone with the script blocked still shows every item.
   mount.innerHTML = `
     <nav class="main-nav" role="navigation" aria-label="Main menu">
-      <ul class="main-nav-list">${items}</ul>
+      <button class="nav-toggle" id="navToggle" type="button"
+              aria-expanded="false" aria-controls="mainNavList">
+        <span class="nav-toggle-bars" aria-hidden="true"></span>
+        <span class="nav-toggle-label">Menu</span>
+      </button>
+      <ul class="main-nav-list" id="mainNavList">${items}</ul>
     </nav>`;
+
+  wireNavToggle(mount);
+}
+
+// Open/close for the phone menu. Nothing runs on a desktop width beyond the
+// listeners themselves: .nav-open only means anything inside the phone media
+// query.
+function wireNavToggle(mount){
+  const nav = mount.querySelector('.main-nav');
+  const toggle = mount.querySelector('.nav-toggle');
+  if(!nav || !toggle) return;
+
+  const phone = window.matchMedia('(max-width: 767px)');
+
+  function setOpen(open){
+    nav.classList.toggle('nav-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  toggle.addEventListener('click', () => {
+    setOpen(!nav.classList.contains('nav-open'));
+  });
+
+  // Tapping an item navigates, but same-page links (the current page, #signin)
+  // would otherwise leave the panel hanging open over the content.
+  nav.querySelector('.main-nav-list').addEventListener('click', (event) => {
+    if(event.target.closest('a')) setOpen(false);
+  });
+
+  document.addEventListener('click', (event) => {
+    if(!nav.classList.contains('nav-open')) return;
+    if(!nav.contains(event.target)) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if(event.key !== 'Escape') return;
+    if(!nav.classList.contains('nav-open')) return;
+    setOpen(false);
+    toggle.focus();
+  });
+
+  // Rotating a phone to landscape can cross the breakpoint, which reveals the
+  // full row anyway; drop the open state so the toggle doesn't come back
+  // claiming to be expanded.
+  phone.addEventListener('change', (event) => {
+    if(!event.matches) setOpen(false);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', renderSiteNav);

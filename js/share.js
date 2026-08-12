@@ -15,7 +15,7 @@
   const SHARE_TITLE = 'Law & Order: Special Victory Unit';
   // Goes to every channel that carries more than a bare link: email body, text
   // message, and the OS share sheet. Copy Link stays the URL alone.
-  const SHARE_TEXT = 'Join me in playing the strangest fantasy football game you\'ve ever played. DUN DUN.';
+  const SHARE_TEXT = 'Join me in playing the strangest fantasy football game you\'ve ever seen. DUN DUN.';
 
   document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('shareModal');

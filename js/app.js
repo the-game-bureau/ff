@@ -60,6 +60,16 @@ function isCurrentSeasonPick(pick){
   return !pick.season || Number(pick.season) === Number(SEASON);
 }
 
+// A week that was released so its team could be used elsewhere. See the same
+// pair in js/victims.js, which is where skip rows are written; keep them in
+// step. A skipped week counts as unpicked everywhere: standings, timeline,
+// ticker and Evidence Locker all read what this returns.
+const PICK_SKIP_RESULT = 'SKIP';
+
+function isSkippedPick(pick){
+  return String(pick?.result || '').trim().toUpperCase() === PICK_SKIP_RESULT;
+}
+
 function activePicksFromHistory(picks){
   const latestByUserWeek = new Map();
 
@@ -71,7 +81,9 @@ function activePicksFromHistory(picks){
     }
   }
 
-  return [...latestByUserWeek.values()].sort((a, b) => {
+  // Filtered after the newest row per week is chosen, so a skip can outrank the
+  // pick it releases.
+  return [...latestByUserWeek.values()].filter(pick => !isSkippedPick(pick)).sort((a, b) => {
     const weekDiff = Number(a.week) - Number(b.week);
     if(weekDiff !== 0) return weekDiff;
     return new Date(pickTimestamp(a)) - new Date(pickTimestamp(b));

@@ -61,10 +61,18 @@ in [js/victims.js](js/victims.js), checked in this order, first match wins:
 | Label | Meaning |
 | --- | --- |
 | **Your Current Selection** | your pick for the week being viewed |
-| **Previous Selection** | already used in another week, so unselectable |
+| **Future Selection** | your pick for a *later* week — still selectable |
+| **Previous Selection** | used in an earlier week, so unselectable |
 | **Not Playing** | on a bye |
 | **Past Kickoff** | their game has started |
 | **Available** | free to pick |
+
+`Future Selection` is the only label with a coloured badge that is still
+clickable, so it is yellow (the site's interaction colour) rather than the red
+of a genuinely spent team. Taking the team releases the later week — see
+**Releasing a week** below. If that later week has already kicked off (which
+only happens when looking back at an earlier week mid-season) the label stays
+but the card goes dead; the tooltip says which week and why.
 
 `Available` is also the count in the Case File status bar. The earlier themed set
 (CURRENT VICTIM / NOT AVAILABLE / BYE / LOCKED / STILL BREATHING) is retired — do not
@@ -122,7 +130,10 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   helpers that derive the open week, kickoff locks and matchups from it.
 - [js/teams.js](js/teams.js) — `NFL_TEAMS`: name, NFL `abbr`, and colours.
 - [js/nav.js](js/nav.js) — the header menu. **The only place nav items are
-  defined** — edit here, not in the HTML.
+  defined** — edit here, not in the HTML. It also renders the phone hamburger
+  (`.nav-toggle`) and wires it up: CSS hides the toggle above 767px and hides
+  the list below it until `.nav-open` is on the `<nav>`. The list is never
+  removed from the DOM, so the menu still reads with the script blocked.
 - [js/auth-corner.js](js/auth-corner.js) — the header auth controls and the sign-in
   popup, for every page except `index.html`, which carries its own copy in markup
   and drives it from `app.js`. (Two auth modules is a known wart.)
@@ -264,6 +275,44 @@ Tables in use:
 - `picks` — `user_id`, `week`, `team`, `result`. `result` is free text matched
   case-insensitively for `survived` / `dun dun` / `pick is in`, which drives the status
   badge colors. Results are entered out-of-band (admin page, not in this repo).
+
+### Picks are append-only
+
+Nothing is ever updated or deleted in `ff_picks`. **The newest row for a
+(user, week) is the pick** — changing a pick inserts another row, and every
+reader funnels the table through `activePicksFromHistory()` (one copy in
+[js/victims.js](js/victims.js), one in [js/app.js](js/app.js)) to collapse it.
+The unique constraint that used to prevent this was dropped in
+[supabase/sql/ff_allow_pick_changes.sql](supabase/sql/ff_allow_pick_changes.sql).
+
+Server-side, `ff_apply_pick_schedule()` re-checks every insert: the game exists
+in `ff_nfl_schedule`, kickoff has not passed, and the team is not already named
+in another week. So the client's rules are enforced twice, and a client change
+alone cannot loosen them.
+
+### Releasing a week
+
+`result = 'SKIP'` is a tombstone. To un-pick a week, a row is inserted for that
+week carrying `SKIP`; being newest, it replaces the pick, and
+`activePicksFromHistory()` drops a skipped latest row so the week reads as empty
+and its team is free again. The skip row keeps the team it releases, because the
+trigger only accepts a team with a real game that week.
+
+This is what makes **Future Selection** work: picking a team parked in a later
+week writes the `SKIP` row for that week **first**, then the new pick. The other
+order fails — the trigger refuses a team that is still the latest pick elsewhere.
+[supabase/sql/ff_release_future_pick.sql](supabase/sql/ff_release_future_pick.sql)
+teaches the trigger and the `ff_current_suspects` view to ignore skipped weeks,
+and must be run for the swap to work at all.
+
+Two things to know before touching this:
+
+- Anything new that reads picks must drop skipped rows, or a released week comes
+  back as a real pick. The raw `ff_active_picks` view does **not** filter them.
+- Releasing a week can leave a gap in the middle of a season, which the
+  fill-in-order rule (`firstMissingWeekBefore()`) then reports on the weeks after
+  it. That is the honest state of things: the week really does need a victim
+  again.
 
 ## Conventions
 

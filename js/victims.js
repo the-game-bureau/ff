@@ -181,6 +181,17 @@ function isCurrentSeasonPick(pick){
   return !pick.season || Number(pick.season) === Number(SEASON);
 }
 
+// How a week gets un-picked. Nothing is ever deleted from ff_picks — the newest
+// row for a week is the pick — so releasing a team is a new row for that week
+// carrying this marker. Everything downstream reads a skipped latest row as
+// "that week has no victim", which is what frees the team up for another week.
+// js/app.js carries the same pair; keep them in step.
+const PICK_SKIP_RESULT = 'SKIP';
+
+function isSkippedPick(pick){
+  return String(pick?.result || '').trim().toUpperCase() === PICK_SKIP_RESULT;
+}
+
 function activePicksFromHistory(picks){
   const latestByWeek = new Map();
 
@@ -192,7 +203,11 @@ function activePicksFromHistory(picks){
     }
   }
 
-  return [...latestByWeek.values()].sort((a, b) => Number(a.week) - Number(b.week));
+  // Filter after choosing the latest row, not before: a skip has to be able to
+  // outrank the pick it releases, which it only does by being the newest row.
+  return [...latestByWeek.values()]
+    .filter(pick => !isSkippedPick(pick))
+    .sort((a, b) => Number(a.week) - Number(b.week));
 }
 
 function currentWeekPick(){
@@ -208,6 +223,29 @@ function usedInOtherWeek(teamName){
   return victimState.activePicks.find(pick =>
     pick.team === teamName && Number(pick.week) !== Number(viewWeek())
   ) || null;
+}
+
+// A team named in a week further down the schedule. Unlike a team burned in an
+// earlier week, this one can still be taken back: nothing has been played, so
+// the later week is released and the team moves to the week being viewed.
+function usedInLaterWeek(teamName){
+  const usedPick = usedInOtherWeek(teamName);
+  return usedPick && Number(usedPick.week) > Number(viewWeek()) ? usedPick : null;
+}
+
+// ...unless that later week's game has already kicked off, which happens when
+// you are looking back at an earlier week mid-season. Then the pick stands and
+// the team is spent, exactly like an earlier-week one.
+function reclaimableLaterPick(teamName){
+  const laterPick = usedInLaterWeek(teamName);
+  if(!laterPick) return null;
+  return scheduleInfoForTeamWeek(teamName, laterPick.week).locked ? null : laterPick;
+}
+
+function spentInOtherWeek(teamName){
+  const usedPick = usedInOtherWeek(teamName);
+  if(!usedPick) return null;
+  return reclaimableLaterPick(teamName) ? null : usedPick;
 }
 
 // Weeks are filled in order: you cannot name a Week 5 victim without having
@@ -226,7 +264,13 @@ function firstMissingWeekBefore(){
 }
 
 function scheduleInfoForTeam(teamName){
-  return window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(teamName, viewWeek()) || {
+  return scheduleInfoForTeamWeek(teamName, viewWeek());
+}
+
+// Same lookup for any week, not just the one on screen: releasing a later
+// week's pick has to check that week's kickoff, not this one's.
+function scheduleInfoForTeamWeek(teamName, week){
+  return window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(teamName, Number(week)) || {
     game: null,
     opponent: '',
     opponentShort: '',
@@ -350,6 +394,8 @@ async function refreshVictimState(){
 function statusModifier(status){
   if(status === 'Your Current Selection') return ' victim-status-current';
   if(status === 'Previous Selection') return ' victim-status-previous';
+  // Yellow, the site's interaction colour: this one is still yours to take.
+  if(status === 'Future Selection') return ' victim-status-future';
   return '';
 }
 
@@ -358,6 +404,11 @@ function cardStatus(teamName, info){
   const usedPick = usedInOtherWeek(teamName);
 
   if(activePick?.team === teamName) return 'Your Current Selection';
+  // Named further down the schedule. Still selectable: taking it here releases
+  // the later week. Reads as Future Selection even when that week has already
+  // kicked off and the swap is off the table, because that is what it is — the
+  // card just goes disabled with it.
+  if(usedPick && Number(usedPick.week) > Number(viewWeek())) return 'Future Selection';
   // Burned in an earlier week: one team per season, so it is off the board.
   // isCardDisabled() covers this too, so the card is unclickable as well.
   if(usedPick) return 'Previous Selection';
@@ -370,11 +421,25 @@ function cardStatus(teamName, info){
   return 'Available';
 }
 
+// The badge has room for two words, and "Future Selection" does not say which
+// week or what happens when you click it. That goes in the tooltip and the
+// screen-reader label instead, where there is room for a sentence.
+function cardHint(teamName){
+  const laterPick = usedInLaterWeek(teamName);
+  if(!laterPick) return '';
+
+  return reclaimableLaterPick(teamName)
+    ? `Your Week ${laterPick.week} victim. Picking here clears Week ${laterPick.week}.`
+    : `Locked into Week ${laterPick.week} — that game has already started.`;
+}
+
 function isCardDisabled(teamName, info){
   return Boolean(
     firstMissingWeekBefore() ||
     currentPickLocked() ||
-    usedInOtherWeek(teamName) ||
+    // Not usedInOtherWeek(): a later week that has not kicked off yet is still
+    // reclaimable, so those cards stay live.
+    spentInOtherWeek(teamName) ||
     info.isBye ||
     info.locked
   );
@@ -393,7 +458,8 @@ function renderVictims(){
     const disabled = isCardDisabled(team.name, info);
     const isActivePick = activePick?.team === team.name;
     const status = cardStatus(team.name, info);
-    const ariaLabel = `${team.name}, ${matchupText(info)}, ${status}`;
+    const hint = cardHint(team.name);
+    const ariaLabel = `${team.name}, ${matchupText(info)}, ${status}${hint ? `. ${hint}` : ''}`;
 
     return `
     <li class="victim-card${disabled ? ' disabled' : ''}${isActivePick ? ' current-pick' : ''}"
@@ -402,6 +468,7 @@ function renderVictims(){
         aria-disabled="${disabled ? 'true' : 'false'}"
         aria-pressed="${isActivePick ? 'true' : 'false'}"
         aria-label="${escapeHtml(ariaLabel)}"
+        ${hint ? `title="${escapeHtml(hint)}"` : ''}
         data-team="${escapeHtml(team.name)}"
         data-primary="${team.primary}"
         data-secondary="${team.secondary}">
@@ -462,11 +529,40 @@ async function insertVictimPick(row){
         user_id: row.user_id,
         week: row.week,
         team: row.team,
-        username: row.username
+        username: row.username,
+        // Load-bearing on the retry: without it a skip row comes back as an
+        // ordinary pick and the week it was meant to release stays taken.
+        // `result` predates every column this fallback exists for, so it is
+        // always safe to send.
+        ...(row.result ? { result: row.result } : {})
       });
   }
 
   return result;
+}
+
+// Release a later week: a new row for that week carrying the skip marker, which
+// becomes the newest row and so replaces the pick. The row keeps the team it is
+// releasing, because the schedule trigger only accepts a team that actually
+// plays that week.
+async function releaseLaterPick(pick){
+  const week = Number(pick.week);
+  const info = scheduleInfoForTeamWeek(pick.team, week);
+
+  return await insertVictimPick({
+    user_id: victimState.user.id,
+    season: SEASON,
+    week,
+    team: pick.team,
+    username: victimState.profile.username,
+    result: PICK_SKIP_RESULT,
+    submitted_at_utc: new Date().toISOString(),
+    opponent: info.opponent || null,
+    home_away: info.homeAway === 'vs' || info.homeAway === '@' ? info.homeAway : null,
+    kickoff_at_utc: info.game?.kickoffUtc || null,
+    schedule_source_url: window.NFL_SCHEDULE_HELPERS?.getScheduleUrlForWeek?.(week) ||
+      window.NFL_SCHEDULE_SOURCE_URL || null
+  });
 }
 
 async function submitVictimPick(teamName){
@@ -491,9 +587,17 @@ async function submitVictimPick(teamName){
     return;
   }
 
-  const usedPick = usedInOtherWeek(teamName);
-  if(usedPick){
-    setVictimStatus(`${teamName} was already named in Week ${usedPick.week}.`, 'bad');
+  // A later week that has not kicked off is a swap, not a rejection; anything
+  // else already spent is final.
+  const spentPick = spentInOtherWeek(teamName);
+  if(spentPick){
+    const laterPick = usedInLaterWeek(teamName);
+    setVictimStatus(
+      laterPick
+        ? `${teamName} is locked into Week ${laterPick.week} — that game has already started.`
+        : `${teamName} was already named in Week ${spentPick.week}.`,
+      'bad'
+    );
     return;
   }
 
@@ -531,19 +635,56 @@ async function submitVictimPick(teamName){
     schedule_source_url: window.NFL_SCHEDULE_HELPERS?.getScheduleUrlForWeek?.(viewWeek()) || window.NFL_SCHEDULE_SOURCE_URL || null
   };
 
+  const releasePick = reclaimableLaterPick(teamName);
+
   setVictimStatus(`Saving Week ${viewWeek()} victim...`, '');
 
   try {
+    // Release first, then claim. The other order fails: the schedule trigger
+    // refuses a team that is still the latest pick in another week.
+    if(releasePick){
+      const released = await releaseLaterPick(releasePick);
+      if(released.error){
+        setVictimStatus(
+          `Could not clear ${teamName} from Week ${releasePick.week}: ${released.error.message}`,
+          'bad'
+        );
+        return;
+      }
+    }
+
     const { error } = await insertVictimPick(row);
 
     if(error){
-      setVictimStatus(`Pick save failed: ${error.message}`, 'bad');
+      // Redraw before reporting, not after: refreshVictimState() writes its own
+      // status line, so it would overwrite this one.
+      if(releasePick){
+        await refreshVictimState();
+        renderVictims();
+      }
+      // Say so if the release already went through, otherwise that week looks
+      // to have emptied itself.
+      setVictimStatus(
+        releasePick
+          ? `Pick save failed: ${error.message} Week ${releasePick.week} was ` +
+            `cleared, so it needs a victim again.`
+          : `Pick save failed: ${error.message}`,
+        'bad'
+      );
       return;
     }
 
-    setVictimStatus(`Week ${viewWeek()} victim saved: ${teamName} ${matchupText(info)}.`, 'good');
     await refreshVictimState();
     renderVictims();
+    // After the redraw, for the same reason as the failure branch above: the
+    // refresh writes its own status line and would clear this one.
+    setVictimStatus(
+      releasePick
+        ? `Week ${viewWeek()} victim saved: ${teamName} ${matchupText(info)}. ` +
+          `Week ${releasePick.week} is open again.`
+        : `Week ${viewWeek()} victim saved: ${teamName} ${matchupText(info)}.`,
+      'good'
+    );
   } catch(error) {
     console.error('Victim pick error:', error);
     setVictimStatus('Unexpected pick save failure.', 'bad');
