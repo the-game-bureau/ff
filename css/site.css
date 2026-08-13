@@ -1582,7 +1582,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding-bottom: 0;
 }
 
+/* Always at the right-hand end of its row, whatever else shares the row and
+   whatever the width. space-between alone put it in the middle of the three
+   items on the Victims head, and it moved as the heading changed length. */
 .week-picker{
+  margin-left: auto;
   display: inline-flex;
   align-items: stretch;
   border: var(--rule);
@@ -2897,10 +2901,14 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .section-head h2,
   .ticker-head .section-heading{ flex: 1 1 100%; }
 
-  .week-picker,
+  /* The ticker's stepper takes the width so its arrows grow into thumb-sized
+     targets. The week picker does not: it stays a right-aligned control on
+     every width, which is the one thing about it that never moves. */
   .ticker-weeknav{ width: 100%; }
 
-  .week-picker-select{ flex: 1 1 auto; }
+  .week-picker{ width: auto; margin-left: auto; }
+
+  .week-picker-select{ flex: 0 0 auto; }
 
   .ticker-week{ flex: 1 1 auto; min-width: 0; }
 
@@ -2940,17 +2948,15 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .status-line{ font-size: 0.8125rem; }
 
   /* ===== HAMBURGER MENU =====
-     Six buttons plus their sublabels don't fit a phone in any arrangement that
-     stays legible, so the row folds into a toggle and a stacked panel. The
-     panel is display:none rather than a height transition: a collapsed row of
-     bordered boxes still catches taps on some browsers, and this theme has no
-     animation anywhere else.
+     Seven items plus their sublabels do not fit across a phone, so the row
+     folds into a toggle and a stacked panel. The panel is display:none rather
+     than a height transition: a collapsed row of bordered boxes still catches
+     taps on some browsers, and this theme has no animation anywhere else.
 
-     On a phone the buttons stop being buttons. Six boxes stacked, each with its
-     own rule and its own offset shadow, read as clutter; the panel is instead
-     one bordered card and the items are plain rows divided by hairlines — a
-     docket, not a toolbar. The gloss sits under each name on its own line,
-     so nothing has to be shortened to fit beside it. */
+     The items themselves are the SAME buttons as the desktop row — hard rule,
+     offset shadow, sublabel underneath, blue for the current page. They were
+     briefly restyled into flat docket rows, which made the menu a different
+     component depending on the width you opened it at. One nav, one look. */
   .main-nav{ padding: 12px; }
 
   .nav-toggle{ display: flex; }
@@ -2960,111 +2966,57 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0;
+    gap: 14px;
     margin-top: 12px;
-    background: var(--paper-raised);
-    border: var(--rule);
-    box-shadow: var(--shadow-sm);
   }
 
   .nav-open .main-nav-list{ display: flex; }
 
-  /* One row per item, stacked name over gloss. The hairline is on the item, so
-     the first row sits flush against the panel's own top rule. */
   .main-nav-list li{
     flex-direction: column;
     align-items: stretch;
-    gap: 2px;
-    padding: 11px 14px;
-    border-top: 2px solid var(--ink);
+    gap: 5px;
   }
 
-  .main-nav-list li:first-child{ border-top: 0; }
-
-  /* Plain text, not a box: no frame, no shadow, no press. The row is the target
-     and it spans the full panel width, so the whole line is tappable. */
-  .nav-btn,
-  .nav-btn:hover,
-  .nav-btn:focus-visible{
-    display: block;
-    min-height: 0;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    transform: none;
-    font-size: 1rem;
-    letter-spacing: 0.06em;
+  /* Full width, because a phone has the height to spare and a stack of
+     shrink-to-fit buttons would step in and out at every label length. */
+  .nav-btn{
+    justify-content: center;
+    min-height: 48px;
+    text-align: center;
   }
 
-  /* Yellow is still the interaction colour; with no box to fill it goes behind
-     the word instead. */
-  .nav-btn:focus-visible{
-    outline: none;
-    background: var(--accent-yellow);
-    box-shadow: 0 0 0 4px var(--accent-yellow);
-  }
-
-  .nav-sublabel{
-    flex: none;
-    text-align: left;
-    font-size: 0.5625rem;
-    letter-spacing: 0.14em;
-  }
-
-  /* The current page is marked by a yellow bar to the left of the name rather
-     than a filled blue button — the only mark in the panel, so it's
-     unmistakable. On the row itself it would need :has(), so it hangs off the
-     link with a negative margin instead. */
-  .nav-btn-current,
-  .nav-btn-current:hover,
-  .nav-btn-current:focus-visible{
-    background: transparent;
-    color: var(--ink);
-    margin-left: -14px;
-    padding-left: 10px;
-    border-left: 4px solid var(--accent-yellow);
-  }
-
-  /* Inert items grey out in place; nothing about them should read as pressable. */
-  .nav-btn-disabled,
-  .nav-btn-disabled:hover,
-  .nav-btn-disabled:focus-visible{
-    border: 0;
-    box-shadow: none;
-    color: #8A8578;
-  }
-
-  .nav-btn-disabled + .nav-sublabel{ color: #8A8578; }
-
-  /* The auth pair joins the docket as two more rows, under a fat rule so it
-     reads as its own section rather than as two more pages. Only one of the two
-     is ever visible, so the fat rule lands in the same place either way. */
-  /* Same two-class weight as the desktop hide above, or it would not win here. */
-  .main-nav-list .nav-auth-item{ display: flex; }
-  .main-nav-list .nav-auth-item[hidden]{ display: none; }
-  #navEscapeItem,
-  #navEscapeItem[hidden] + #navSignInItem{ border-top: var(--rule-fat); }
-
-  /* Buttons, not links: give them a link's alignment and a pointer. */
+  /* Buttons, not links, in the auth pair: give them a link's cursor. */
   .nav-auth-item .nav-btn{
     width: 100%;
-    text-align: left;
     cursor: pointer;
   }
 
+  /* Same two-class weight as the desktop hide, or it would not win here. */
+  .main-nav-list .nav-auth-item{ display: flex; }
+  .main-nav-list .nav-auth-item[hidden]{ display: none; }
+
+  /* A rule above the auth pair, so signing out reads as its own thing rather
+     than as one more page. Only one of the two is ever on screen, so the rule
+     lands in the same place either way. */
+  #navEscapeItem,
+  #navEscapeItem[hidden] + #navSignInItem{
+    border-top: var(--rule);
+    padding-top: 14px;
+  }
+
   /* No hover on a touch screen, so the reason a button is inert has to be on
-     screen. The tooltip drops out of its bubble and runs on after the gloss. */
+     screen. The tooltip drops out of its bubble and sits under the button, in
+     the sublabel's place. */
   .nav-btn-disabled::after{
     position: static;
     transform: none;
     opacity: 1;
-    margin-left: 8px;
-    padding: 0;
-    background: none;
-    border: 0;
+    display: block;
+    margin: 6px auto 0;
+    padding: 3px 8px;
     box-shadow: none;
-    color: #8A8578;
+    border-width: 2px;
     font-size: 0.5625rem;
     letter-spacing: 0.08em;
   }
@@ -3072,16 +3024,14 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 
 @media (max-width: 480px){
   .main-nav{ padding: 10px 8px; }
-  .main-nav-list{ width: 100%; }
-  /* Narrowest phones: same docket rows, a little tighter. The stacked layout
-     already came from the phone breakpoint, so there's nothing to undo here. */
-  .main-nav-list li{ padding: 10px 12px; }
+  .main-nav-list{ width: 100%; gap: 12px; }
+  /* Narrowest phones: the same buttons, a shade tighter. */
   .nav-btn{
+    padding: 10px 12px;
     font-size: 0.9375rem;
     letter-spacing: 0.04em;
     white-space: normal;
   }
-  .nav-btn-current{ margin-left: -12px; }
   .avatar-upload-row{ grid-template-columns: 1fr; }
   .avatar-preview-frame{ margin: 0 auto; }
   .corkboard{ padding: 20px 10px 18px; }
