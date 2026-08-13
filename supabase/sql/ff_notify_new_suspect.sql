@@ -31,7 +31,11 @@
 -- Run once in the Supabase SQL editor. Safe to re-run.
 
 -- pg_net makes HTTP requests from Postgres without blocking the transaction.
-create extension if not exists pg_net with schema extensions;
+-- No "with schema": pg_net is not relocatable and installs into its own `net`
+-- schema. Naming a schema here fails, and because the SQL editor runs the file
+-- as one batch, that single error rolls back everything below it — including
+-- the trigger, which is then silently absent.
+create extension if not exists pg_net;
 
 
 -- ---------------------------------------------------------------------------
@@ -42,7 +46,7 @@ create or replace function public.ff_notify_new_suspect()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, extensions, vault
+set search_path = public, net, extensions, vault
 as $$
 declare
   github_token text;

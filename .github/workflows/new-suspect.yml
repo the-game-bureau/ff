@@ -1,9 +1,11 @@
+---
 # Opens an issue when somebody joins the league.
-#
+
 # Fired by a repository_dispatch from Supabase — see
 # supabase/sql/ff_notify_new_suspect.sql, which posts here from a trigger on
-# ff_profiles. Watching this repo is what turns the issue into an email.
-#
+# ff_profiles. Watching this repo is what turns the issue into an email or a
+# phone notification.
+
 # The payload carries the username and nothing else. Names and email addresses
 # stay in the database: an issue is readable by anyone with access to the repo
 # and lives forever, which is the wrong home for either.
@@ -30,16 +32,24 @@ jobs:
           # should not depend on a rule enforced somewhere else.
           SUSPECT: ${{ github.event.client_payload.username }}
           SUSPECTS_URL: https://thegamebureau.com/ff/suspects/
+          # Assigned and mentioned on purpose. GitHub Mobile only pushes for
+          # things addressed to you — mentions, assignments, review requests —
+          # so watching the repo gets you email and a web inbox entry but never
+          # a phone notification. This is what makes the phone buzz.
+          NOTIFY: ${{ github.repository_owner }}
         run: |
           TITLE="New suspect booked: ${SUSPECT}"
-          BODY=$(printf '**%s** has been booked into the 2026 season.\n\nSee the board: %s\n' \
-            "${SUSPECT}" "${SUSPECTS_URL}")
-          gh issue create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "${TITLE}" \
-            --body "${BODY}" \
-            --label "signup" || \
-          gh issue create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "${TITLE}" \
-            --body "${BODY}"
+          BODY=$(printf '@%s — **%s** has been booked into the 2026 season.\n\nSee the board: %s\n' \
+            "${NOTIFY}" "${SUSPECT}" "${SUSPECTS_URL}")
+
+          # --label and --assignee both fail the whole command if the label does
+          # not exist or the assignee cannot be set, so each is dropped in turn
+          # rather than losing the notification over a missing label.
+          gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "${TITLE}" --body "${BODY}" \
+            --assignee "${NOTIFY}" --label "signup" \
+          || gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "${TITLE}" --body "${BODY}" \
+            --assignee "${NOTIFY}" \
+          || gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "${TITLE}" --body "${BODY}"
