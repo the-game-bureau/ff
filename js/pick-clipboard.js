@@ -132,7 +132,7 @@
     renderPickTally(weekPicks.length);
 
     if (!weekPicks.length) {
-      body.innerHTML = `<tr><td colspan="3" class="pick-clipboard-empty">No picks filed for Week ${selectedWeek}.</td></tr>`;
+      body.innerHTML = `<tr><td colspan="4" class="pick-clipboard-empty">No picks filed for Week ${selectedWeek}.</td></tr>`;
       return;
     }
 
@@ -140,10 +140,17 @@
       <tr>
         <td data-label="Suspect">${escapeHtml(displayName(pick))}</td>
         <td data-label="Victim">
-          <span class="pick-clipboard-team">${escapeHtml(teamName(pick))}</span>
-          <span class="pick-clipboard-matchup">${escapeHtml(matchupText(pick))}</span>
+          <span class="pick-clipboard-line">
+            <span class="pick-clipboard-team">${escapeHtml(teamName(pick))}</span>
+            <span class="pick-clipboard-score">00</span>
+          </span>
+          <span class="pick-clipboard-line">
+            <span class="pick-clipboard-matchup">${escapeHtml(matchupText(pick))}</span>
+            <span class="pick-clipboard-score">00</span>
+          </span>
         </td>
         <td class="pick-clipboard-time" data-label="Filed">${escapeHtml(stamp(pick))}</td>
+        <td class="pick-clipboard-verdict" data-label="Result">${verdictMark(pick)}</td>
       </tr>
     `).join('');
   }
@@ -197,6 +204,36 @@
 
   function teamName(pick) {
     return String(pick?.team || '').trim();
+  }
+
+  // Marked by hand, in a second pen: green tick if the victim went down and the
+  // suspect walks, red X if the case closed on them. A pick with no result yet
+  // is left blank — the line is waiting to be marked, and a placeholder there
+  // would read as a verdict.
+  //
+  // Drawn as strokes rather than typed as ✓ and ✗, so they sit on the page like
+  // the rest of the pen work instead of like font glyphs.
+  function verdictMark(pick) {
+    const result = String(pick?.result || '').trim().toLowerCase();
+
+    if (result.includes('survived')) {
+      return `
+        <svg class="pick-mark pick-mark-tick" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M5 17.5 C8.5 20 11 23.5 12.5 26.5 C16 18 21.5 10 28.5 4.5"/>
+        </svg>
+        <span class="sr-only">Survived</span>`;
+    }
+
+    if (result.includes('dun dun')) {
+      return `
+        <svg class="pick-mark pick-mark-cross" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M6 5.5 C12 11.5 20 20 26.5 27"/>
+          <path d="M26 6 C20 12 11.5 20.5 5.5 26.5"/>
+        </svg>
+        <span class="sr-only">Dun dun</span>`;
+    }
+
+    return '<span class="sr-only">Pending</span>';
   }
 
   function matchupText(pick) {

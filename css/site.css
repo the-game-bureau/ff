@@ -2251,23 +2251,76 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background: rgba(0, 71, 171, 0.035);
 }
 
-.pick-clipboard-team{
-  display: block;
-  font-weight: 900;
+/* Team over opponent, each with its score box at the right-hand end of the
+   line, so the two numbers stack into a column you can read down. */
+.pick-clipboard-line{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 
+.pick-clipboard-line + .pick-clipboard-line{ margin-top: 3px; }
+
+.pick-clipboard-team{ font-weight: 900; }
+
+/* One pen wrote this page. The opponent used to be set in a lighter blue,
+   which read as a second ink — it is lighter only in weight now. */
 .pick-clipboard-matchup{
-  display: block;
-  margin-top: 3px;
-  color: rgba(0, 71, 171, 0.72);
   font-size: 1.05rem;
   font-weight: 700;
   text-transform: none;
 }
 
+/* Placeholder until results land. Right-aligned and fixed width so the ones and
+   the tens line up down the column the way a hand-kept scoresheet does. */
+.pick-clipboard-score{
+  flex: 0 0 auto;
+  min-width: 2.2ch;
+  text-align: right;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
 .pick-clipboard-time{
   color: var(--bic-blue);
   white-space: nowrap;
+}
+
+/* The marking column. A different pen from the one that filled in the sheet —
+   the tick and the cross are the only things on this page not written in blue,
+   because they were added later by whoever checked the results. */
+.pick-clipboard-verdict{
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.pick-mark{
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  overflow: visible;
+  fill: none;
+  /* Round caps and a slight wobble in the path are what keep these reading as
+     pen strokes rather than icons. */
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Ink pools where the nib slows and lifts; a hint of transparency lets the
+     ruled line show through the stroke. */
+  opacity: 0.88;
+}
+
+.pick-mark-tick{
+  stroke: #1E7A3C;
+  transform: rotate(-4deg);
+}
+
+.pick-mark-cross{
+  stroke: #C92232;
+  transform: rotate(2deg);
 }
 
 .pick-clipboard-empty{
@@ -2299,10 +2352,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     gap: 8px;
   }
 
+  /* Shrinks to whatever is left after the week nav has taken its width,
+     rather than being sized against a guess at the nav's width. */
   .pick-clipboard-pad-brand{
     font-size: 1.05rem;
-    max-width: calc(100% - 164px);
+    flex: 0 1 auto;
+    min-width: 0;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pick-clipboard-paper::after{
@@ -2314,11 +2371,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     gap: 12px;
   }
 
+  /* Was absolutely positioned at a fixed left offset, which parked it in the
+     middle of the pad head on every phone width and drifted with the brand's
+     length. It belongs at the right-hand end, which the flex row it already
+     sits in does on its own. */
   .pick-clipboard-pad-head .pick-clipboard-nav{
-    position: absolute;
-    top: 9px;
-    left: 122px;
-    right: auto;
+    position: static;
+    flex: 0 0 auto;
+    margin-left: auto;
     width: auto;
     max-width: none;
   }
@@ -2404,6 +2464,15 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .pick-clipboard-time{
     white-space: normal;
   }
+
+  /* Stacked into label/value rows, so the mark lines up under the values
+     rather than centring itself across the whole card. */
+  .pick-clipboard-verdict{
+    width: auto;
+    text-align: left;
+  }
+
+  .pick-mark{ margin: 0; }
 }
 
 /* ===== PICK TICKER ===== */
