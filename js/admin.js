@@ -249,11 +249,13 @@
           <td>${Number(row.pick_count || 0)}</td>
           <td>${escapeAdminHtml(joined)}</td>
           <td>
-            <button class="btn btn-secondary btn-mini" type="button"
-                    data-save-record="${escapeAdminHtml(row.id)}">Save</button>
-            <button class="btn btn-danger btn-mini" type="button"
-                    data-delete-user="${escapeAdminHtml(row.id)}"
-                    data-delete-label="${escapeAdminHtml(label)}">Remove</button>
+            <span class="admin-record-actions">
+              <button class="btn btn-secondary btn-mini" type="button"
+                      data-save-record="${escapeAdminHtml(row.id)}">Save</button>
+              <button class="btn btn-danger btn-mini" type="button"
+                      data-delete-user="${escapeAdminHtml(row.id)}"
+                      data-delete-label="${escapeAdminHtml(label)}">Remove</button>
+            </span>
             ${drifted ? `<span class="admin-cell-note" title="Login email is ${escapeAdminHtml(row.login_email)}">LOGIN DIFFERS</span>` : ''}
           </td>
         </tr>`;

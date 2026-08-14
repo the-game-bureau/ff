@@ -1176,6 +1176,21 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-bottom-color: var(--ink);
 }
 
+.admin-record-actions{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-record-actions .btn-mini{
+  min-height: 34px;
+  padding: 8px 10px;
+  box-shadow: 3px 3px 0 var(--ink);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}
+
 /* The mugshot is a control too: click it to replace the photo. */
 .admin-mugshot{
   display: block;
