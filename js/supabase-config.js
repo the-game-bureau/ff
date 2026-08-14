@@ -7,9 +7,9 @@
     projectRef,
     url,
     publishableKey,
-    // Leave this as the old key if you copy auth sessions and reuse the old
-    // JWT secret. Change it to the new ref if you prefer to force a clean login.
-    storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+    // New project uses its own JWT secret, so force a clean login instead of
+    // replaying old cached sessions that PostgREST rejects.
+    storageKey: `law-order-svu-auth-${projectRef}`,
     resetRedirectUrl: 'https://thegamebureau.com/ff/',
     tables: Object.freeze({
       profiles: '_2026_profiles',
