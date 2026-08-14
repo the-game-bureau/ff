@@ -7,6 +7,9 @@ admin.html
 # Archived database - sensitive/old data
 archived_db/
 
+# Supabase migration dump output. These can contain auth hashes and emails.
+supabase/migration-2026/out/
+
 # Scratch harnesses used to drive headless screenshots and DOM checks. They
 # have to sit under the served root so their iframes stay same-origin, but
 # they are throwaway and should never be committed or linted.

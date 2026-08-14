@@ -8,9 +8,10 @@
 // (app.js on the home page, auth-corner.js elsewhere). It reuses app.js's
 // client when that exists rather than spinning up a second one.
 (function () {
-  const RESET_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const RESET_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const RESET_STORAGE_KEY = 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
+  const RESET_CONFIG = window.FF_SUPABASE_CONFIG || {};
+  const RESET_SUPABASE_URL = RESET_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+  const RESET_SUPABASE_ANON_KEY = RESET_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const RESET_STORAGE_KEY = RESET_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
 
   const MIN_PASSWORD_LENGTH = 8;
 

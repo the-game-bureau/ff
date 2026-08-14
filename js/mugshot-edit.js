@@ -8,7 +8,7 @@
 // signed-in user's own row and to the mugshot column alone, so a hand-written
 // request cannot repaint someone else's file either.
 (function () {
-  const PROFILES_TABLE = 'ff_profiles';
+  const PROFILES_TABLE = window.FF_SUPABASE_CONFIG?.tables?.profiles || 'ff_profiles';
   const MAX_BYTES = 5 * 1024 * 1024;
   // Same 256px JPEG the join form stores, so a replacement is the same weight
   // as the original. The pipeline is duplicated from renderRawMugshot() in

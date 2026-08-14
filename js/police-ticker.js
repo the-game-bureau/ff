@@ -8,10 +8,11 @@
 // here: skip rows are tombstones and must not read as picks, and the newest row
 // per WEEK still has to be narrowed to the newest row per PLAYER.
 (function () {
-  const TICKER_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const TICKER_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const ACTIVE_PICKS_VIEW = 'ff_active_picks';
-  const PICKS_TABLE = 'ff_picks';
+  const TICKER_CONFIG = window.FF_SUPABASE_CONFIG || {};
+  const TICKER_SUPABASE_URL = TICKER_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+  const TICKER_SUPABASE_ANON_KEY = TICKER_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const ACTIVE_PICKS_VIEW = TICKER_CONFIG.views?.activePicks || 'ff_active_picks';
+  const PICKS_TABLE = TICKER_CONFIG.tables?.picks || 'ff_picks';
   const SKIP_RESULT = 'SKIP';
 
   // Seconds per item. The animation is the same length whatever the roster
@@ -23,7 +24,7 @@
     ? window.supabase.createClient(TICKER_SUPABASE_URL, TICKER_SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
-          storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+          storageKey: TICKER_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
           storage: window.localStorage
         }
       })

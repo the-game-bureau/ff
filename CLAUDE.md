@@ -271,9 +271,11 @@ list once there are several).
 
 ## Supabase
 
-Client is created inline with the project URL and the **anon** key (public by design;
-row-level security is what protects data — never put a service-role key in this file).
-Session persists in `localStorage` under `law-order-svu-auth`.
+Supabase project settings live in [js/supabase-config.js](js/supabase-config.js):
+URL, publishable key, table/view/RPC names, Edge Function name, reset redirect, and
+auth storage key. The key is public by design; row-level security is what protects
+data — never put a service-role key in browser code. Session persists in
+`localStorage` under the configured storage key.
 
 Tables in use:
 

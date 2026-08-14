@@ -1,8 +1,13 @@
 (function () {
-  const ADMIN_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const ADMIN_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const ADMIN_PROFILE_TABLE = 'ff_profiles';
-  const ADMIN_SCHEDULE_TABLE = 'ff_nfl_schedule';
+  const ADMIN_CONFIG = window.FF_SUPABASE_CONFIG || {};
+  const ADMIN_SUPABASE_URL = ADMIN_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+  const ADMIN_SUPABASE_ANON_KEY = ADMIN_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const ADMIN_PROFILE_TABLE = ADMIN_CONFIG.tables?.profiles || 'ff_profiles';
+  const ADMIN_SCHEDULE_TABLE = ADMIN_CONFIG.tables?.schedule || 'ff_nfl_schedule';
+  const ADMIN_RPCS = ADMIN_CONFIG.rpcs || {};
+  const ADMIN_PROJECT_REF = ADMIN_CONFIG.projectRef || 'qmaafbncpzrdmqapkkgr';
+  const ADMIN_SCHEDULE_TABLE_URL = ADMIN_CONFIG.dashboard?.scheduleTableUrl ||
+    `https://supabase.com/dashboard/project/${ADMIN_PROJECT_REF}/editor/table/${ADMIN_SCHEDULE_TABLE}?schema=public`;
   const ADMIN_ALLOWED_USERNAME = 'theclarinetofjustice';
   const SOURCE_URL = window.NFL_SCHEDULE_SOURCE_URL || 'https://plaintextsports.com/nfl/2026/schedule';
   const SOURCE_SEASON = window.NFL_SCHEDULE_SEASON || 2026;
@@ -12,7 +17,7 @@
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+      storageKey: ADMIN_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
       storage: window.localStorage,
     },
   });
@@ -26,6 +31,7 @@
     els.tools = document.getElementById('adminTools');
     els.reconcile = document.getElementById('btnReconcileSchedule');
     els.copyPrompt = document.getElementById('btnCopyReconcilePrompt');
+    els.scheduleTableLink = document.getElementById('adminScheduleTableLink');
     els.summary = document.getElementById('adminSummary');
     els.diffBody = document.getElementById('adminDiffBody');
     els.prompt = document.getElementById('reconcilePrompt');
@@ -105,6 +111,10 @@
     window.addEventListener('ff-auth-changed', () => {
       guardAdmin();
     });
+
+    if (els.scheduleTableLink) {
+      els.scheduleTableLink.href = ADMIN_SCHEDULE_TABLE_URL;
+    }
   });
 
   async function guardAdmin() {
@@ -179,7 +189,7 @@
 
     setRecordsStatus('Loading records.', 'note');
 
-    const { data, error } = await adminDb.rpc('ff_admin_list_profiles');
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListProfiles || 'ff_admin_list_profiles');
 
     if (error) {
       const missing = error.code === 'PGRST202' ||
@@ -297,7 +307,7 @@
 
     setRecordsStatus('Saving record.', 'note');
 
-    const { data, error } = await adminDb.rpc('ff_admin_update_profile', {
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminUpdateProfile || 'ff_admin_update_profile', {
       target_user_id: userId,
       new_username: changes.username ?? null,
       new_first_name: changes.first_name ?? null,
@@ -416,7 +426,7 @@
 
     setArchiveStatus('Loading 2025 roster.', 'note');
 
-    const { data, error } = await adminDb.rpc('ff_admin_list_archive_players', {
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListArchivePlayers || 'ff_admin_list_archive_players', {
       target_season: 2025
     });
 
@@ -568,7 +578,7 @@
 
     setUsersStatus('Loading roster.', 'note');
 
-    const { data, error } = await adminDb.rpc('ff_admin_list_users');
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListUsers || 'ff_admin_list_users');
 
     if (error) {
       // A missing function is the common case on a project where the SQL has
@@ -657,7 +667,7 @@
     els.confirmDelete.disabled = true;
     els.deleteError.textContent = '';
 
-    const { data, error } = await adminDb.rpc('ff_admin_remove_member', {
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminRemoveMember || 'ff_admin_remove_member', {
       target_user_id: pendingDelete.id
     });
 
@@ -1100,11 +1110,11 @@
 
     return `Audit and reconcile the NFL schedule table for The Game Bureau.
 
-Supabase project: qmaafbncpzrdmqapkkgr
-Table: public.ff_nfl_schedule
+Supabase project: ${ADMIN_PROJECT_REF}
+Table: public.${ADMIN_SCHEDULE_TABLE}
 Season: ${SOURCE_SEASON}
 Source of truth: ${SOURCE_URL}
-Table editor: https://supabase.com/dashboard/project/qmaafbncpzrdmqapkkgr/editor/table/ff_nfl_schedule?schema=public${noteLine}
+Table editor: ${ADMIN_SCHEDULE_TABLE_URL}${noteLine}
 Task:
 1. Fetch the Plain Text Sports schedule page.
 2. Parse regular season weeks 1 through 18.
@@ -1116,9 +1126,9 @@ Task:
    - source_url should be ${SOURCE_URL}#week{week}.
 4. Compare those source rows against this current table snapshot.
 5. Report missing rows, extra rows, and changed fields.
-6. Generate SQL to upsert source rows into public.ff_nfl_schedule. Include deletes only for rows that are definitely extra.
+6. Generate SQL to upsert source rows into public.${ADMIN_SCHEDULE_TABLE}. Include deletes only for rows that are definitely extra.
 
-Current public.ff_nfl_schedule snapshot:
+Current public.${ADMIN_SCHEDULE_TABLE} snapshot:
 ${snapshot}`;
   }
 })();

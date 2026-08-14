@@ -1,13 +1,14 @@
-const SUSPECTS_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-const SUSPECTS_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-const SUSPECTS_VIEW = 'ff_current_suspects';
-const SUSPECTS_PROFILES_TABLE = 'ff_profiles';
+const SUSPECTS_CONFIG = window.FF_SUPABASE_CONFIG || {};
+const SUSPECTS_SUPABASE_URL = SUSPECTS_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+const SUSPECTS_SUPABASE_ANON_KEY = SUSPECTS_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+const SUSPECTS_VIEW = SUSPECTS_CONFIG.views?.currentSuspects || 'ff_current_suspects';
+const SUSPECTS_PROFILES_TABLE = SUSPECTS_CONFIG.tables?.profiles || 'ff_profiles';
 const DEFAULT_MUGSHOT_URL = new URL('../src/generated/mugshot-placeholder.svg', window.location.href).href;
 
 const suspectsDb = window.supabase ? window.supabase.createClient(SUSPECTS_SUPABASE_URL, SUSPECTS_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+    storageKey: SUSPECTS_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
     storage: window.localStorage
   }
 }) : null;

@@ -1,12 +1,13 @@
-const VICTIMS_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-const VICTIMS_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-const VICTIMS_PROFILES_TABLE = 'ff_profiles';
-const VICTIMS_PICKS_TABLE = 'ff_picks';
+const VICTIMS_CONFIG = window.FF_SUPABASE_CONFIG || {};
+const VICTIMS_SUPABASE_URL = VICTIMS_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+const VICTIMS_SUPABASE_ANON_KEY = VICTIMS_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+const VICTIMS_PROFILES_TABLE = VICTIMS_CONFIG.tables?.profiles || 'ff_profiles';
+const VICTIMS_PICKS_TABLE = VICTIMS_CONFIG.tables?.picks || 'ff_picks';
 
 const victimsDb = window.supabase ? window.supabase.createClient(VICTIMS_SUPABASE_URL, VICTIMS_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+    storageKey: VICTIMS_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
     storage: window.localStorage
   }
 }) : null;

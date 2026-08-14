@@ -15,6 +15,7 @@
   <meta property="og:image" content="../src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+  <script src="../js/supabase-config.js"></script>
 
   <link rel="stylesheet" href="../css/site.css"/>
 </head>
@@ -43,7 +44,7 @@
           <button id="btnReconcileSchedule" class="btn btn-primary" type="button">Reconcile Schedule</button>
           <button id="btnCopyReconcilePrompt" class="btn btn-secondary" type="button">Copy Prompt</button>
           <a class="btn btn-secondary" href="https://plaintextsports.com/nfl/2026/schedule" target="_blank" rel="noopener noreferrer">Open Source</a>
-          <a class="btn btn-secondary" href="https://supabase.com/dashboard/project/qmaafbncpzrdmqapkkgr/editor/table/ff_nfl_schedule?schema=public" target="_blank" rel="noopener noreferrer">Open Table</a>
+          <a id="adminScheduleTableLink" class="btn btn-secondary" href="https://supabase.com/dashboard/project/qmaafbncpzrdmqapkkgr/editor/table/ff_nfl_schedule?schema=public" target="_blank" rel="noopener noreferrer">Open Table</a>
         </div>
 
         <div class="admin-summary" id="adminSummary"></div>

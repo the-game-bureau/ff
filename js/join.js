@@ -9,13 +9,14 @@
 // declares its own DEFAULT_MUGSHOT_URL, and two top-level consts of one name
 // is a parse error that kills both files.
 (function () {
-const JOIN_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-const JOIN_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-const JOIN_PROFILES_TABLE = 'ff_profiles';
-const AVATAR_CANVAS_SIZE = 128;
-const AVATAR_PROCESS_SIZE = 192;
+const JOIN_CONFIG = window.FF_SUPABASE_CONFIG || {};
+const JOIN_SUPABASE_URL = JOIN_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+const JOIN_SUPABASE_ANON_KEY = JOIN_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+const JOIN_PROFILES_TABLE = JOIN_CONFIG.tables?.profiles || 'ff_profiles';
+const JOIN_AUTH_STORAGE_KEY = JOIN_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
+const PENDING_JOIN_STORAGE_KEY = `ff-pending-join-${JOIN_CONFIG.projectRef || JOIN_SUPABASE_URL}`;
+const PENDING_JOIN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-const MUGSHOT_UPLOAD_SIZE = 1024;
 const MUGSHOT_STORAGE_SIZE = 256;
 // Mugshots are photographs, which PNG stores badly — the same 256px image is
 // roughly 12x smaller as JPEG. Every stored mugshot is fetched again for each
@@ -24,9 +25,6 @@ const MUGSHOT_STORAGE_SIZE = 256;
 // JPEG to lose. 0.82 is the usual sweet spot before artefacts show on faces.
 const MUGSHOT_JPEG_TYPE = 'image/jpeg';
 const MUGSHOT_JPEG_QUALITY = 0.82;
-const MUGSHOT_AI_TIMEOUT_MS = 70000;
-const MUGSHOT_AI_ENABLED = false;
-const MUGSHOT_FUNCTION_URL = `${JOIN_SUPABASE_URL}/functions/v1/ff-mugshotify`;
 // Every page's nav mount carries the hop back to the site root; the form can
 // now open from any depth, so paths are resolved through it rather than
 // assuming this file is one directory down.
@@ -50,7 +48,7 @@ let renderedAvatarFileKey = '';
 const joinDb = window.supabase ? window.supabase.createClient(JOIN_SUPABASE_URL, JOIN_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+    storageKey: JOIN_AUTH_STORAGE_KEY,
     storage: window.localStorage
   }
 }) : null;
@@ -299,6 +297,100 @@ async function createProfileForSession(user, profileDetails){
   });
 }
 
+function savePendingJoin(profileDetails){
+  try {
+    window.localStorage.setItem(PENDING_JOIN_STORAGE_KEY, JSON.stringify({
+      createdAt: Date.now(),
+      email: profileDetails.email,
+      username: profileDetails.username,
+      firstName: profileDetails.firstName,
+      lastName: profileDetails.lastName,
+      avatarDataUrl: profileDetails.avatarDataUrl || null
+    }));
+  } catch(error) {
+    console.warn('Could not save pending join profile:', error);
+  }
+}
+
+function readPendingJoin(){
+  let pending = null;
+
+  try {
+    pending = JSON.parse(window.localStorage.getItem(PENDING_JOIN_STORAGE_KEY) || 'null');
+  } catch {
+    clearPendingJoin();
+    return null;
+  }
+
+  if(!pending || !pending.createdAt || Date.now() - pending.createdAt > PENDING_JOIN_MAX_AGE_MS){
+    clearPendingJoin();
+    return null;
+  }
+
+  return pending;
+}
+
+function clearPendingJoin(){
+  try {
+    window.localStorage.removeItem(PENDING_JOIN_STORAGE_KEY);
+  } catch {
+    // Nothing useful to do here.
+  }
+}
+
+function pendingJoinMatchesUser(pending, user){
+  const pendingEmail = String(pending?.email || '').toLowerCase();
+  const userEmail = String(user?.email || '').toLowerCase();
+  return Boolean(pendingEmail && userEmail && pendingEmail === userEmail);
+}
+
+async function finishPendingJoinForUser(user){
+  if(!joinDb || !user) return false;
+
+  const pending = readPendingJoin();
+  if(!pending || !pendingJoinMatchesUser(pending, user)) return false;
+
+  const { data: profile, error: profileFetchError } = await joinDb
+    .from(JOIN_PROFILES_TABLE)
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if(profileFetchError && profileFetchError.code !== 'PGRST116'){
+    console.error('Pending profile check failed:', profileFetchError);
+    return false;
+  }
+
+  if(profile){
+    clearPendingJoin();
+    return true;
+  }
+
+  const { error: profileError } = await createProfileForSession(user, {
+    ...pending,
+    email: user.email || pending.email || null
+  });
+
+  if(profileError){
+    console.error('Pending profile booking failed:', profileError);
+    return false;
+  }
+
+  clearPendingJoin();
+  setJoinStatus('Booking complete. You are on the board.', 'good');
+  window.dispatchEvent(new Event('ff-auth-changed'));
+  return true;
+}
+
+async function finishPendingJoinFromCurrentSession(){
+  if(!joinDb) return false;
+
+  const { data: { user }, error } = await joinDb.auth.getUser();
+  if(error || !user) return false;
+
+  return await finishPendingJoinForUser(user);
+}
+
 async function updateSignedInUserMugshot(user, profileDetails){
   if(!user || !profileDetails.avatarDataUrl) return { error: null };
 
@@ -391,137 +483,6 @@ function validateMugshotFile(file){
   if(file.size > MAX_AVATAR_BYTES){
     throw new Error('Mugshot image must be 5 MB or smaller.');
   }
-}
-
-function clampByte(value){
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function posterizeChannel(value, levels = 9){
-  const step = 255 / (levels - 1);
-  return clampByte(Math.round(value / step) * step);
-}
-
-function luminanceAt(pixels, width, height, x, y){
-  const safeX = Math.max(0, Math.min(width - 1, x));
-  const safeY = Math.max(0, Math.min(height - 1, y));
-  const i = (safeY * width + safeX) * 4;
-  return pixels[i] * 0.299 + pixels[i + 1] * 0.587 + pixels[i + 2] * 0.114;
-}
-
-function edgeStrengthAt(pixels, width, height, x, y){
-  const tl = luminanceAt(pixels, width, height, x - 1, y - 1);
-  const tc = luminanceAt(pixels, width, height, x, y - 1);
-  const tr = luminanceAt(pixels, width, height, x + 1, y - 1);
-  const ml = luminanceAt(pixels, width, height, x - 1, y);
-  const mr = luminanceAt(pixels, width, height, x + 1, y);
-  const bl = luminanceAt(pixels, width, height, x - 1, y + 1);
-  const bc = luminanceAt(pixels, width, height, x, y + 1);
-  const br = luminanceAt(pixels, width, height, x + 1, y + 1);
-  const gx = -tl - 2 * ml - bl + tr + 2 * mr + br;
-  const gy = -tl - 2 * tc - tr + bl + 2 * bc + br;
-  return Math.sqrt(gx * gx + gy * gy);
-}
-
-function smoothPreservingEdges(pixels, width, height, passes = 2){
-  const kernel = [
-    [-1, -1, 1], [0, -1, 2], [1, -1, 1],
-    [-1, 0, 2],  [0, 0, 5],  [1, 0, 2],
-    [-1, 1, 1],  [0, 1, 2],  [1, 1, 1]
-  ];
-  let source = new Uint8ClampedArray(pixels);
-
-  for(let pass = 0; pass < passes; pass++){
-    const output = new Uint8ClampedArray(source.length);
-
-    for(let y = 0; y < height; y++){
-      for(let x = 0; x < width; x++){
-        const i = (y * width + x) * 4;
-        const centerR = source[i];
-        const centerG = source[i + 1];
-        const centerB = source[i + 2];
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        let total = 0;
-
-        for(const [dx, dy, baseWeight] of kernel){
-          const sampleX = Math.max(0, Math.min(width - 1, x + dx));
-          const sampleY = Math.max(0, Math.min(height - 1, y + dy));
-          const sampleIndex = (sampleY * width + sampleX) * 4;
-          const colorDelta =
-            (Math.abs(source[sampleIndex] - centerR) +
-             Math.abs(source[sampleIndex + 1] - centerG) +
-             Math.abs(source[sampleIndex + 2] - centerB)) / 3;
-          const colorWeight = Math.max(0.12, 1 - colorDelta / 96);
-          const weight = baseWeight * colorWeight;
-
-          r += source[sampleIndex] * weight;
-          g += source[sampleIndex + 1] * weight;
-          b += source[sampleIndex + 2] * weight;
-          total += weight;
-        }
-
-        output[i] = r / total;
-        output[i + 1] = g / total;
-        output[i + 2] = b / total;
-        output[i + 3] = 255;
-      }
-    }
-
-    source = output;
-  }
-
-  return source;
-}
-
-function tuneCartoonColor(channel, average){
-  const contrast = (channel - 128) * 1.04 + 128;
-  const saturated = average + (contrast - average) * 1.18;
-  const lifted = saturated + (average > 210 ? 4 : average < 64 ? -6 : 2);
-  return posterizeChannel(lifted, average > 92 && average < 210 ? 10 : 8);
-}
-
-function cartoonizeImageData(imageData){
-  const { width, height, data } = imageData;
-  const original = new Uint8ClampedArray(data);
-  const smoothed = smoothPreservingEdges(original, width, height, 2);
-
-  for(let y = 0; y < height; y++){
-    for(let x = 0; x < width; x++){
-      const i = (y * width + x) * 4;
-      const alpha = original[i + 3];
-
-      if(alpha < 32){
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = 255;
-        continue;
-      }
-
-      const average = (smoothed[i] + smoothed[i + 1] + smoothed[i + 2]) / 3;
-      let r = tuneCartoonColor(smoothed[i], average);
-      let g = tuneCartoonColor(smoothed[i + 1], average);
-      let b = tuneCartoonColor(smoothed[i + 2], average);
-      const edge = edgeStrengthAt(original, width, height, x, y);
-      const outline = Math.pow(Math.max(0, Math.min(1, (edge - 46) / 148)), 0.8) * 0.72;
-
-      if(outline > 0){
-        const ink = 18;
-        r = clampByte(r * (1 - outline) + ink * outline);
-        g = clampByte(g * (1 - outline) + ink * outline);
-        b = clampByte(b * (1 - outline) + ink * outline);
-      }
-
-      data[i] = r;
-      data[i + 1] = g;
-      data[i + 2] = b;
-      data[i + 3] = 255;
-    }
-  }
-
-  return imageData;
 }
 
 function paintEmptyAvatarPreview(){
@@ -627,24 +588,6 @@ function drawImageToSquare(ctx, image, outputSize){
   );
 }
 
-async function fileToSquareDataUrl(file, outputSize, type = 'image/jpeg', quality = 0.86){
-  validateMugshotFile(file);
-
-  const image = await loadImageFromFile(file);
-  const canvas = document.createElement('canvas');
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, outputSize, outputSize);
-  drawImageToSquare(ctx, image, outputSize);
-
-  return canvas.toDataURL(type, quality);
-}
-
 async function fileToSizedDataUrl(file, maxSize, type = 'image/jpeg', quality = 0.88){
   validateMugshotFile(file);
 
@@ -669,74 +612,6 @@ async function fileToSizedDataUrl(file, maxSize, type = 'image/jpeg', quality = 
   return canvas.toDataURL(type, quality);
 }
 
-async function normalizeGeneratedMugshot(dataUrl){
-  if(!/^data:image\/(?:png|jpe?g|webp);base64,/i.test(String(dataUrl || ''))){
-    throw new Error('AI mugshot response was not an image.');
-  }
-
-  const image = await loadImageFromDataUrl(dataUrl);
-  const canvas = document.createElement('canvas');
-  canvas.width = MUGSHOT_STORAGE_SIZE;
-  canvas.height = MUGSHOT_STORAGE_SIZE;
-
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, MUGSHOT_STORAGE_SIZE, MUGSHOT_STORAGE_SIZE);
-  drawImageToSquare(ctx, image, MUGSHOT_STORAGE_SIZE);
-
-  return {
-    canvas,
-    dataUrl: canvas.toDataURL(MUGSHOT_JPEG_TYPE, MUGSHOT_JPEG_QUALITY)
-  };
-}
-
-function fetchWithTimeout(url, options, timeoutMs){
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
-
-  return fetch(url, {
-    ...options,
-    signal: controller.signal
-  }).finally(() => window.clearTimeout(timeoutId));
-}
-
-async function getMugshotFunctionAuthToken(){
-  const { data } = await joinDb.auth.getSession();
-  return data?.session?.access_token || JOIN_SUPABASE_ANON_KEY;
-}
-
-async function renderAiMugshot(file){
-  validateMugshotFile(file);
-
-  const imageDataUrl = await fileToSquareDataUrl(file, MUGSHOT_UPLOAD_SIZE);
-  const authToken = await getMugshotFunctionAuthToken();
-
-  const response = await fetchWithTimeout(MUGSHOT_FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': JOIN_SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${authToken}`
-    },
-    body: JSON.stringify({ imageDataUrl })
-  }, MUGSHOT_AI_TIMEOUT_MS);
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error('AI mugshot response was unreadable.');
-  }
-
-  if(!response.ok){
-    throw new Error(payload?.error || 'AI mugshot conversion failed.');
-  }
-
-  return await normalizeGeneratedMugshot(payload?.dataUrl);
-}
-
 async function renderRawMugshot(file){
   const dataUrl = await fileToSizedDataUrl(file, MUGSHOT_STORAGE_SIZE, 'image/jpeg', 0.88);
   const image = await loadImageFromDataUrl(dataUrl);
@@ -757,55 +632,6 @@ async function renderRawMugshot(file){
   };
 }
 
-async function renderCartoonMugshot(file){
-  validateMugshotFile(file);
-
-  const image = await loadImageFromFile(file);
-  const sourceWidth = image.naturalWidth || image.width;
-  const sourceHeight = image.naturalHeight || image.height;
-  const cropSize = Math.min(sourceWidth, sourceHeight);
-  const cropX = Math.floor((sourceWidth - cropSize) / 2);
-  const cropY = Math.floor((sourceHeight - cropSize) / 2);
-
-  const processCanvas = document.createElement('canvas');
-  processCanvas.width = AVATAR_PROCESS_SIZE;
-  processCanvas.height = AVATAR_PROCESS_SIZE;
-  const processCtx = processCanvas.getContext('2d', { willReadFrequently: true });
-  processCtx.imageSmoothingEnabled = true;
-  processCtx.imageSmoothingQuality = 'high';
-  processCtx.fillStyle = '#FFFFFF';
-  processCtx.fillRect(0, 0, AVATAR_PROCESS_SIZE, AVATAR_PROCESS_SIZE);
-  processCtx.drawImage(
-    image,
-    cropX,
-    cropY,
-    cropSize,
-    cropSize,
-    0,
-    0,
-    AVATAR_PROCESS_SIZE,
-    AVATAR_PROCESS_SIZE
-  );
-
-  const imageData = processCtx.getImageData(0, 0, AVATAR_PROCESS_SIZE, AVATAR_PROCESS_SIZE);
-  processCtx.putImageData(cartoonizeImageData(imageData), 0, 0);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = AVATAR_CANVAS_SIZE;
-  canvas.height = AVATAR_CANVAS_SIZE;
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, AVATAR_CANVAS_SIZE, AVATAR_CANVAS_SIZE);
-  ctx.drawImage(processCanvas, 0, 0, AVATAR_CANVAS_SIZE, AVATAR_CANVAS_SIZE);
-
-  return {
-    canvas,
-    dataUrl: canvas.toDataURL(MUGSHOT_JPEG_TYPE, MUGSHOT_JPEG_QUALITY)
-  };
-}
-
 async function prepareAvatarUpload(file){
   if(!file){
     renderedAvatarDataUrl = '';
@@ -819,31 +645,13 @@ async function prepareAvatarUpload(file){
     return renderedAvatarDataUrl;
   }
 
-  let rendered;
-  let renderedMode = 'raw';
-
-  if(MUGSHOT_AI_ENABLED){
-    try {
-      renderedMode = 'ai';
-      setAvatarStatus('Sketch artist drawing...', '');
-      rendered = await renderAiMugshot(file);
-    } catch(error) {
-      console.warn('AI mugshot conversion failed. Falling back to resized raw upload:', error);
-      renderedMode = 'raw';
-    }
-  }
-
-  if(!rendered){
-    setAvatarStatus('Sizing mugshot...', '');
-    rendered = await renderRawMugshot(file);
-  }
+  setAvatarStatus('Sizing mugshot...', '');
+  const rendered = await renderRawMugshot(file);
 
   renderedAvatarDataUrl = rendered.dataUrl;
   renderedAvatarFileKey = key;
   copyCanvasToPreview(rendered.canvas);
   setPreviewLightboxSource(rendered.dataUrl);
-  // Same message either way: whether the AI pass ran or the photo went through
-  // as-is is our business, not the player's.
   setAvatarStatus('MUGSHOT READY.', 'good');
   return rendered.dataUrl;
 }
@@ -870,6 +678,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setJoinStatus('Booking desk is offline. Refresh and try again.', 'bad');
     return;
   }
+
+  finishPendingJoinFromCurrentSession();
+  joinDb.auth.onAuthStateChange((_event, session) => {
+    finishPendingJoinForUser(session?.user);
+  });
 
   // Once they start fixing it, stop shouting about it. Leaving the outline and
   // the old message up while the field is being retyped reads as if the new
@@ -1021,6 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      savePendingJoin(profileDetails);
       setJoinStatus('Booking filed. Check your email, then report to Suspects.', 'good');
       resetJoinForm(form);
       redirectToSuspects(1200);

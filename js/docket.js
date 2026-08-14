@@ -8,10 +8,11 @@
 // would climb all season and never fall, which is the opposite of what a
 // survivor pool's headline number should do.
 (function () {
-  const DOCKET_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const DOCKET_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const SUSPECTS_VIEW = 'ff_current_suspects';
-  const PROFILES_TABLE = 'ff_profiles';
+  const DOCKET_CONFIG = window.FF_SUPABASE_CONFIG || {};
+  const DOCKET_SUPABASE_URL = DOCKET_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+  const DOCKET_SUPABASE_ANON_KEY = DOCKET_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const SUSPECTS_VIEW = DOCKET_CONFIG.views?.currentSuspects || 'ff_current_suspects';
+  const PROFILES_TABLE = DOCKET_CONFIG.tables?.profiles || 'ff_profiles';
   // The one status that means the case closed on you. Matched loosely because
   // results are free text entered out of band, the same way the badge colours
   // on the lineup are matched.
@@ -69,7 +70,7 @@
     ? window.supabase.createClient(DOCKET_SUPABASE_URL, DOCKET_SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
-          storageKey: 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+          storageKey: DOCKET_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
           storage: window.localStorage
         }
       })

@@ -1,10 +1,11 @@
 (function () {
-  const AUTH_SUPABASE_URL = 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const AUTH_SUPABASE_ANON_KEY = 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const AUTH_STORAGE_KEY = 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
-  const AUTH_PROFILES_TABLE = 'ff_profiles';
+  const AUTH_CONFIG = window.FF_SUPABASE_CONFIG || {};
+  const AUTH_SUPABASE_URL = AUTH_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
+  const AUTH_SUPABASE_ANON_KEY = AUTH_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const AUTH_STORAGE_KEY = AUTH_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
+  const AUTH_PROFILES_TABLE = AUTH_CONFIG.tables?.profiles || 'ff_profiles';
   // Must match a Redirect URL configured in Supabase Auth.
-  const RESET_REDIRECT_URL = 'https://thegamebureau.com/ff/';
+  const RESET_REDIRECT_URL = AUTH_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
 
   const authDb = window.supabase ? window.supabase.createClient(AUTH_SUPABASE_URL, AUTH_SUPABASE_ANON_KEY, {
     auth: {
