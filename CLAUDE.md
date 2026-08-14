@@ -152,6 +152,12 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - [js/admin.js](js/admin.js) — the admin page.
 - [supabase/sql/](supabase/sql/) — one-off migrations and repair scripts, each
   documenting the problem it solves. Run by hand in the Supabase SQL editor.
+- [supabase/backups/](supabase/backups/) — `ff_2025_db.7z`, the raw Supabase
+  export (emails and `user_id`s included) as a 7-Zip AES-256 archive with
+  encrypted headers. Committed because the ciphertext is safe to publish; the
+  plaintext CSVs it holds live in the gitignored `archived_db/` and must never
+  be committed. Passphrase is in a password manager, never in this repo — see
+  [supabase/backups/README.md](supabase/backups/README.md).
 
 **Other**
 
