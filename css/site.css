@@ -739,6 +739,9 @@ body{
 .btn-secondary{ background: var(--primary-blue); color: var(--paper-raised); }
 .btn-secondary:hover, .btn-secondary:focus-visible{ background: var(--primary-blue-mid); }
 
+.btn-danger{ background: var(--error); color: var(--paper-raised); }
+.btn-danger:hover, .btn-danger:focus-visible{ background: var(--primary-red-dark); }
+
 .btn:disabled{
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
