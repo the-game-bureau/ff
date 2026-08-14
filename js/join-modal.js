@@ -48,11 +48,13 @@
 
         <h2 id="joinModalTitle">Person of Interest</h2>
 
-        <form class="join-form" id="joinForm">
+        <!-- novalidate matches join/index.html: validateJoin() in js/join.js
+             names the broken rule, the browser's bubble does not. -->
+        <form class="join-form" id="joinForm" novalidate>
           <div class="join-field">
             <label for="joinUsername">Username / Team Name <span class="privacy-tag privacy-tag-public">Public</span></label>
             <input id="joinUsername" name="username" type="text" autocomplete="nickname" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required/>
-            <p class="gate-help">3-20 letters, numbers, or underscores. This is the name on your mugshot placard and in every verdict.</p>
+            <p class="gate-help">3-20 characters. Letters, numbers, and underscores only &mdash; no spaces, no punctuation. This is the name on your mugshot placard and in every verdict.</p>
           </div>
 
           <div class="join-field avatar-field">
@@ -88,6 +90,7 @@
           <div class="join-field">
             <label for="joinPassword">Password <span class="privacy-tag">Private Obviously</span></label>
             <input id="joinPassword" name="password" type="password" autocomplete="new-password" minlength="6" required/>
+            <p class="gate-help">At least 6 characters.</p>
           </div>
 
           <div class="join-field">

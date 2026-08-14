@@ -64,6 +64,26 @@ function setJoinStatus(message, kind){
   if(kind) statusEl.classList.add(`join-status-${kind}`);
 }
 
+// A message at the bottom of a seven-field form does not say which field it is
+// about, so the offending input is outlined and focused too.
+function clearJoinFieldFlags(){
+  document.querySelectorAll('.join-form .join-input-bad')
+    .forEach(input => input.classList.remove('join-input-bad'));
+}
+
+function flagJoinField(fieldId){
+  clearJoinFieldFlags();
+
+  const input = fieldId ? document.getElementById(fieldId) : null;
+  if(!input) return;
+
+  input.classList.add('join-input-bad');
+  input.focus();
+  // Passwords get retyped, not edited, so the old one is selected ready to be
+  // overwritten. Selecting a half-typed username would throw it away instead.
+  if(input.type === 'password') input.select();
+}
+
 // "Already booked" would claim they are in this league, which is not something
 // this error proves: the login may have been created on another site sharing
 // this Supabase project. Logging in is the right next step either way — the
@@ -106,32 +126,107 @@ function redirectToSuspects(delay = 800){
   }, delay);
 }
 
+// Every failure below names the field and the rule it broke, and comes back
+// with the id to focus, so the form does not just say no. The form carries
+// `novalidate` for the same reason: the browser's "Please match the requested
+// format" bubble on the username pattern told nobody anything.
+function joinProblem(message, fieldId){
+  return { message, fieldId };
+}
+
+// The characters actually typed that the username rule rejects, quoted back so
+// the fix is obvious. Deduped and capped, because pasting a sentence in here
+// would otherwise produce a wall of punctuation.
+function illegalUsernameCharacters(username){
+  const bad = [...new Set(username.replace(/[A-Za-z0-9_]/g, '').split(''))];
+  const shown = bad.slice(0, 5).map(ch => `"${ch}"`).join(' ');
+  return bad.length > 5 ? `${shown} and more` : shown;
+}
+
+function validateUsername(username){
+  if(!username) return joinProblem('Enter a username. It is the name on your mugshot placard.', 'joinUsername');
+
+  if(/\s/.test(username)){
+    return joinProblem(
+      'Username cannot contain spaces. Use an underscore instead, like john_munch.',
+      'joinUsername'
+    );
+  }
+
+  if(username.length < 3){
+    return joinProblem(
+      `Username must be at least 3 characters. Yours is ${username.length}.`,
+      'joinUsername'
+    );
+  }
+
+  if(username.length > 20){
+    return joinProblem(
+      `Username must be 20 characters or fewer. Yours is ${username.length}.`,
+      'joinUsername'
+    );
+  }
+
+  if(!/^[A-Za-z0-9_]+$/.test(username)){
+    return joinProblem(
+      `Username cannot contain ${illegalUsernameCharacters(username)}. Letters, numbers, and underscores only.`,
+      'joinUsername'
+    );
+  }
+
+  return null;
+}
+
+function validateEmail(email){
+  if(!email) return joinProblem('Enter your email address. It is private and only used to log you in.', 'joinEmail');
+
+  if(/\s/.test(email)){
+    return joinProblem('Email cannot contain spaces. Check for a stray space at the end.', 'joinEmail');
+  }
+
+  const parts = email.split('@');
+  if(parts.length !== 2 || !parts[0] || !parts[1]){
+    return joinProblem('Email needs one @ with something either side, like munch@example.com.', 'joinEmail');
+  }
+
+  if(!/^[^@]+\.[^@]+$/.test(parts[1])){
+    return joinProblem(`"${parts[1]}" is not a complete domain. It needs a dot, like example.com.`, 'joinEmail');
+  }
+
+  return null;
+}
+
 function validateJoin({ email, username, firstName, lastName, password, passwordConfirm }){
-  if(!email || !username || !firstName || !lastName || !password || !passwordConfirm){
-    return 'Fill every required booking field.';
+  const usernameProblem = validateUsername(username);
+  if(usernameProblem) return usernameProblem;
+
+  if(!firstName) return joinProblem('Enter your first name. Other players see it; nobody outside the league does.', 'joinFirstName');
+  if(firstName.length > 50){
+    return joinProblem(`First name must be 50 characters or fewer. Yours is ${firstName.length}.`, 'joinFirstName');
   }
 
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    return 'Enter a valid email address.';
+  if(!lastName) return joinProblem('Enter your last name. It stays private.', 'joinLastName');
+  if(lastName.length > 50){
+    return joinProblem(`Last name must be 50 characters or fewer. Yours is ${lastName.length}.`, 'joinLastName');
   }
 
-  if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
-    return 'Username must be 3-20 characters, letters/numbers/underscore only.';
-  }
+  const emailProblem = validateEmail(email);
+  if(emailProblem) return emailProblem;
 
-  if(firstName.length > 50 || lastName.length > 50){
-    return 'First and last names must be 50 characters or fewer.';
-  }
-
+  if(!password) return joinProblem('Enter a password of at least 6 characters.', 'joinPassword');
   if(password.length < 6){
-    return 'Password must be at least 6 characters.';
+    return joinProblem(
+      `Password must be at least 6 characters. Yours is ${password.length}.`,
+      'joinPassword'
+    );
   }
 
+  if(!passwordConfirm) return joinProblem('Type the password a second time to confirm it.', 'joinPasswordConfirm');
   if(password !== passwordConfirm){
-    return 'Password confirmation does not match.';
+    return joinProblem('The two passwords do not match. Retype them both.', 'joinPasswordConfirm');
   }
 
-  return '';
+  return null;
 }
 
 function profileNameColumnsUnsupported(error){
@@ -755,6 +850,7 @@ async function prepareAvatarUpload(file){
 
 function resetJoinForm(form){
   form.reset();
+  clearJoinFieldFlags();
   renderedAvatarDataUrl = '';
   renderedAvatarFileKey = '';
   setAvatarStatus('', '');
@@ -774,6 +870,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setJoinStatus('Booking desk is offline. Refresh and try again.', 'bad');
     return;
   }
+
+  // Once they start fixing it, stop shouting about it. Leaving the outline and
+  // the old message up while the field is being retyped reads as if the new
+  // value is wrong too.
+  form.addEventListener('input', (event) => {
+    if(!event.target.classList.contains('join-input-bad')) return;
+    event.target.classList.remove('join-input-bad');
+    setJoinStatus('', '');
+  });
 
   if(avatarInput){
     avatarInput.addEventListener('change', async () => {
@@ -808,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordConfirm = document.getElementById('joinPasswordConfirm').value;
     const avatarFile = avatarInput?.files?.[0] || null;
 
-    const validationError = validateJoin({
+    const problem = validateJoin({
       email,
       username,
       firstName,
@@ -816,10 +921,13 @@ document.addEventListener('DOMContentLoaded', () => {
       password,
       passwordConfirm
     });
-    if(validationError){
-      setJoinStatus(validationError, 'bad');
+    if(problem){
+      setJoinStatus(problem.message, 'bad');
+      flagJoinField(problem.fieldId);
       return;
     }
+
+    clearJoinFieldFlags();
 
     submitButton.disabled = true;
     let avatarDataUrl = null;

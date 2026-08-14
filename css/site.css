@@ -963,6 +963,15 @@ input::placeholder{
   font-size: 0.875rem;
 }
 
+/* The field the join error is about. Written as input.join-input-bad and kept
+   below input:focus so it still reads red once js/join.js focuses it, rather
+   than turning the usual interaction yellow. */
+input.join-input-bad{
+  background: var(--error-tint);
+  border-color: var(--error);
+  box-shadow: var(--shadow-sm);
+}
+
 /* ===== STATUS BAR ===== */
 .status-bar{
   margin: 22px auto 0;
