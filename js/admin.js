@@ -44,10 +44,6 @@
     els.archiveStatus = document.getElementById('adminArchiveStatus');
     els.archiveBody = document.getElementById('adminArchiveBody');
 
-    els.usersPanel = document.getElementById('adminUsersPanel');
-    els.usersStatus = document.getElementById('adminUsersStatus');
-    els.usersBody = document.getElementById('adminUsersBody');
-    els.refreshUsers = document.getElementById('btnRefreshUsers');
     els.deleteModal = document.getElementById('adminDeleteModal');
     els.deleteSummary = document.getElementById('adminDeleteSummary');
     els.deleteWord = document.getElementById('adminDeleteWord');
@@ -57,7 +53,6 @@
 
     els.reconcile?.addEventListener('click', reconcileSchedule);
     els.copyPrompt?.addEventListener('click', copyReconcilePrompt);
-    els.refreshUsers?.addEventListener('click', loadUsers);
     els.refreshRecords?.addEventListener('click', loadRecords);
 
     // Delegated: the archive rows are rebuilt on every load.
@@ -66,11 +61,17 @@
       if (button) copyInvite(button);
     });
 
-    // Delegated for the same reason as the roster below: rows are rebuilt on
-    // every load, and each row carries three controls.
+    // Delegated: rows are rebuilt on every load, and each row carries a few
+    // controls.
     els.recordsBody?.addEventListener('click', (event) => {
       const save = event.target.closest('[data-save-record]');
       if (save) { saveRecord(save.dataset.saveRecord); return; }
+
+      const remove = event.target.closest('[data-delete-user]');
+      if (remove) {
+        openDeleteModal(remove.dataset.deleteUser, remove.dataset.deleteLabel);
+        return;
+      }
 
       const mugshot = event.target.closest('[data-record-mugshot]');
       if (mugshot) pickRecordMugshot(mugshot.dataset.recordMugshot);
@@ -83,12 +84,6 @@
       if (!field) return;
       event.preventDefault();
       saveRecord(field.closest('tr')?.dataset.recordId);
-    });
-
-    // Delegated: the rows are rebuilt on every load.
-    els.usersBody?.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-delete-user]');
-      if (button) openDeleteModal(button.dataset.deleteUser, button.dataset.deleteLabel);
     });
 
     els.confirmDelete?.addEventListener('click', confirmDelete);
@@ -156,12 +151,10 @@
     }
 
     els.tools.hidden = false;
-    if (els.usersPanel) els.usersPanel.hidden = false;
     if (els.recordsPanel) els.recordsPanel.hidden = false;
     if (els.archivePanel) els.archivePanel.hidden = false;
     setAdminStatus('Admin access granted. Schedule audit tools are ready.', 'good');
     await ensurePrompt();
-    await loadUsers();
     await loadRecords();
     await loadArchivePlayers();
   }
@@ -235,6 +228,7 @@
         row.email.toLowerCase() !== row.login_email.toLowerCase();
       const joined = row.created_at ? String(row.created_at).slice(0, 10) : '';
       const mugshot = safeMugshot(row.avatar_data_url);
+      const label = row.username || '(no username)';
 
       return `
         <tr data-record-id="${escapeAdminHtml(row.id)}">
@@ -257,6 +251,9 @@
           <td>
             <button class="btn btn-secondary btn-mini" type="button"
                     data-save-record="${escapeAdminHtml(row.id)}">Save</button>
+            <button class="btn btn-secondary btn-mini" type="button"
+                    data-delete-user="${escapeAdminHtml(row.id)}"
+                    data-delete-label="${escapeAdminHtml(label)}">Remove</button>
             ${drifted ? `<span class="admin-cell-note" title="Login email is ${escapeAdminHtml(row.login_email)}">LOGIN DIFFERS</span>` : ''}
           </td>
         </tr>`;
@@ -327,7 +324,6 @@
     // is actually on file, not what was typed.
     setRecordsStatus(`Saved ${data?.username || 'record'}.`, 'good');
     await loadRecords();
-    await loadUsers();
   }
 
   function pickRecordMugshot(userId) {
@@ -567,68 +563,11 @@
     if (kind) els.archiveStatus.classList.add(`join-status-${kind}`);
   }
 
-  // ===== ROSTER =====
-  // Everything here goes through RPCs that re-check the caller server-side.
-  // The publishable key cannot read auth.users directly, and should not be
+  // ===== REMOVAL =====
+  // Everything here goes through an RPC that re-checks the caller server-side.
+  // The publishable key cannot delete league rows directly, and should not be
   // able to; see supabase/sql/ff_admin_delete_user.sql.
   let pendingDelete = null;
-
-  async function loadUsers() {
-    if (!adminDb || !els.usersBody) return;
-
-    setUsersStatus('Loading roster.', 'note');
-
-    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListUsers || 'ff_admin_list_users');
-
-    if (error) {
-      // A missing function is the common case on a project where the SQL has
-      // not been run yet, and it deserves a message that says so.
-      const missing = error.code === 'PGRST202' ||
-        /could not find the function|does not exist/i.test(error.message || '');
-      setUsersStatus(
-        missing
-          ? 'Roster unavailable: run supabase/sql/ff_admin_delete_user.sql in the SQL editor first.'
-          : `Roster failed: ${error.message}${error.code ? ` (${error.code})` : ''}`,
-        'bad'
-      );
-      console.error('ff_admin_list_users failed:', error);
-      renderUsers([]);
-      return;
-    }
-
-    renderUsers(data || []);
-    setUsersStatus(`${(data || []).length} league member${(data || []).length === 1 ? '' : 's'}.`, 'good');
-  }
-
-  function renderUsers(users) {
-    if (!els.usersBody) return;
-
-    if (!users.length) {
-      els.usersBody.innerHTML = '<tr><td colspan="5" class="table-empty">No league members.</td></tr>';
-      return;
-    }
-
-    els.usersBody.innerHTML = users.map((user) => {
-      // Every row is a league member: the roster is driven from ff_profiles,
-      // so accounts belonging to other sites on this shared project never
-      // reach here and cannot be removed by accident.
-      const label = user.username || '(no username)';
-      const joined = user.created_at ? String(user.created_at).slice(0, 10) : '';
-
-      return `
-        <tr>
-          <td>${escapeAdminHtml(label)}</td>
-          <td>${escapeAdminHtml(user.email || '')}</td>
-          <td>${Number(user.pick_count || 0)}</td>
-          <td>${escapeAdminHtml(joined)}</td>
-          <td>
-            <button class="btn btn-secondary btn-mini" type="button"
-              data-delete-user="${escapeAdminHtml(user.id)}"
-              data-delete-label="${escapeAdminHtml(label)}">Remove</button>
-          </td>
-        </tr>`;
-    }).join('');
-  }
 
   function openDeleteModal(userId, label) {
     if (!els.deleteModal) return;
@@ -640,7 +579,7 @@
     els.deleteWord.textContent = label;
     els.deleteSummary.textContent =
       `This removes ${label} from the league: their profile and every pick they made. ` +
-      `Their login is kept, so anything they have on another site sharing this project is untouched. ` +
+      `Their login is kept, so they can still sign in if they need to rejoin later. ` +
       `The picks cannot be recovered.`;
     els.deleteConfirm.value = '';
     els.deleteError.textContent = '';
@@ -672,8 +611,6 @@
     });
 
     if (error) {
-      // Same treatment as the roster load: a missing function means the SQL has
-      // not been run on this project, and saying so beats a PostgREST code.
       const missing = error.code === 'PGRST202' ||
         /could not find the function|does not exist/i.test(error.message || '');
       els.deleteError.textContent = missing
@@ -686,15 +623,8 @@
 
     const label = data?.username || data?.email || pendingDelete.label;
     closeDeleteModal();
-    setUsersStatus(`Removed ${label} from the league. ${Number(data?.picks_deleted || 0)} pick(s) deleted. Login kept.`, 'good');
-    await loadUsers();
-  }
-
-  function setUsersStatus(message, kind) {
-    if (!els.usersStatus) return;
-    els.usersStatus.textContent = message;
-    els.usersStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
-    if (kind) els.usersStatus.classList.add(`join-status-${kind}`);
+    await loadRecords();
+    setRecordsStatus(`Removed ${label} from the league. ${Number(data?.picks_deleted || 0)} pick(s) deleted. Login kept.`, 'good');
   }
 
   function escapeAdminHtml(value) {
@@ -1067,10 +997,11 @@
     if (els.tools) {
       els.tools.hidden = true;
     }
-    // The roster carries emails, so it goes away with everything else the
-    // moment the guard stops passing.
-    if (els.usersPanel) {
-      els.usersPanel.hidden = true;
+    if (els.recordsPanel) {
+      els.recordsPanel.hidden = true;
+    }
+    if (els.archivePanel) {
+      els.archivePanel.hidden = true;
     }
     closeDeleteModal();
   }

@@ -80,9 +80,8 @@
       <p class="gate-help">
         Every field on file except the password, which nobody can change but its
         owner &mdash; it is stored as a hash, and the reset-by-email link is the
-        only way through. <strong>Email is the login</strong>, and these logins
-        are shared with another site on this project, so changing one here
-        changes how that person signs in there too.
+        only way through. <strong>Email is the login</strong>, so changing it
+        changes how that person signs in.
       </p>
 
       <div id="adminRecordsStatus" class="join-status" role="status" aria-live="polite"></div>
@@ -98,7 +97,7 @@
               <th scope="col">Email</th>
               <th scope="col">Picks</th>
               <th scope="col">Joined</th>
-              <th scope="col">Save</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody id="adminRecordsBody">
@@ -109,41 +108,6 @@
 
       <div class="action-buttons">
         <button id="btnRefreshRecords" class="btn btn-secondary" type="button">Reload Records</button>
-      </div>
-    </section>
-
-    <!-- Hidden behind the same guard as the tools above. The real check is in
-         the database function; this only decides what is shown. -->
-    <section class="game-info admin-panel" id="adminUsersPanel" aria-labelledby="adminUsersTitle" hidden>
-      <h2 id="adminUsersTitle">Remove From League</h2>
-      <p class="gate-help">
-        Deletes the player's profile and every pick they made. Their login is
-        kept &mdash; this Supabase project is shared with another site, so
-        removing the login here would revoke their access there too. Only
-        league members are listed.
-      </p>
-
-      <div id="adminUsersStatus" class="join-status" role="status" aria-live="polite"></div>
-
-      <div class="table-wrap">
-        <table id="adminUsersTable" aria-label="Registered accounts">
-          <thead>
-            <tr>
-              <th scope="col">Username</th>
-              <th scope="col">Email</th>
-              <th scope="col">Picks</th>
-              <th scope="col">Joined</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody id="adminUsersBody">
-            <tr><td colspan="5" class="table-empty">Not loaded yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="action-buttons">
-        <button id="btnRefreshUsers" class="btn btn-secondary" type="button">Reload Roster</button>
       </div>
     </section>
 
