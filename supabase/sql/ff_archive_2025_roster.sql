@@ -17,6 +17,25 @@
 -- Run once in the Supabase SQL editor. Needs ff_admin_delete_user.sql first:
 -- ff_is_admin() lives there. Safe to re-run; it replaces the rows.
 
+-- ---------------------------------------------------------------------------
+-- WRONG-DATABASE GUARD. The Supabase editor gives no hint which project is
+-- open, and these scripts have been run against the wrong one: they succeed,
+-- report a clean pass, and change nothing the site can see. _2026_picks is the
+-- marker because it exists only in the project js/supabase-config.js points at.
+-- The editor runs a file as one transaction, so this raise rolls back
+-- everything after it.
+-- ---------------------------------------------------------------------------
+do $guard$
+begin
+  if to_regclass('public._2026_picks') is null then
+    raise exception
+      'Wrong database: public._2026_picks does not exist here. Open the project '
+      'named in js/supabase-config.js and run this again.';
+  end if;
+end
+$guard$;
+
+
 create table if not exists public.ff_archive_players (
   season      integer     not null default 2025,
   username    text        not null,

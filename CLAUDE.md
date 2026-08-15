@@ -152,6 +152,14 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - [js/admin.js](js/admin.js) — the admin page.
 - [supabase/sql/](supabase/sql/) — one-off migrations and repair scripts, each
   documenting the problem it solves. Run by hand in the Supabase SQL editor.
+  **Every script in here opens with the same wrong-database guard**, a `do`
+  block that raises unless `public._2026_picks` exists. Copy it verbatim into
+  any new script. The editor gives no hint which project is open, and a script
+  run against the wrong one succeeds, reports a clean pass, and changes nothing
+  the site can see — which has happened. Because the editor runs a file as one
+  transaction, the raise rolls back everything after it.
+  `supabase/migration-2026/` is deliberately exempt: those scripts are what
+  *created* the `_2026_` names, so the marker does not exist yet when they run.
 - [supabase/backups/](supabase/backups/) — `ff_2025_db.7z`, the raw Supabase
   export (emails and `user_id`s included) as a 7-Zip AES-256 archive with
   encrypted headers. Committed because the ciphertext is safe to publish; the

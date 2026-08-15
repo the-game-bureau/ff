@@ -17,6 +17,25 @@
 -- Run the SELECTs first. Only run the DELETE once you have seen what it will
 -- remove. Replace the address in both places.
 
+-- ---------------------------------------------------------------------------
+-- WRONG-DATABASE GUARD. The Supabase editor gives no hint which project is
+-- open, and these scripts have been run against the wrong one: they succeed,
+-- report a clean pass, and change nothing the site can see. _2026_picks is the
+-- marker because it exists only in the project js/supabase-config.js points at.
+-- The editor runs a file as one transaction, so this raise rolls back
+-- everything after it.
+-- ---------------------------------------------------------------------------
+do $guard$
+begin
+  if to_regclass('public._2026_picks') is null then
+    raise exception
+      'Wrong database: public._2026_picks does not exist here. Open the project '
+      'named in js/supabase-config.js and run this again.';
+  end if;
+end
+$guard$;
+
+
 -- 1. Is the login still there?
 --    deleted_at matters: a soft-deleted user is still a row, still owns the
 --    address, and still makes signUp answer "User already registered" — while

@@ -32,6 +32,30 @@
 --
 -- Run in the Supabase SQL editor. Safe to re-run — the second run finds five
 -- minutes already in place and says so.
+--
+-- This file was once run against the wrong project: it found a trigger, rewrote
+-- it, and reported a clean pass while the live project stayed at two minutes.
+-- The tell was in the verify output — a project whose site writes to
+-- _2026_picks reporting the function as public.ff_apply_pick_schedule. Hence
+-- the guard below, now on every script in this folder.
+
+-- ---------------------------------------------------------------------------
+-- WRONG-DATABASE GUARD. The Supabase editor gives no hint which project is
+-- open, and these scripts have been run against the wrong one: they succeed,
+-- report a clean pass, and change nothing the site can see. _2026_picks is the
+-- marker because it exists only in the project js/supabase-config.js points at.
+-- The editor runs a file as one transaction, so this raise rolls back
+-- everything after it.
+-- ---------------------------------------------------------------------------
+do $guard$
+begin
+  if to_regclass('public._2026_picks') is null then
+    raise exception
+      'Wrong database: public._2026_picks does not exist here. Open the project '
+      'named in js/supabase-config.js and run this again.';
+  end if;
+end
+$guard$;
 
 -- ---------------------------------------------------------------------------
 -- 1. Look first. Run this on its own if you want to see what is installed

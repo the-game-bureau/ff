@@ -1,3 +1,22 @@
+
+-- ---------------------------------------------------------------------------
+-- WRONG-DATABASE GUARD. The Supabase editor gives no hint which project is
+-- open, and these scripts have been run against the wrong one: they succeed,
+-- report a clean pass, and change nothing the site can see. _2026_picks is the
+-- marker because it exists only in the project js/supabase-config.js points at.
+-- The editor runs a file as one transaction, so this raise rolls back
+-- everything after it.
+-- ---------------------------------------------------------------------------
+do $guard$
+begin
+  if to_regclass('public._2026_picks') is null then
+    raise exception
+      'Wrong database: public._2026_picks does not exist here. Open the project '
+      'named in js/supabase-config.js and run this again.';
+  end if;
+end
+$guard$;
+
 alter table public.ff_profiles
   add column if not exists first_name text,
   add column if not exists last_name text,

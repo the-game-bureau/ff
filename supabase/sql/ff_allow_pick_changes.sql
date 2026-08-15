@@ -20,6 +20,25 @@
 -- Run once in the Supabase SQL editor.
 
 -- ---------------------------------------------------------------------------
+-- WRONG-DATABASE GUARD. The Supabase editor gives no hint which project is
+-- open, and these scripts have been run against the wrong one: they succeed,
+-- report a clean pass, and change nothing the site can see. _2026_picks is the
+-- marker because it exists only in the project js/supabase-config.js points at.
+-- The editor runs a file as one transaction, so this raise rolls back
+-- everything after it.
+-- ---------------------------------------------------------------------------
+do $guard$
+begin
+  if to_regclass('public._2026_picks') is null then
+    raise exception
+      'Wrong database: public._2026_picks does not exist here. Open the project '
+      'named in js/supabase-config.js and run this again.';
+  end if;
+end
+$guard$;
+
+
+-- ---------------------------------------------------------------------------
 -- 1. Confirm the constraint is there and see its exact name. It is normally
 --    ff_picks_user_week_key, but a table rebuilt by hand may name it something
 --    else, and step 2 needs the real name.
