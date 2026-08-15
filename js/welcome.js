@@ -27,6 +27,16 @@
     openWelcome();
   });
 
+  // Arriving on /#welcome a second time in the same tab changes the fragment
+  // and nothing else — no reload, so DOMContentLoaded never fires again and the
+  // card stayed shut. Easy to hit, because closing it strips the hash: the next
+  // /#welcome link from this page is a fragment change, not a navigation.
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash !== WELCOME_HASH) return;
+    ensureWelcomeModal();
+    openWelcome();
+  });
+
   function ensureWelcomeModal() {
     if (document.getElementById('welcomeModal')) return;
 

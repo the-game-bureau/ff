@@ -6,6 +6,9 @@ const PICKS_TABLE = FF_CONFIG.tables?.picks || 'ff_picks';
 // Where Supabase sends the password-recovery link. This exact URL must be
 // listed under Authentication > URL Configuration > Redirect URLs.
 const RESET_REDIRECT_URL = FF_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
+const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email.\n\n'
+  + 'Previous year accounts were not activated for this season. '
+  + 'Use JOIN to book yourself in, then sign in with the password you set there.';
 
 // FIXED: Added session persistence to prevent auth cycling
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -451,6 +454,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
+        // Supabase reports success for an unknown address, so a 2025 player
+        // would be told to check an inbox nothing was ever sent to. Ask first.
+        const { data: registered, error: lookupError } = await db.rpc(
+          FF_CONFIG.rpcs?.emailRegistered || '_2026_email_registered',
+          { p_email: email },
+        );
+
+        if (!lookupError && registered === false) {
+          alert(NO_ACCOUNT_MESSAGE);
+          return;
+        }
+
         const { error } = await db.auth.resetPasswordForEmail(email, {
           // Derived from wherever the page is actually served, so this keeps
           // working on both lawandorder-svu.app and the GitHub Pages URL.

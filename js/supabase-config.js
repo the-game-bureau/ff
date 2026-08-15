@@ -27,6 +27,7 @@
       adminListArchivePlayers: '_2026_admin_list_archive_players',
       adminListUsers: '_2026_admin_list_users',
       adminRemoveMember: '_2026_admin_remove_member',
+      emailRegistered: '_2026_email_registered',
     }),
     dashboard: Object.freeze({
       scheduleTableUrl: `https://supabase.com/dashboard/project/${projectRef}/editor/table/_2026_nfl_schedule?schema=public`,
