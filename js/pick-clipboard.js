@@ -8,6 +8,7 @@
   const ACTIVE_PICKS_VIEW = PICKBOARD_CONFIG.views?.activePicks || 'ff_active_picks';
   const PICKS_TABLE = PICKBOARD_CONFIG.tables?.picks || 'ff_picks';
   const SKIP_RESULT = 'SKIP';
+  const LEGAL_PAD_SCORE_SIMULATIONS = [];
 
   const pickboardDb = window.supabase
     ? window.supabase.createClient(PICKBOARD_SUPABASE_URL, PICKBOARD_SUPABASE_ANON_KEY, {
@@ -21,6 +22,7 @@
 
   let activePicks = [];
   let selectedWeek = Number(window.CURRENT_WEEK || 1);
+  let pendingFocus = null;
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('pickClipboard')) return;
@@ -128,7 +130,7 @@
 
     const weekPicks = activePicks
       .filter((pick) => Number(pick.week) === Number(selectedWeek))
-      .sort((a, b) => displayName(a).localeCompare(displayName(b)) || teamName(a).localeCompare(teamName(b)));
+      .sort(compareFiledOldestFirst);
 
     renderPickTally(weekPicks.length);
 
@@ -138,22 +140,33 @@
     }
 
     body.innerHTML = weekPicks.map((pick) => `
-      <tr>
+      <tr id="${escapeHtml(pickAnchorId(displayName(pick), selectedWeek))}" tabindex="-1">
         <td data-label="Suspect">${escapeHtml(displayName(pick))}</td>
         <td data-label="Victim">
-          <span class="pick-clipboard-line">
-            <span class="pick-clipboard-team">${escapeHtml(teamName(pick))}</span>
-            <span class="pick-clipboard-score">00</span>
+          <span class="pick-clipboard-line pick-clipboard-victim-line">
+            <span class="pick-clipboard-victim-name">
+              ${victimLogoHtml(pick)}
+              <span class="pick-clipboard-team">${escapeHtml(teamName(pick))}</span>
+            </span>
+            ${scoreHtml(pick, 'victim')}
           </span>
-          <span class="pick-clipboard-line">
-            <span class="pick-clipboard-matchup">${escapeHtml(matchupText(pick))}</span>
-            <span class="pick-clipboard-score">00</span>
+          <span class="pick-clipboard-line pick-clipboard-opponent-line">
+            <span class="pick-clipboard-opponent-name">
+              ${matchupHtml(pick)}
+            </span>
+            ${scoreHtml(pick, 'opponent')}
           </span>
         </td>
         <td class="pick-clipboard-time" data-label="Filed">${escapeHtml(stamp(pick))}</td>
         <td class="pick-clipboard-verdict" data-label="Result">${verdictMark(pick)}</td>
       </tr>
     `).join('');
+
+    if (pendingFocus && Number(pendingFocus.week) === Number(selectedWeek)) {
+      if (focusPickRow(pendingFocus.username, pendingFocus.week)) {
+        pendingFocus = null;
+      }
+    }
   }
 
   function maxWeek() {
@@ -196,7 +209,15 @@
   }
 
   function pickTime(pick) {
-    return new Date(pick?.submitted_at_utc || pick?.created_at || 0).getTime();
+    return pickDate(pick)?.getTime() || 0;
+  }
+
+  function compareFiledOldestFirst(a, b) {
+    const aTime = pickTime(a) || Number.MAX_SAFE_INTEGER;
+    const bTime = pickTime(b) || Number.MAX_SAFE_INTEGER;
+    return aTime - bTime ||
+      displayName(a).localeCompare(displayName(b)) ||
+      teamName(a).localeCompare(teamName(b));
   }
 
   function displayName(pick) {
@@ -207,46 +228,174 @@
     return String(pick?.team || '').trim();
   }
 
-  // Marked by hand, in a second pen: green tick if the victim went down and the
-  // suspect walks, red X if the case closed on them. A pick with no result yet
-  // is left blank — the line is waiting to be marked, and a placeholder there
-  // would read as a verdict.
-  //
-  // Drawn as strokes rather than typed as ✓ and ✗, so they sit on the page like
-  // the rest of the pen work instead of like font glyphs.
+  function scoreHtml(pick, side) {
+    const score = pickScore(pick, side);
+    const value = score === null ? '00' : String(score);
+    return `<span class="pick-clipboard-score">${escapeHtml(value)}</span>`;
+  }
+
+  function pickScore(pick, side) {
+    const official = officialScore(pick, side);
+    if (official !== null) return official;
+
+    return simulatedScore(pick, side);
+  }
+
+  function officialScore(pick, side) {
+    const game = officialScoreGameForPick(pick);
+    if (!game) return null;
+
+    const matchup = matchupDetails(pick);
+    const scoreTeam = side === 'victim' ? teamName(pick) : matchup.opponent;
+    const score = window.NFL_SCORE_HELPERS?.getTeamScoreFromGame?.(game, scoreTeam);
+    return Number.isFinite(Number(score)) ? Number(score) : null;
+  }
+
+  function officialScoreGameForPick(pick) {
+    const matchup = matchupDetails(pick);
+    if (matchup.isBye || !matchup.opponent) return null;
+
+    return window.NFL_SCORE_HELPERS?.getGameForTeams?.(
+      teamName(pick),
+      matchup.opponent,
+      Number(pick?.week || selectedWeek)
+    ) || null;
+  }
+
+  function simulatedScore(pick, side) {
+    const simulation = scoreSimulationForPick(pick);
+    if (!simulation) return null;
+
+    const matchup = matchupDetails(pick);
+    const scoreTeam = side === 'victim' ? teamName(pick) : matchup.opponent;
+    const key = normalizeTeamName(scoreTeam);
+    return Object.prototype.hasOwnProperty.call(simulation.scores, key)
+      ? simulation.scores[key]
+      : null;
+  }
+
+  function scoreSimulationForPick(pick) {
+    const week = Number(pick?.week || selectedWeek);
+    const pickedTeam = normalizeTeamName(teamName(pick));
+    const opponent = normalizeTeamName(matchupDetails(pick).opponent);
+    if (!week || !pickedTeam || !opponent) return null;
+
+    return LEGAL_PAD_SCORE_SIMULATIONS.find((simulation) => {
+      if (Number(simulation.week) !== week) return false;
+      const teams = simulation.teams.map(normalizeTeamName);
+      return teams.includes(pickedTeam) && teams.includes(opponent);
+    }) || null;
+  }
+
+  function victimLogoHtml(pick) {
+    const team = teamForName(teamName(pick));
+    if (!team) return '';
+
+    return teamLogoHtml(team);
+  }
+
+  function teamLogoHtml(team) {
+    return `<img class="pick-clipboard-team-logo"
+                 src="${escapeHtml(teamLogoSrc(team.abbr))}"
+                 alt=""
+                 loading="lazy"
+                 decoding="async"/>`;
+  }
+
+  function teamForName(name) {
+    const key = normalizeTeamName(name);
+    if (!key) return null;
+
+    return availableTeams().find((team) => normalizeTeamName(team.name) === key) || null;
+  }
+
+  function availableTeams() {
+    return typeof NFL_TEAMS === 'undefined' ? [] : NFL_TEAMS;
+  }
+
+  function teamLogoSrc(abbr) {
+    return `https://static.www.nfl.com/league/api/clubs/logos/${encodeURIComponent(String(abbr || '').trim())}.svg`;
+  }
+
+  function normalizeTeamName(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  }
+
+  // Legal-pad verdicts are the truth value of the accusation: the named victim
+  // did lose, or the pick lied. A pick with no result yet is left blank.
   function verdictMark(pick) {
+    const scored = scoreVerdict(pick);
+    if (scored === 'TRUTH') {
+      return '<span class="pick-clipboard-verdict-word pick-clipboard-verdict-truth">TRUTH</span>';
+    }
+    if (scored === 'LIE') {
+      return '<span class="pick-clipboard-verdict-word pick-clipboard-verdict-lie">LIE</span>';
+    }
+
     const result = String(pick?.result || '').trim().toLowerCase();
 
     if (result.includes('survived')) {
-      return `
-        <svg class="pick-mark pick-mark-tick" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <path d="M5 17.5 C8.5 20 11 23.5 12.5 26.5 C16 18 21.5 10 28.5 4.5"/>
-        </svg>
-        <span class="sr-only">Survived</span>`;
+      return '<span class="pick-clipboard-verdict-word pick-clipboard-verdict-truth">TRUTH</span>';
     }
 
     if (result.includes('dun dun')) {
-      return `
-        <svg class="pick-mark pick-mark-cross" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <path d="M6 5.5 C12 11.5 20 20 26.5 27"/>
-          <path d="M26 6 C20 12 11.5 20.5 5.5 26.5"/>
-        </svg>
-        <span class="sr-only">Dun dun</span>`;
+      return '<span class="pick-clipboard-verdict-word pick-clipboard-verdict-lie">LIE</span>';
     }
 
     return '<span class="sr-only">Pending</span>';
   }
 
-  function matchupText(pick) {
+  function scoreVerdict(pick) {
+    if (!isPickScoreFinal(pick)) return '';
+
+    const victimScore = pickScore(pick, 'victim');
+    const opponentScore = pickScore(pick, 'opponent');
+    if (victimScore === null || opponentScore === null) return '';
+
+    return Number(victimScore) < Number(opponentScore) ? 'TRUTH' : 'LIE';
+  }
+
+  function isPickScoreFinal(pick) {
+    const official = officialScoreGameForPick(pick);
+    if (official) return Boolean(official.final);
+    return Boolean(scoreSimulationForPick(pick));
+  }
+
+  function matchupHtml(pick) {
+    const matchup = matchupDetails(pick);
+    if (matchup.isBye) return '<span class="pick-clipboard-matchup">BYE</span>';
+
+    const team = teamForName(matchup.opponent);
+    const logo = team ? teamLogoHtml(team) : '';
+    return `
+      <span class="pick-clipboard-matchup-action">lose</span>
+      <span class="pick-clipboard-matchup-prefix">${escapeHtml(matchup.homeAway)}</span>
+      <span class="pick-clipboard-opponent-team">
+        ${logo}
+        <span class="pick-clipboard-matchup">${escapeHtml(matchup.shortName)}</span>
+      </span>`;
+  }
+
+  function matchupDetails(pick) {
     const storedOpponent = String(pick?.opponent || '').trim();
     const storedHomeAway = String(pick?.home_away || '').trim();
     if (storedOpponent) {
-      return `${storedHomeAway || 'vs'} ${shortTeamName(storedOpponent)}`;
+      return {
+        homeAway: storedHomeAway || 'vs',
+        opponent: storedOpponent,
+        shortName: shortTeamName(storedOpponent),
+        isBye: false
+      };
     }
 
     const info = window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(teamName(pick), Number(pick.week));
-    if (!info || info.isBye) return 'BYE';
-    return `${info.homeAway} ${info.opponentShort || shortTeamName(info.opponent)}`;
+    if (!info || info.isBye) return { isBye: true };
+    return {
+      homeAway: info.homeAway,
+      opponent: info.opponent || '',
+      shortName: info.opponentShort || shortTeamName(info.opponent),
+      isBye: false
+    };
   }
 
   function shortTeamName(name) {
@@ -255,25 +404,73 @@
   }
 
   function stamp(pick) {
-    const when = pick?.submitted_at_utc || pick?.created_at;
-    if (!when) return '-';
-
-    const date = new Date(when);
-    if (Number.isNaN(date.getTime())) return '-';
+    const date = pickDate(pick);
+    if (!date) return '-';
 
     return date.toLocaleString('en-US', {
       timeZone: 'America/Chicago',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZoneName: 'short'
     });
+  }
+
+  function pickDate(pick) {
+    const when = pick?.submitted_at_utc || pick?.created_at;
+    if (!when) return null;
+
+    const date = new Date(normalizeUtcTimestamp(when));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function normalizeUtcTimestamp(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+
+    // submitted_at_utc is stored as UTC. If a backend response omits the
+    // timezone suffix, make that UTC explicit before converting to Central.
+    return /(?:z|[+-]\d{2}:?\d{2})$/i.test(text) ? text : `${text}Z`;
   }
 
   function countLabel(count) {
     if (!count) return `No Week ${selectedWeek} picks on file.`;
     return `${count} Week ${selectedWeek} ${count === 1 ? 'pick' : 'picks'} on file.`;
   }
+
+  function pickAnchorId(username, week) {
+    return `pick-clipboard-w${Number(week)}-${anchorSlug(username)}`;
+  }
+
+  function anchorSlug(value) {
+    return String(value || 'unknown')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'unknown';
+  }
+
+  function focusPickRow(username, week) {
+    const row = document.getElementById(pickAnchorId(username, week));
+    if (!row) return false;
+
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.classList.add('pick-clipboard-row-target');
+    window.setTimeout(() => row.classList.remove('pick-clipboard-row-target'), 1600);
+    return true;
+  }
+
+  window.PickClipboard = Object.freeze({
+    anchorIdFor: pickAnchorId,
+    showWeek(week, username) {
+      selectedWeek = clampWeek(week);
+      pendingFocus = username ? { username, week: selectedWeek } : null;
+      renderWeekOptions();
+      renderClipboard();
+    }
+  });
 
   function renderPickTally(count) {
     const el = document.getElementById('pickClipboardCount');

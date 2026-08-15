@@ -44,7 +44,7 @@
       <div class="scoreboard">
         <div class="scoreboard-cell" id="docketStanding">
           <span class="scoreboard-count" id="docketCount" aria-live="polite">&mdash;</span>
-          <span class="scoreboard-label" id="docketLabel">Still Standing</span>
+          <span class="scoreboard-label" id="docketLabel">Still Under Suspicion</span>
         </div>
 
         <div class="scoreboard-cell scoreboard-cell-out" id="docketEliminated">
@@ -89,6 +89,73 @@
         </div>
       </div>
     </section>
+
+    <section class="suspect-lineup-chart" id="suspectLineupChart" aria-labelledby="suspectLineupChartTitle">
+      <div class="lineup-chart-head">
+        <h2 id="suspectLineupChartTitle" class="section-heading lineup-tracker-heading-hidden">SUSPECT TRACKER</h2>
+        <span id="suspectLineupChartStatus" class="lineup-chart-status" aria-live="polite">Loading pool...</span>
+      </div>
+
+      <ol id="suspectLineupChartList" class="lineup-chart-list" aria-label="Weekly pick pool"></ol>
+
+      <dl class="lineup-emoji-key" aria-label="Suspect Tracker emoji key">
+        <div class="lineup-emoji-key-item">
+          <dt class="lineup-emoji-key-mark lineup-emoji-key-empty" aria-hidden="true"></dt>
+          <dd>NO PICK</dd>
+        </div>
+        <div class="lineup-emoji-key-item">
+          <dt class="lineup-emoji-key-mark lineup-emoji-key-pick">
+            <button class="lineup-emoji-key-image-button" type="button"
+                    data-mugshot-lightbox
+                    data-mugshot-src="../src/generated/nfl-shield.png"
+                    data-mugshot-alt="NFL shield"
+                    data-mugshot-caption="PICK FILED"
+                    data-mugshot-lightbox-size="icon"
+                    aria-label="Preview pick filed icon">
+              <span class="lineup-logo-marker lineup-logo-marker-legend">
+                <img class="lineup-nfl-shield-icon" src="../src/generated/nfl-shield.png" alt="" loading="lazy" decoding="async"/>
+                <span class="lineup-logo-marker-text" aria-hidden="true">LOSE</span>
+              </span>
+            </button>
+          </dt>
+          <dd>PICK FILED</dd>
+        </div>
+        <div class="lineup-emoji-key-item">
+          <dt class="lineup-emoji-key-mark lineup-emoji-key-survived">
+            <button class="lineup-emoji-key-image-button" type="button"
+                    data-mugshot-lightbox
+                    data-mugshot-src="../src/generated/nfl-shield.png"
+                    data-mugshot-alt="NFL shield"
+                    data-mugshot-caption="NFL TEAM LOST"
+                    data-mugshot-lightbox-size="icon"
+                    aria-label="Preview NFL team lost icon">
+              <span class="lineup-logo-marker lineup-logo-marker-legend">
+                <img class="lineup-nfl-shield-icon" src="../src/generated/nfl-shield.png" alt="" loading="lazy" decoding="async"/>
+                <span class="lineup-logo-marker-text" aria-hidden="true">LOST</span>
+              </span>
+            </button>
+          </dt>
+          <dd>NFL TEAM LOST</dd>
+        </div>
+        <div class="lineup-emoji-key-item">
+          <dt class="lineup-emoji-key-mark lineup-emoji-key-dun-dun">
+            <button class="lineup-emoji-key-image-button" type="button"
+                    data-mugshot-lightbox
+                    data-mugshot-src="../src/generated/nfl-shield.png"
+                    data-mugshot-alt="NFL shield"
+                    data-mugshot-caption="NFL TEAM WON"
+                    data-mugshot-lightbox-size="icon"
+                    aria-label="Preview NFL team won icon">
+              <span class="lineup-logo-marker lineup-logo-marker-legend">
+                <img class="lineup-nfl-shield-icon" src="../src/generated/nfl-shield.png" alt="" loading="lazy" decoding="async"/>
+                <span class="lineup-logo-marker-text" aria-hidden="true">WON</span>
+              </span>
+            </button>
+          </dt>
+          <dd>NFL TEAM WON</dd>
+        </div>
+      </dl>
+    </section>
   </div>
 
   <footer class="footer" role="contentinfo">
@@ -97,11 +164,14 @@
   </footer>
 
   <script src="../js/nfl-schedule.js"></script>
+  <script src="../js/nfl-scores.js"></script>
   <script src="../js/season.js"></script>
   <script src="../js/teams.js"></script>
   <script src="../js/nav.js"></script>
   <script src="../js/docket.js"></script>
   <script src="../js/pick-clipboard.js"></script>
+  <script src="../js/mugshot-lightbox.js"></script>
+  <script src="../js/suspect-lineup-chart.js"></script>
   <script src="../js/auth-corner.js"></script>
   <script src="../js/join-modal.js"></script>
   <script src="../js/join.js"></script>

@@ -65,6 +65,7 @@
     '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
     '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100']
   };
+  const DOT_SCOREBOARD_LABEL_WIDTH = getDotTextWidth('Still Under Suspicion');
 
   const docketDb = window.supabase
     ? window.supabase.createClient(DOCKET_SUPABASE_URL, DOCKET_SUPABASE_ANON_KEY, {
@@ -142,7 +143,7 @@
     const rows = data || [];
     const out = rows.filter((row) => isEliminated(row.game_status)).length;
     setScore(String(rows.length - out), String(out));
-    setLabel(labelEl, 'Still Standing');
+    setLabel(labelEl, 'Still Under Suspicion');
     setLabel(outLabelEl, 'Dun Dun');
   }
 
@@ -155,7 +156,11 @@
 
   function renderDotText(el, value) {
     const text = normalizeDotText(value);
-    const minColumns = el.classList.contains('scoreboard-count') ? DOT_TWO_DIGIT_WIDTH : 0;
+    const minColumns = el.classList.contains('scoreboard-count')
+      ? DOT_TWO_DIGIT_WIDTH
+      : el.classList.contains('scoreboard-label')
+        ? DOT_SCOREBOARD_LABEL_WIDTH
+        : 0;
     const layout = getDotLayout(text, minColumns);
     const viewWidth = (layout.width - 1) * DOT_PITCH + DOT_RADIUS * 2 + DOT_PAD * 2;
     const viewHeight = (DOT_ROWS - 1) * DOT_PITCH + DOT_RADIUS * 2 + DOT_PAD * 2;
@@ -225,6 +230,22 @@
       dots: offset ? dots.map((dot) => ({ ...dot, x: dot.x + offset })) : dots,
       width
     };
+  }
+
+  function getDotTextWidth(text) {
+    let cursor = 0;
+
+    Array.from(normalizeDotText(text)).forEach((char) => {
+      if (char === ' ') {
+        cursor += DOT_SPACE_WIDTH + DOT_CHAR_GAP;
+        return;
+      }
+
+      const rows = DOT_FONT[char] || DOT_FONT['?'];
+      cursor += rows[0].length + DOT_CHAR_GAP;
+    });
+
+    return Math.max(cursor - DOT_CHAR_GAP, 1);
   }
 
   function isEliminated(status) {

@@ -141,6 +141,18 @@ function splitTeamName(name){
   return { place: name.slice(0, cut), nickname: name.slice(cut + 1) };
 }
 
+function plaintextSportsTeamUrl(teamName){
+  return `https://plaintextsports.com/nfl/${SEASON}/teams/${teamSlug(teamName)}`;
+}
+
+function teamSlug(value){
+  return String(value || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 const CONFERENCE_ORDER = ['AFC', 'NFC'];
 const DIVISION_ORDER = ['East', 'North', 'South', 'West'];
 
@@ -488,24 +500,30 @@ function renderVictims(){
       : escapeHtml(status);
 
     return `
-    <li class="victim-card${disabled ? ' disabled' : ''}${isActivePick ? ' current-pick' : ''}"
-        role="button"
-        tabindex="${disabled ? '-1' : '0'}"
-        aria-disabled="${disabled ? 'true' : 'false'}"
-        aria-pressed="${isActivePick ? 'true' : 'false'}"
-        aria-label="${escapeHtml(ariaLabel)}"
-        ${hint ? `title="${escapeHtml(hint)}"` : ''}
-        data-team="${escapeHtml(team.name)}"
-        data-primary="${team.primary}"
-        data-secondary="${team.secondary}">
-      <img class="victim-logo" src="${LOGO_URL(team.abbr)}" alt="${team.name} logo"
-           width="76" height="76" loading="lazy" />
-      <div class="victim-name">
-        <span class="victim-place">${escapeHtml(place)}</span>
-        <span class="victim-nickname">${escapeHtml(nickname)}</span>
-        <span class="victim-matchup-line" title="${escapeHtml(info.line || matchupText(info))}">${escapeHtml(matchupText(info))}</span>
+    <li class="victim-card-shell">
+      <div class="victim-card${disabled ? ' disabled' : ''}${isActivePick ? ' current-pick' : ''}"
+          role="button"
+          tabindex="${disabled ? '-1' : '0'}"
+          aria-disabled="${disabled ? 'true' : 'false'}"
+          aria-pressed="${isActivePick ? 'true' : 'false'}"
+          aria-label="${escapeHtml(ariaLabel)}"
+          ${hint ? `title="${escapeHtml(hint)}"` : ''}
+          data-team="${escapeHtml(team.name)}"
+          data-primary="${team.primary}"
+          data-secondary="${team.secondary}">
+        <img class="victim-logo" src="${LOGO_URL(team.abbr)}" alt="${team.name} logo"
+            width="76" height="76" loading="lazy" />
+        <div class="victim-name">
+          <span class="victim-place">${escapeHtml(place)}</span>
+          <span class="victim-nickname">${escapeHtml(nickname)}</span>
+          <span class="victim-matchup-line" title="${escapeHtml(info.line || matchupText(info))}">${escapeHtml(matchupText(info))}</span>
+        </div>
+        <div class="victim-status${statusModifier(status)}${statusWeek ? ' victim-status-swap' : ''}">${statusFaces}</div>
       </div>
-      <div class="victim-status${statusModifier(status)}${statusWeek ? ' victim-status-swap' : ''}">${statusFaces}</div>
+      <a class="victim-investigate-link"
+         href="${escapeHtml(plaintextSportsTeamUrl(team.name))}"
+         target="_blank"
+         rel="noopener noreferrer">INVESTIGATE ${escapeHtml(nickname)}</a>
     </li>
   `;
   }).join('');
