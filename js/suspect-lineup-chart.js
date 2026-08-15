@@ -14,7 +14,66 @@
   const THEME_SAMPLE_SIZE = 24;
   const SKIP_RESULT = 'SKIP';
   const NFL_SHIELD_ICON_SRC = new URL('../src/generated/nfl-shield.png', window.location.href).href;
-  let fitNamesFrame = 0;
+  const DOT_TEXT_ROWS = 7;
+  const DOT_TEXT_PITCH = 4;
+  // Bold, in the only way a dot-matrix printer can be: fatter dots, same grid.
+  // 1.15 left daylight between neighbours and read as a faint draft pass; 1.5
+  // against a pitch of 4 leaves the dots just touching, which is what a real
+  // double-strike looks like. Any higher and the counters in 8, 0 and B fill in.
+  const DOT_TEXT_RADIUS = 1.5;
+  const DOT_TEXT_PAD = 1;
+  const DOT_TEXT_CHAR_GAP = 1;
+  const DOT_TEXT_SPACE_WIDTH = 3;
+  // 5x7, the cell a real dot-matrix head prints. Started as just the letters in
+  // SUSPECT TRACKER; the rest arrived when the booking names moved to dots too,
+  // so it now covers everything a username can legally contain — letters,
+  // digits and the underscore (see the rules in js/join.js). The nine original
+  // glyphs are untouched, because the title is drawn from them and any redraw
+  // would show up as the heading changing shape.
+  const DOT_TEXT_FONT = {
+    A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+    B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+    C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+    D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+    E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+    F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+    G: ['01111', '10000', '10000', '10111', '10001', '10001', '01111'],
+    H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+    I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
+    J: ['00111', '00010', '00010', '00010', '00010', '10010', '01100'],
+    K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+    L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+    M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+    N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+    O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+    P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+    Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+    R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+    S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+    U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+    V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+    W: ['10001', '10001', '10001', '10101', '10101', '11011', '10001'],
+    X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+    Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+    Z: ['11111', '00001', '00010', '00100', '01000', '10000', '11111'],
+    0: ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    1: ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    2: ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    3: ['11111', '00010', '00100', '00010', '00001', '10001', '01110'],
+    4: ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    5: ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+    6: ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    7: ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    8: ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    9: ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+    // Underscore sits on the bottom row, so a name like a_little_stitious
+    // still reads as separate words at two dots high.
+    _: ['00000', '00000', '00000', '00000', '00000', '00000', '11111'],
+    '-': ['00000', '00000', '00000', '01110', '00000', '00000', '00000'],
+    '.': ['00000', '00000', '00000', '00000', '00000', '01100', '01100'],
+    '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100']
+  };
 
   const lineupDb = window.supabase
     ? window.supabase.createClient(LINEUP_SUPABASE_URL, LINEUP_SUPABASE_ANON_KEY, {
@@ -30,9 +89,13 @@
     if (!document.getElementById('suspectLineupChart')) return;
 
     renderLoading();
+    // The legend is static markup, so it is printed once here rather than
+    // waiting on the pool to load.
+    paintDotMatrixLabels();
     loadLineup();
     window.addEventListener('ff-auth-changed', loadLineup);
-    window.addEventListener('resize', scheduleFitTrackerNames);
+    // No resize handler any more: every label is an SVG that rescales itself,
+    // so there is nothing left to re-measure when the window changes.
   });
 
   async function loadLineup() {
@@ -230,8 +293,7 @@
     setStatus('', '');
     bindLegalPadLinks(list);
     paintTrackerThemes(list);
-    scheduleFitTrackerNames(list);
-    document.fonts?.ready?.then(() => scheduleFitTrackerNames(list)).catch(() => {});
+    paintDotMatrixLabels(list);
   }
 
   function renderLoading() {
@@ -261,7 +323,7 @@
             <img class="lineup-tracker-mugshot" src="${escapeHtml(row.avatarSrc)}" alt="${escapeHtml(`${row.username} mugshot`)}" width="38" height="38"/>
           </button>
           <div class="lineup-booking-id">
-            <strong class="lineup-booking-name">${escapeHtml(row.username)}</strong>
+            <strong class="lineup-booking-name" aria-label="${escapeHtml(row.username)}">${dotMatrixTextHtml(row.username, 'lineup-booking-name')}</strong>
             ${row.firstName ? `<span class="lineup-booking-first">${escapeHtml(row.firstName)}</span>` : ''}
           </div>
         </div>
@@ -273,15 +335,74 @@
   function poolHeaderHtml() {
     return `
       <li class="lineup-pool-header" aria-hidden="true">
-        <span class="lineup-pool-corner">SUSPECT TRACKER</span>
+        <span class="lineup-pool-corner" aria-label="SUSPECT TRACKER">${dotMatrixTextHtml('SUSPECT TRACKER')}</span>
         ${POOL_WEEKS.map((week) => weekHeaderHtml(week)).join('')}
       </li>
     `;
   }
 
+  // `variant` only names the CSS hooks. The geometry is identical everywhere,
+  // so the heading and the booking names are the same printer at two sizes
+  // rather than two typefaces that happen to both be dotty.
+  function dotMatrixTextHtml(value, variant = 'lineup-pool-corner') {
+    const layout = dotMatrixLayout(value);
+    const viewWidth = (layout.width - 1) * DOT_TEXT_PITCH + DOT_TEXT_RADIUS * 2 + DOT_TEXT_PAD * 2;
+    const viewHeight = (DOT_TEXT_ROWS - 1) * DOT_TEXT_PITCH + DOT_TEXT_RADIUS * 2 + DOT_TEXT_PAD * 2;
+    const dots = layout.dots.map((dot) => `
+          <circle cx="${DOT_TEXT_PAD + DOT_TEXT_RADIUS + dot.x * DOT_TEXT_PITCH}"
+                  cy="${DOT_TEXT_PAD + DOT_TEXT_RADIUS + dot.y * DOT_TEXT_PITCH}"
+                  r="${DOT_TEXT_RADIUS}"></circle>`).join('');
+
+    // width/height attributes as well as the viewBox, and they are load-bearing:
+    // an SVG carrying only a viewBox has no intrinsic size, so `width: auto`
+    // resolves against the containing block. Inside anything sized to its
+    // content — a max-content grid column, say — that is circular, and the
+    // browser settles it at zero. The label vanishes. With real dimensions the
+    // element has an intrinsic box to be measured at, and the CSS ceilings then
+    // scale it down from there.
+    return `
+        <svg class="${variant}-dot-svg" viewBox="0 0 ${viewWidth} ${viewHeight}"
+             width="${viewWidth}" height="${viewHeight}"
+             preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false">
+          <g class="${variant}-dot">${dots}
+          </g>
+        </svg>`;
+  }
+
+  function dotMatrixLayout(value) {
+    const dots = [];
+    let cursor = 0;
+
+    Array.from(String(value || '').trim().toUpperCase()).forEach((char) => {
+      if (char === ' ') {
+        cursor += DOT_TEXT_SPACE_WIDTH + DOT_TEXT_CHAR_GAP;
+        return;
+      }
+
+      const rows = DOT_TEXT_FONT[char] || DOT_TEXT_FONT['?'];
+      rows.forEach((row, y) => {
+        Array.from(row).forEach((slot, x) => {
+          if (slot === '1') dots.push({ x: cursor + x, y });
+        });
+      });
+      cursor += rows[0].length + DOT_TEXT_CHAR_GAP;
+    });
+
+    return {
+      dots,
+      width: Math.max(cursor - DOT_TEXT_CHAR_GAP, 1)
+    };
+  }
+
+  // Just the number, printed large. The W is dropped because the column is
+  // already eighteen numbers in a row under a heading that says what they are —
+  // it was eighteen copies of a letter nobody needed to read. Screen readers
+  // still get "Week 12" from the aria-label, which is the one place the word
+  // still earns its keep.
   function weekHeaderHtml(week) {
     const currentClass = week === currentPoolWeek() ? ' lineup-week-label-current' : '';
-    return `<span class="lineup-week-label${currentClass}" data-lineup-week="${week}">W${week}</span>`;
+    return `<span class="lineup-week-label${currentClass}" data-lineup-week="${week}"
+                  aria-label="Week ${week}">${dotMatrixTextHtml(String(week), 'lineup-week-label')}</span>`;
   }
 
   function currentPoolWeek() {
@@ -401,24 +522,39 @@
     });
   }
 
-  function scheduleFitTrackerNames(root = document) {
-    window.cancelAnimationFrame(fitNamesFrame);
-    fitNamesFrame = window.requestAnimationFrame(() => fitTrackerNames(root));
-  }
+  // The rest of the board's type. The legend and the cell captions live in the
+  // page markup rather than in these templates, so they are converted in place
+  // after render instead of being templated — with the script blocked the page
+  // still reads as ordinary text, which is the state the markup is written for.
+  //
+  // Each one keeps its words on an aria-label, because the dots themselves are
+  // aria-hidden and a grid of circles says nothing to a screen reader.
+  const DOT_LABEL_SELECTORS = [
+    '.lineup-booking-first',
+    '.lineup-logo-marker-text',
+    '.lineup-emoji-key dd'
+  ];
 
-  function fitTrackerNames(root = document) {
-    // The first-name line shrinks by the same rule as the username above it,
-    // so a long name narrows rather than clipping.
-    const names = root.querySelectorAll('.lineup-booking-name, .lineup-booking-first');
-    for (const el of names) {
-      el.style.fontSize = '';
-      const maxPx = parseFloat(window.getComputedStyle(el).fontSize) || 14;
-      const minPx = 5.5;
+  function paintDotMatrixLabels(root = document) {
+    const scope = root === document ? document : root;
+    const targets = DOT_LABEL_SELECTORS.flatMap((selector) => [
+      ...scope.querySelectorAll(selector),
+      // The legend sits outside the list that renderRows() redraws, so a scoped
+      // call would never reach it.
+      ...(scope === document ? [] : document.querySelectorAll(selector))
+    ]);
 
-      for (let size = maxPx; size >= minPx; size -= 0.5) {
-        el.style.fontSize = `${size}px`;
-        if (el.scrollWidth <= el.clientWidth) break;
-      }
+    for (const el of new Set(targets)) {
+      if (el.dataset.dotPainted === 'true') continue;
+
+      const text = (el.textContent || '').trim();
+      if (!text) continue;
+
+      el.dataset.dotPainted = 'true';
+      if (el.getAttribute('aria-hidden') !== 'true') el.setAttribute('aria-label', text);
+      // Variant names get "-dot-svg" and "-dot" appended, so this is the class
+      // pair .lineup-label-dot-svg / .lineup-label-dot.
+      el.innerHTML = dotMatrixTextHtml(text, 'lineup-label');
     }
   }
 

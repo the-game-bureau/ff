@@ -2474,13 +2474,58 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .suspect-lineup-chart{
   --lineup-pick-fill: #FFF1A6;
   --lineup-pick-border: #A97900;
+  --tractor-strip: 34px;
+  --tractor-hole: 12px;
+  --matrix-ink: #232323;
   position: relative;
-  max-width: 920px;
+  max-width: 1040px;
   margin: 38px auto 0;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+  padding: 26px calc(var(--tractor-strip) + 18px) 22px;
+  background-color: #F8F5E7;
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.16) 0 0.7px, transparent 0.95px),
+    repeating-linear-gradient(0deg, rgba(75, 148, 88, 0.09) 0 34px, rgba(75, 148, 88, 0.17) 34px 68px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 17px);
+  background-position: 0 0, 0 0, 0 0;
+  background-size: 6px 6px, 100% 68px, 100% 17px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.16);
+  color: var(--matrix-ink);
+  overflow: hidden;
+}
+
+.suspect-lineup-chart::before,
+.suspect-lineup-chart::after{
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  width: var(--tractor-strip);
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.34);
+  background-image:
+    radial-gradient(circle at 50% 20px, #F8F5E7 0 var(--tractor-hole), rgba(0, 0, 0, 0.28) calc(var(--tractor-hole) + 0.7px), transparent calc(var(--tractor-hole) + 1.4px)),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(0, 0, 0, 0.16) 39px 40px);
+  background-size: 100% 54px, 100% 40px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+
+.suspect-lineup-chart::before{
+  left: 0;
+  border-right: 2px dashed rgba(0, 0, 0, 0.35);
+}
+
+.suspect-lineup-chart::after{
+  right: 0;
+  border-left: 2px dashed rgba(0, 0, 0, 0.35);
+}
+
+.lineup-chart-head,
+.lineup-chart-list,
+.lineup-emoji-key{
+  position: relative;
+  z-index: 1;
 }
 
 .lineup-chart-head{
@@ -2497,9 +2542,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .lineup-chart-head .section-heading{
   margin: 0;
   padding: 8px 12px;
-  background: var(--paper);
-  border: var(--rule-fat);
-  box-shadow: 5px 5px 0 var(--ink);
+  background: rgba(248, 245, 231, 0.92);
+  border: 2px solid var(--matrix-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.24);
   line-height: 1;
 }
 
@@ -2523,7 +2568,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-size: 0.75rem;
   font-weight: 900;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: rgba(35, 35, 35, 0.66);
 }
 
 .lineup-chart-status-bad{ color: var(--error); }
@@ -2539,11 +2584,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   gap: 8px;
   margin: 0;
   padding: 0 5px 5px 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   border: 0;
   background: transparent;
   box-shadow: none;
-  scrollbar-color: var(--ink) transparent;
+  scrollbar-color: var(--matrix-ink) transparent;
 }
 
 .lineup-pool-header,
@@ -2563,37 +2608,81 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--matrix-ink);
 }
 
+/* Every rule on this board is printed, not drawn: dotted borders out of the
+   same head that prints the type, and no offset shadows anywhere. A shadow
+   implies a card lifted off a surface, and nothing here is lifted — it is all
+   ink on one continuous sheet of tractor-feed paper. */
 .lineup-pool-corner,
 .lineup-week-label{
   display: flex;
   align-items: center;
   min-height: 24px;
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  background: rgba(248, 245, 231, 0.86);
+  border: 2px dotted rgba(35, 35, 35, 0.72);
 }
 
+/* Same box metrics as a week label, so the heading prints on the same line as
+   the numbers instead of floating above them. The header row is aligned to its
+   end, so matching the height is what makes the two line up — a taller corner
+   set the row height and left the numbers sitting under it. */
 .lineup-pool-corner{
-  justify-content: start;
-  min-height: 40px;
-  padding: 8px 10px;
-  border-width: 5px;
-  box-shadow: 5px 5px 0 var(--ink);
-  font-family: var(--font-display);
-  font-size: 1rem;
+  justify-content: center;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  color: var(--matrix-ink);
   line-height: 1;
+}
+
+/* width:auto rather than a percentage so the element box hugs the drawing. A
+   percentage width leaves the box wider than the dots whenever the height cap
+   bites, and the SVG's xMin alignment then parks the title at the left of that
+   slack — it looks off-centre however the parent is aligned. Hugging the
+   drawing lets the flex centring above do its job. */
+.lineup-pool-corner-dot-svg{
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  /* Cannot outgrow the row it now shares with the week numbers. */
+  max-height: 16px;
+  overflow: visible;
+}
+
+.lineup-pool-corner-dot{
+  fill: currentColor;
 }
 
 .lineup-week-label{
   justify-content: center;
+  padding: 3px 2px;
+}
+
+/* Printed larger than the booking names on purpose: this is the ruler the whole
+   board is read against, and a single digit or two has the room for it. */
+.lineup-week-label-dot-svg{
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 16px;
+}
+
+.lineup-week-label-dot{
+  fill: currentColor;
 }
 
 .lineup-week-label-current{
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+  background: var(--matrix-ink);
+  color: #F8F5E7;
+  border-color: var(--matrix-ink);
 }
 
 .lineup-booking-card{
@@ -2609,8 +2698,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding: 5px 8px 5px 5px;
   background: var(--tracker-primary);
   color: var(--tracker-ink);
-  border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
+  border: 2px dotted var(--matrix-ink);
   font-family: var(--font-mono);
 }
 
@@ -2648,35 +2736,68 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   min-width: 0;
 }
 
+/* Printed, not typeset: the name is a dot grid drawn by
+   js/suspect-lineup-chart.js, the same 5x7 head that prints the SUSPECT TRACKER
+   heading. So there is no font here — the element is only the box the SVG has
+   to fit inside, and its accessible name lives on the aria-label because the
+   dots themselves are aria-hidden. */
 .lineup-booking-name{
+  display: flex;
+  align-items: center;
   min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-display);
-  font-size: 0.86rem;
-  font-weight: 900;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  letter-spacing: 0;
   color: inherit;
+}
+
+/* Two ceilings, and whichever bites first wins. A short handle stops growing at
+   the cap height so it never towers over the card; a long one runs out of
+   column width instead and the aspect ratio takes the height down with it. That
+   is the whole of the old fit-to-width loop, done by the SVG for free. */
+.lineup-booking-name-dot-svg{
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 13px;
+}
+
+.lineup-booking-name-dot{
+  fill: currentColor;
 }
 
 /* Deliberately quieter than the username: the handle is who you are in the
    game, the first name is only there so signed-in players can tell each other
-   apart. Present only for them — see js/suspect-lineup-chart.js. */
+   apart. Present only for them — see js/suspect-lineup-chart.js. Printed at
+   two thirds the username's cap height, which is now what "quieter" means —
+   the dots are all one weight, so size is the only register left. */
 .lineup-booking-first{
+  display: flex;
   min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  font-weight: 700;
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
   color: inherit;
   opacity: 0.72;
 }
+
+/* The shared print head for everything converted in place: first names, the
+   cell captions, the legend. Each gets its own ceiling below. */
+.lineup-label-dot-svg{
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+.lineup-label-dot{
+  fill: currentColor;
+}
+
+/* Same cap height as the username above it. The two lines now differ only by
+   the opacity on .lineup-booking-first, which is enough to keep the handle
+   first without shrinking the real name into the fine print. */
+.lineup-booking-first .lineup-label-dot-svg{ max-height: 13px; }
+.lineup-emoji-key dd .lineup-label-dot-svg{ max-height: 9px; }
+
+/* Smallest print on the board — it sits under a team logo inside a 30px cell,
+   so it gets the shortest head of all. */
+.lineup-logo-marker-text .lineup-label-dot-svg{ max-height: 6px; }
 
 .lineup-week-block{
   position: relative;
@@ -2686,24 +2807,29 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: var(--pool-week-size);
   min-width: var(--pool-week-size);
   min-height: 0;
-  background: var(--paper);
-  color: var(--ink);
-  border: 3px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  /* No fill: the cells are printed onto the sheet, so the green bars and the
+     paper grain run straight through them. Only a cell carrying a result
+     paints, and that paint is then the thing your eye finds. */
+  background: transparent;
+  color: var(--matrix-ink);
+  border: 2px dotted rgba(35, 35, 35, 0.78);
   font-size: 0.92rem;
   line-height: 1;
   text-decoration: none;
 }
 
+/* An unfilled week had its own paler wash and a dot screen on top. Both are
+   gone: with nothing painted, an empty cell is simply the sheet inside a dotted
+   rule, which is what an unprinted cell on fanfold paper actually looks like. */
 .lineup-week-block-empty{
-  background: var(--paper);
+  background: transparent;
   color: transparent;
 }
 
 .lineup-week-block-empty[href]:hover,
 .lineup-week-block-empty[href]:focus-visible{
-  background: var(--paper-raised);
-  outline: 3px solid var(--ink);
+  background: rgba(255, 250, 210, 0.94);
+  outline: 2px solid var(--matrix-ink);
   outline-offset: 2px;
 }
 
@@ -2717,7 +2843,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .lineup-week-block-pick:focus-visible{
   background: #FFE071;
   border-color: var(--lineup-pick-border);
-  outline: 3px solid var(--ink);
+  outline: 2px solid var(--matrix-ink);
   outline-offset: 2px;
 }
 
@@ -2789,7 +2915,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--matrix-ink);
 }
 
 .lineup-emoji-key-item{
@@ -2800,9 +2926,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   min-height: 40px;
   min-width: 0;
   padding: 4px 9px 4px 4px;
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  background: rgba(248, 245, 231, 0.9);
+  border: 2px dotted rgba(35, 35, 35, 0.78);
 }
 
 .lineup-emoji-key dt,
@@ -2816,9 +2941,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   place-items: center;
   width: 30px;
   height: 30px;
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  background: #F8F5E7;
+  border: 2px dotted rgba(35, 35, 35, 0.78);
   font-size: 0.9rem;
 }
 
@@ -2857,7 +2981,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .lineup-emoji-key-image-button:focus-visible{
-  outline: 3px solid var(--ink);
+  outline: 2px solid var(--matrix-ink);
   outline-offset: 2px;
 }
 
@@ -2954,12 +3078,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   }
 
   .suspect-lineup-chart{
+    --tractor-strip: 22px;
+    --tractor-hole: 7px;
     width: 100%;
     max-width: 100%;
     margin-top: 30px;
-    padding: 0;
+    padding: 18px calc(var(--tractor-strip) + 10px) 18px;
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: 0 8px 0 rgba(0, 0, 0, 0.14);
   }
 
   .lineup-chart-list{
@@ -3006,12 +3132,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     height: 40px;
   }
 
-  .lineup-booking-name{
-    font-size: 0.76rem;
+  /* The name is dots, so the narrow board shrinks the print head rather than a
+     font size. */
+  .lineup-booking-name-dot-svg{
+    max-height: 11px;
   }
 
-  .lineup-booking-first{
-    font-size: 0.58rem;
+  .lineup-booking-first .lineup-label-dot-svg{
+    max-height: 11px;
   }
 
   .lineup-week-block{
