@@ -64,7 +64,7 @@ in [js/victims.js](js/victims.js), checked in this order, first match wins:
 | **Future Selection** | your pick for a *later* week — still selectable |
 | **Previous Selection** | used in an earlier week, so unselectable |
 | **Not Playing** | on a bye |
-| **Past Kickoff** | their game has started |
+| **Locked Up** | within `PICK_LOCK_MINUTES` of kickoff, the game has started, or this week's victim has already locked |
 | **Available** | free to pick |
 
 `Future Selection` is the only label with a coloured badge that is still

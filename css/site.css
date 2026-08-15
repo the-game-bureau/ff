@@ -1771,8 +1771,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* The selected card is ringed in that team's own secondary colour, so the
    highlight names the team rather than being the same yellow for all 32.
-   Falls back to the house yellow if a team has no secondary set. */
+   Falls back to the house yellow if a team has no secondary set.
+
+   The wash is the same idea: a tenth of the team's primary over the paper, so
+   the card the player has committed to is tinted in that team's colour rather
+   than in a house highlight. A tenth is deliberately weak — the card still has
+   to read as paper behind dark ink, and several primaries are near-black.
+   Browsers without color-mix drop this declaration and keep the plain paper
+   from .victim-card, which is a fine card, just an untinted one. */
 .victim-card.current-pick{
+  background-color: color-mix(in srgb, var(--victim-primary, var(--ink)) 10%, var(--paper-raised));
   outline: var(--stripe-b-w) solid var(--victim-secondary, var(--accent-yellow));
   outline-offset: calc(-1 * var(--stripe-b-w));
 }
@@ -1896,35 +1904,57 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* A badge saying "Previous Selection" never says which week, and the tooltip
-   that does only exists on a mouse. So the two selection badges carry both and
-   cross-fade between them. The faces share one grid cell, so the badge is as
-   wide as the longer of the two and holds still while they swap. */
+   that does only exists on a mouse. So the selection badges carry everything
+   they have to say and cross-fade between the faces. The faces share one grid
+   cell, so the badge is as wide as the widest and holds still while they swap.
+   Face count is on the container (.victim-status-swap-2 / -3), which is what
+   sets the cycle length and the per-face delay. */
 .victim-status-swap{
   display: inline-grid;
   align-items: center;
   justify-items: center;
 }
 
-.victim-status-face{
-  grid-area: 1 / 1;
-  animation: victim-status-swap 7s linear infinite;
+.victim-status-face{ grid-area: 1 / 1; }
+
+/* One face's turn, in both cycles. Keeping this fixed rather than the cycle
+   length means a third face makes the badge take longer to come round, not make
+   each label flash by faster. */
+.victim-status-swap-2 .victim-status-face{
+  animation: victim-status-swap-2 7s linear infinite;
 }
 
-/* Half a cycle out of phase, so one is always up. */
-.victim-status-face-alt{ animation-delay: -3.5s; }
+.victim-status-swap-3 .victim-status-face{
+  animation: victim-status-swap-3 10.5s linear infinite;
+}
 
-/* Long holds, short fades: this is a label to read, not an effect to watch. */
-@keyframes victim-status-swap{
+/* Evenly out of phase, so exactly one face is up at a time. The delays are
+   negative — the animation starts already part-way through — which runs the
+   turn order backwards: the further back a face is started, the sooner it comes
+   round. So the second face is the one held furthest back, not the nearest. */
+.victim-status-swap-2 .victim-status-face:nth-child(2){ animation-delay: -3.5s; }
+.victim-status-swap-3 .victim-status-face:nth-child(2){ animation-delay: -7s; }
+.victim-status-swap-3 .victim-status-face:nth-child(3){ animation-delay: -3.5s; }
+
+/* Long holds, short fades: these are labels to read, not an effect to watch. */
+@keyframes victim-status-swap-2{
   0%, 43%  { opacity: 1; }
   50%, 93% { opacity: 0; }
   100%     { opacity: 1; }
 }
 
-/* Nothing blinking for anyone who has asked motion to stop. The label wins and
-   the week is left to the tooltip and the screen-reader label. */
+@keyframes victim-status-swap-3{
+  0%, 28%  { opacity: 1; }
+  33%, 95% { opacity: 0; }
+  100%     { opacity: 1; }
+}
+
+/* Nothing blinking for anyone who has asked motion to stop. One face is marked
+   as the one that carries the meaning — see cardStatusFaces() — and the rest is
+   left to the tooltip and the screen-reader label. */
 @media (prefers-reduced-motion: reduce){
   .victim-status-face{ animation: none; }
-  .victim-status-face-alt{ display: none; }
+  .victim-status-face:not(.victim-status-face-primary){ display: none; }
 }
 
 /* ===== DOCKET TOTALS =====

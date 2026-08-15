@@ -2,7 +2,10 @@
 // Fetched: 2026-08-11T22:10:51.656Z
 const NFL_SCHEDULE_SOURCE_URL = 'https://plaintextsports.com/nfl/2026/schedule';
 const NFL_SCHEDULE_SEASON = 2026;
-const NFL_PICK_LOCK_MINUTES = 2;
+// The pick lock is a house rule, not schedule data, so it lives in
+// js/season.js and is read at call time — see getNflPickLockAtUtc(). This
+// number is only the floor for a page that somehow loads without season.js.
+const NFL_PICK_LOCK_FALLBACK_MINUTES = 5;
 const NFL_SCHEDULE_GAMES = [
   {
     "season": 2026,
@@ -3028,9 +3031,16 @@ function formatNflKickoff(kickoffUtc){
   }).format(new Date(kickoffUtc));
 }
 
+// Read at call time, never cached: season.js is loaded after this file, so at
+// load time the number is not there yet.
+function getNflPickLockMinutes(){
+  const minutes = Number(window.PICK_LOCK_MINUTES);
+  return Number.isFinite(minutes) && minutes >= 0 ? minutes : NFL_PICK_LOCK_FALLBACK_MINUTES;
+}
+
 function getNflPickLockAtUtc(game){
   if(!game || !game.kickoffUtc) return null;
-  return new Date(new Date(game.kickoffUtc).getTime() - NFL_PICK_LOCK_MINUTES * 60 * 1000).toISOString();
+  return new Date(new Date(game.kickoffUtc).getTime() - getNflPickLockMinutes() * 60 * 1000).toISOString();
 }
 
 function isNflGameTbd(game){
@@ -3103,7 +3113,9 @@ function getNflScheduleUrlForWeek(week = getCurrentNflWeek()){
 
 window.NFL_SCHEDULE_SOURCE_URL = NFL_SCHEDULE_SOURCE_URL;
 window.NFL_SCHEDULE_SEASON = NFL_SCHEDULE_SEASON;
-window.NFL_PICK_LOCK_MINUTES = NFL_PICK_LOCK_MINUTES;
+// window.NFL_PICK_LOCK_MINUTES is gone on purpose rather than repointed: it was
+// a number, and leaving that name bound to a getter would read as the number to
+// anything that picked it up. The helper below is the way to ask.
 window.NFL_SCHEDULE_GAMES = NFL_SCHEDULE_GAMES;
 window.NFL_SCHEDULE_HELPERS = {
   getWeekGames: getNflWeekGames,
@@ -3111,6 +3123,7 @@ window.NFL_SCHEDULE_HELPERS = {
   getTeamOpponentName: getNflTeamOpponentName,
   getTeamLocationMark: getNflTeamLocationMark,
   getPickLockAtUtc: getNflPickLockAtUtc,
+  getPickLockMinutes: getNflPickLockMinutes,
   getTeamScheduleInfo: getNflTeamScheduleInfo,
   getCurrentWeek: getCurrentNflWeek,
   getScheduleUrlForWeek: getNflScheduleUrlForWeek,

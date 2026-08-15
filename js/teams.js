@@ -15,7 +15,7 @@ const NFL_TEAMS = [
   { name: "Green Bay Packers",    abbr: "GB", conference: "NFC", division: "North", primary: "#203731", secondary: "#FFB612" },
   { name: "Houston Texans",       abbr: "HOU", conference: "AFC", division: "South", primary: "#03202F", secondary: "#A71930" },
   { name: "Indianapolis Colts",   abbr: "IND", conference: "AFC", division: "South", primary: "#002C5F", secondary: "#A5ACAF" },
-  { name: "Jacksonville Jaguars", abbr: "JAX", conference: "AFC", division: "South", primary: "#101820", secondary: "#D7A22A" },
+  { name: "Jacksonville Jaguars", abbr: "JAX", conference: "AFC", division: "South", primary: "#006778", secondary: "#D7A22A" },
   { name: "Kansas City Chiefs",   abbr: "KC", conference: "AFC", division: "West", primary: "#E31837", secondary: "#FFB81C" },
   { name: "Las Vegas Raiders",    abbr: "LV", conference: "AFC", division: "West", primary: "#000000", secondary: "#A5ACAF" },
   { name: "Los Angeles Chargers", abbr: "LAC", conference: "AFC", division: "West", primary: "#0080C6", secondary: "#FFC20E" },
@@ -31,6 +31,6 @@ const NFL_TEAMS = [
   { name: "San Francisco 49ers",  abbr: "SF", conference: "NFC", division: "West", primary: "#AA0000", secondary: "#B3995D" },
   { name: "Seattle Seahawks",     abbr: "SEA", conference: "NFC", division: "West", primary: "#002244", secondary: "#69BE28" },
   { name: "Tampa Bay Buccaneers", abbr: "TB", conference: "NFC", division: "South", primary: "#D50A0A", secondary: "#FF7900" },
-  { name: "Tennessee Titans",     abbr: "TEN", conference: "AFC", division: "South", primary: "#0C2340", secondary: "#4B92DB" },
+  { name: "Tennessee Titans",     abbr: "TEN", conference: "AFC", division: "South", primary: "#4B92DB", secondary: "#C60C30" },
   { name: "Washington Commanders",abbr: "WAS", conference: "NFC", division: "East", primary: "#5A1414", secondary: "#FFB612" }
 ];

@@ -4,8 +4,18 @@
 var SEASON = window.NFL_SCHEDULE_SEASON || 2026;
 var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 
+// How many minutes before kickoff a team stops being pickable. A house rule,
+// so it lives here rather than in the generated schedule file, which would lose
+// it the next time that file is regenerated. js/nfl-schedule.js reads this at
+// call time, not at load time, which is what lets it sit in the file that loads
+// second. The server enforces the same number — see
+// supabase/sql/ff_pick_lock_minutes.sql — so changing it here alone only makes
+// the browser stricter, never looser.
+var PICK_LOCK_MINUTES = 5;
+
 window.SEASON = SEASON;
 window.CURRENT_WEEK = CURRENT_WEEK;
+window.PICK_LOCK_MINUTES = PICK_LOCK_MINUTES;
 
 function renderWeekBadge(){
   const el = document.getElementById('weekBadge');

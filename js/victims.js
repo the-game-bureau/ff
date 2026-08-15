@@ -431,7 +431,19 @@ function cardStatus(teamName, info){
   const missingWeek = firstMissingWeekBefore();
   if(missingWeek) return `Week ${missingWeek} First`;
   if(info.isBye) return 'Not Playing';
-  if(info.locked) return 'Past Kickoff';
+  // Not "Past Kickoff": the card closes PICK_LOCK_MINUTES before the game
+  // starts, so for those last minutes that label would be a lie. "Locked Up" is
+  // true from the moment the card goes dead until the game is over — and it is
+  // the booking-cell version of the same fact, which is the register the rest
+  // of the site speaks in.
+  //
+  // currentPickLocked() is the same answer for a different reason: once this
+  // week's victim has locked, the week is settled and nothing else on the board
+  // can be taken, whatever its own kickoff says. isCardDisabled() has always
+  // killed those cards; without this they went on reading "Available" while
+  // refusing every click — a Monday night team still saying it was free at
+  // Sunday teatime.
+  if(info.locked || currentPickLocked()) return 'Locked Up';
 
   // Named further down the schedule, and this week is otherwise open — so it
   // really is takeable, and taking it releases the later week.
@@ -442,12 +454,42 @@ function cardStatus(teamName, info){
 // Which week the badge is talking about. "Previous Selection" and "Future
 // Selection" both mean "you already named this team somewhere else" without
 // ever saying where, and the tooltip that does say only exists on a mouse. So
-// the badge alternates: the label fades out, "Week N" fades in, and back. The
-// swap is pure CSS (see .victim-status-face) — this only supplies the number.
+// the badge cycles through what it has to say. This only supplies the number;
+// the fade is pure CSS (see .victim-status-face).
 function cardStatusWeek(status, teamName){
   if(status !== 'Previous Selection' && status !== 'Future Selection') return '';
   const usedPick = usedInOtherWeek(teamName);
   return usedPick ? `Week ${usedPick.week}` : '';
+}
+
+// The faces the badge rotates through, in the order they appear. One face means
+// no rotation at all.
+//
+// Future Selection leads with "Available But" because that is the fact a player
+// scanning the grid needs first: the card is takeable. The dangling "but" is
+// doing real work — it holds the sentence open so the two faces after it read
+// as the catch rather than as three unrelated labels. The team is spoken for,
+// and here is the week taking it back would empty. Previous Selection has no
+// such catch; it is just the label and the week.
+//
+// `primary` is the face that survives when motion is turned off, so the badge
+// still says the thing that is not obvious from the card's colour.
+function cardStatusFaces(status, teamName){
+  const week = cardStatusWeek(status, teamName);
+  if(!week) return [{ text: status, primary: true }];
+
+  if(status === 'Future Selection'){
+    return [
+      { text: 'Available But', primary: false },
+      { text: status, primary: true },
+      { text: week, primary: false }
+    ];
+  }
+
+  return [
+    { text: status, primary: true },
+    { text: week, primary: false }
+  ];
 }
 
 // The badge has room for two words, and "Future Selection" does not say which
@@ -491,12 +533,14 @@ function renderVictims(){
     const hint = cardHint(team.name);
     const ariaLabel = `${team.name}, ${matchupText(info)}, ${status}${statusWeek ? `, ${statusWeek}` : ''}${hint ? `. ${hint}` : ''}`;
 
-    // Both faces are in the flow of one grid cell, stacked, so the badge sizes
-    // to the wider of the two and nothing shifts as they cross-fade. The card's
-    // aria-label already carries both, so neither face is read out.
-    const statusFaces = statusWeek
-      ? `<span class="victim-status-face" aria-hidden="true">${escapeHtml(status)}</span>
-         <span class="victim-status-face victim-status-face-alt" aria-hidden="true">${escapeHtml(statusWeek)}</span>`
+    // Every face is in the flow of one grid cell, stacked, so the badge sizes to
+    // the widest of them and nothing shifts as they cross-fade. The card's
+    // aria-label already carries the lot, so no face is read out.
+    const faces = cardStatusFaces(status, team.name);
+    const statusFaces = faces.length > 1
+      ? faces.map(face =>
+          `<span class="victim-status-face${face.primary ? ' victim-status-face-primary' : ''}"
+                 aria-hidden="true">${escapeHtml(face.text)}</span>`).join('')
       : escapeHtml(status);
 
     return `
@@ -518,7 +562,7 @@ function renderVictims(){
           <span class="victim-nickname">${escapeHtml(nickname)}</span>
           <span class="victim-matchup-line" title="${escapeHtml(info.line || matchupText(info))}">${escapeHtml(matchupText(info))}</span>
         </div>
-        <div class="victim-status${statusModifier(status)}${statusWeek ? ' victim-status-swap' : ''}">${statusFaces}</div>
+        <div class="victim-status${statusModifier(status)}${faces.length > 1 ? ` victim-status-swap victim-status-swap-${faces.length}` : ''}">${statusFaces}</div>
       </div>
       <a class="victim-investigate-link"
          href="${escapeHtml(plaintextSportsTeamUrl(team.name))}"
@@ -609,7 +653,83 @@ async function releaseLaterPick(pick){
   });
 }
 
+// Taking a team back from a later week empties that week, and the only warning
+// used to be a title tooltip — which does not exist on a phone. So the release
+// asks first. Only the swap asks: naming an Available team, or changing this
+// week's victim, costs nothing and stays one click.
+function confirmVictimRelease(teamName, fromWeek, toWeek){
+  return new Promise((resolve) => {
+    let modal = document.getElementById('releaseWeekModal');
+
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'releaseWeekModal';
+      modal.className = 'modal-backdrop';
+      modal.hidden = true;
+      modal.innerHTML = `
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="releaseWeekTitle" tabindex="-1">
+          <h2 id="releaseWeekTitle">Move This Victim?</h2>
+          <p id="releaseWeekBody"></p>
+          <div class="modal-actions">
+            <button id="btnReleaseWeekConfirm" class="btn btn-primary" type="button">Move It</button>
+            <button id="btnReleaseWeekCancel" class="btn btn-secondary" type="button">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    document.getElementById('releaseWeekBody').textContent =
+      `${teamName} is your Week ${fromWeek} victim. Naming them in Week ${toWeek} ` +
+      `leaves Week ${fromWeek} with no victim.`;
+
+    const close = (answer) => {
+      modal.hidden = true;
+      modal.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      confirmBtn.removeEventListener('click', onYes);
+      cancelBtn.removeEventListener('click', onNo);
+      resolve(answer);
+    };
+
+    const onYes = () => close(true);
+    const onNo = () => close(false);
+    const onBackdrop = (event) => { if(event.target === modal) close(false); };
+    const onKey = (event) => { if(event.key === 'Escape') close(false); };
+
+    const confirmBtn = document.getElementById('btnReleaseWeekConfirm');
+    const cancelBtn = document.getElementById('btnReleaseWeekCancel');
+
+    confirmBtn.addEventListener('click', onYes);
+    cancelBtn.addEventListener('click', onNo);
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+
+    modal.hidden = false;
+    // Cancel takes the focus, not Move It: a stray Enter should keep the week.
+    cancelBtn.focus();
+  });
+}
+
+// One pick at a time. Clicks land faster than the round trip that refreshes
+// victimState, so a second click was being judged against pre-insert state —
+// the pool has a pair of identical rows two seconds apart from exactly that.
+// On a Future Selection card it is worse than a duplicate: the second click
+// releases another week, so two weeks empty to fill one.
+let pickInFlight = false;
+
 async function submitVictimPick(teamName){
+  if(pickInFlight) return;
+  pickInFlight = true;
+
+  try {
+    await runVictimPick(teamName);
+  } finally {
+    pickInFlight = false;
+  }
+}
+
+async function runVictimPick(teamName){
   if(!victimState.user){
     setVictimStatus('<a class="status-link" href="#signin">Login</a> to pick.', 'bad');
     return;
@@ -680,6 +800,14 @@ async function submitVictimPick(teamName){
   };
 
   const releasePick = reclaimableLaterPick(teamName);
+
+  if(releasePick){
+    const goAhead = await confirmVictimRelease(teamName, releasePick.week, viewWeek());
+    if(!goAhead){
+      setVictimStatus(`Week ${releasePick.week} keeps ${teamName}.`, '');
+      return;
+    }
+  }
 
   setVictimStatus(`Saving Week ${viewWeek()} victim...`, '');
 
