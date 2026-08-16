@@ -2477,6 +2477,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   --tractor-strip: 34px;
   --tractor-hole: 12px;
   --matrix-ink: #232323;
+  /* The grid's track sizes live up here, not on .lineup-chart-list, because
+     the legend below the board has to line up with the board and a sibling
+     cannot read a variable declared on the list. --pool-row-w is how wide the
+     printed grid actually is: one name column plus eighteen week columns and
+     the gaps between them. The row BOX is wider than that — grid tracks stop
+     at 220px and leave the remainder unallocated — so centring the legend on
+     the row box is not the same as centring it on the ink. */
+  --pool-name-col-w: 220px;
+  --pool-week-size: 34px;
+  --pool-gap: 4px;
+  --pool-row-w: calc(var(--pool-name-col-w) + 18 * (var(--pool-week-size) + var(--pool-gap)));
   position: relative;
   max-width: 1040px;
   margin: 38px auto 0;
@@ -2575,10 +2586,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .lineup-chart-status-good{ color: var(--success); }
 
 .lineup-chart-list{
-  --pool-name-col: minmax(180px, 220px);
-  --pool-week-size: 34px;
+  --pool-name-col: minmax(180px, var(--pool-name-col-w));
   --pool-week-col: var(--pool-week-size);
-  --pool-gap: 4px;
   list-style: none;
   display: grid;
   gap: 8px;
@@ -2906,10 +2915,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   list-style: none;
   display: flex;
   flex-wrap: wrap;
+  /* Right edge flush with the last week column. The block is given the grid's
+     own width and starts where the grid starts, so packing the items to its
+     end lands them on the same rule the board ends on. Centring drifted off
+     that edge, and the sheet is wider than the grid, so aligning to the paper
+     would not do it either. */
   justify-content: flex-end;
+  width: min(100%, var(--pool-row-w));
   gap: 8px;
   margin: 14px 0 0;
-  padding: 0 4px 4px 0;
+  padding: 0 0 4px;
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 900;
@@ -3080,6 +3095,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .suspect-lineup-chart{
     --tractor-strip: 22px;
     --tractor-hole: 7px;
+    /* Same three numbers the wide board declares, so --pool-row-w recomputes
+       from them without being restated. */
+    --pool-name-col-w: 172px;
+    --pool-week-size: 31px;
+    --pool-gap: 3px;
     width: 100%;
     max-width: 100%;
     margin-top: 30px;
@@ -3089,20 +3109,22 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   }
 
   .lineup-chart-list{
-    --pool-name-col: 172px;
-    --pool-week-size: 31px;
-    --pool-week-col: var(--pool-week-size);
-    --pool-gap: 3px;
+    /* Fixed rather than a minmax here: the phone board scrolls sideways, so
+       there is no spare width for the name column to negotiate over. */
+    --pool-name-col: var(--pool-name-col-w);
     gap: 8px;
     padding: 0 5px 5px 0;
     overflow-x: auto;
   }
 
+  /* Two columns on a phone, centred as a block: the grid stops being a flex
+     row here, so justify-content above does not reach it. */
   .lineup-emoji-key{
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px 6px;
     width: calc(100% - 8px);
+    margin-inline: auto;
   }
 
   .lineup-emoji-key-item{
@@ -3392,25 +3414,50 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   /* One width for the whole card: the photo sets it, and anything sitting
      under the photo (the retake button) lines up with its edges. */
   --mugshot-width: min(152px, 100%);
-  /* Room above the photo for the pin to sit in. */
-  padding-top: 10px;
+  /* The tack head straddles the mugshot's top edge. */
+  padding-top: 11px;
 }
 
-/* The pin. A diamond rather than a disc: this design has no round things in it
-   anywhere, and a rotated square still reads as a pinhead at this size. Sits
-   over the top edge of the photo, which is where a pin actually goes. */
+/* The tack. A small domed head plus a metal shank reads as a real thumbtack
+   without adding another image request. */
 .suspect-card::before{
   content: "";
   position: absolute;
   top: 0;
   left: 50%;
+  z-index: 5;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.92) 0 2px, rgba(255, 255, 255, 0.46) 3px, transparent 6px),
+    radial-gradient(circle at 68% 72%, rgba(80, 0, 0, 0.48) 0 1px, transparent 8px),
+    linear-gradient(135deg, #FF5A52 0%, var(--primary-red) 48%, var(--primary-red-dark) 100%);
+  border: 1px solid rgba(70, 0, 0, 0.72);
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 220, 215, 0.62),
+    inset -4px -5px 5px rgba(65, 0, 0, 0.42),
+    0 2px 2px rgba(50, 20, 5, 0.38),
+    0 5px 0 rgba(60, 35, 10, 0.16);
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+.suspect-card::after{
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
   z-index: 4;
-  width: 16px;
+  width: 4px;
   height: 16px;
-  margin-left: -8px;
-  background: var(--primary-red);
-  border: 2px solid var(--ink);
-  transform: rotate(45deg);
+  margin-left: -2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5E5E5E 0%, #F9F6EA 46%, #8B8377 100%);
+  box-shadow: 2px 3px 2px rgba(60, 35, 10, 0.32);
+  transform: translateX(5px) rotate(16deg);
+  transform-origin: top center;
   pointer-events: none;
 }
 
@@ -3919,4 +3966,261 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .team-grid{ grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); }
   .helmet{ width: 62px; height: 55px; }
   .modal-actions .btn{ flex: 1 1 100%; }
+}
+
+/* ===== COLOUR LAB (admin/colors/) =====
+   The tool for choosing a suspect's two colours by eye. Every card shows the
+   same two things the colours actually drive: the placard stripe down the left
+   of the mugshot, exactly as suspects/ draws it, and the booking card fill the
+   Suspect Tracker uses. A pair that reads fine as two swatches can vanish
+   against the photograph it has to frame, which is why the preview is the
+   photograph rather than a swatch. */
+.lab-lede{
+  max-width: 78ch;
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.lab-bar{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px;
+}
+
+.lab-count,
+.lab-hint{
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lab-hint{ font-weight: 700; text-transform: none; letter-spacing: 0.02em; }
+
+.lab-out-label{
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+}
+
+.lab-out{
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: var(--rule);
+  resize: vertical;
+}
+
+.lab-grid{
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+.lab-card{
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  background: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+/* An edited card is worth spotting from across the grid — it is the difference
+   between a colour the sampler chose and one a person did. */
+.lab-card.is-edited{ border-color: var(--accent-yellow); }
+.lab-card.is-edited .lab-edited{ display: inline; }
+
+.lab-shot-wrap{ position: relative; width: 168px; }
+
+/* The placard stripe from suspects/: 9px of primary, then 5px of secondary,
+   down the left edge. Same geometry as .suspect-avatar-frame::before so what is
+   judged here is what ships. */
+.lab-shot-frame{
+  --stripe-a: var(--ink);
+  --stripe-b: var(--accent-yellow);
+  position: relative;
+  width: 168px;
+  height: 168px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  border: var(--rule);
+}
+
+.lab-shot-frame::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14px;
+  z-index: 2;
+  background: linear-gradient(90deg, var(--stripe-a) 0 9px, var(--stripe-b) 9px 14px);
+}
+
+.lab-shot-frame-empty{ opacity: 0.4; }
+
+.lab-shot{ display: block; cursor: crosshair; }
+
+.lab-loupe{
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  display: none;
+  width: 84px;
+  height: 84px;
+  background: var(--paper-raised);
+  border: var(--rule);
+  /* The magnifier is the one place on the site where a blurred upscale would
+     defeat the purpose: it exists to show individual pixels. */
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.lab-loupe.is-on{ display: block; }
+
+.lab-readout{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  min-height: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+}
+
+.lab-readout i{
+  display: block;
+  width: 22px;
+  height: 16px;
+  border: 2px solid var(--ink);
+}
+
+.lab-body{ min-width: 0; }
+
+.lab-name{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lab-edited{
+  display: none;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--accent-yellow);
+  border: 2px solid var(--ink);
+}
+
+.lab-chips{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.lab-chip{
+  position: relative;
+  width: 56px;
+  height: 38px;
+  padding: 0;
+  border: var(--rule);
+  cursor: pointer;
+}
+
+/* The label hangs below the chip rather than inside it: a chip is a colour
+   sample, and type on top of it would be unreadable against half the palette. */
+.lab-chip::after{
+  content: attr(data-label);
+  position: absolute;
+  /* Centred on the chip but free to be wider than it: pinned to both edges
+     instead, "Secondary" wrapped inside 56px and all that showed was the Y. */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -15px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.lab-chip.is-armed{ outline: 4px solid var(--accent-yellow); outline-offset: 2px; }
+.lab-chip.is-armed::after{ color: var(--ink); font-weight: 900; }
+
+.lab-picker{
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: var(--paper-raised);
+  border: var(--rule);
+  cursor: pointer;
+}
+
+.lab-hexes{
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.lab-preview-row{ margin-bottom: 8px; }
+
+.lab-preview{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 2px dotted var(--ink);
+}
+
+.lab-preview i{
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid currentColor;
+}
+
+.lab-flag{
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--error);
+}
+
+@media (max-width: 767px){
+  .lab-grid{ grid-template-columns: minmax(0, 1fr); }
+  .lab-card{ grid-template-columns: minmax(0, 1fr); }
+  .lab-shot-wrap{ width: 100%; }
 }

@@ -312,6 +312,7 @@
   function rowHtml(row) {
     return `
       <li class="lineup-chart-row" data-picks-in="${row.picksIn}" data-weeks-won="${row.wins}"
+          data-username="${escapeHtml(row.username)}"
           aria-label="${escapeHtml(row.username)}">
         <div class="lineup-booking-card">
           <button class="lineup-tracker-mugshot-button" type="button"
@@ -563,18 +564,25 @@
       const img = card.querySelector('.lineup-tracker-mugshot');
       if (!img) continue;
 
+      const username = card.closest('.lineup-chart-row')?.dataset.username || '';
+      const apply = (colors) => {
+        if (!colors) return;
+        card.style.setProperty('--tracker-primary', colors[0]);
+        card.style.setProperty('--tracker-secondary', colors[1]);
+        card.style.setProperty('--tracker-ink', textColorFor(colors[0]));
+      };
+
+      // A listed suspect skips sampling altogether — see js/suspect-colors.js.
+      // Checked before the image is even waited on, so an override paints on
+      // the first frame instead of after a decode.
+      const override = window.suspectColorOverride?.(username);
+      if (override) { apply(override); continue; }
+
       const ready = img.complete && img.naturalWidth
         ? Promise.resolve()
         : img.decode().catch(() => null);
 
-      ready.then(() => {
-        const colors = dominantPair(img);
-        if (!colors) return;
-
-        card.style.setProperty('--tracker-primary', colors[0]);
-        card.style.setProperty('--tracker-secondary', colors[1]);
-        card.style.setProperty('--tracker-ink', textColorFor(colors[0]));
-      }).catch(() => {});
+      ready.then(() => apply(dominantPair(img))).catch(() => {});
     }
   }
 
@@ -631,8 +639,29 @@
     return `rgb(${color.r}, ${color.g}, ${color.b})`;
   }
 
-  function textColorFor(cssRgb) {
-    const channels = cssRgb.match(/\d+/g)?.map(Number) || [255, 255, 255];
+  // Takes either form, because it now gets both: the sampler hands it
+  // 'rgb(r, g, b)' off the canvas, while an override from js/suspect-colors.js
+  // is a hex string. Scraping digits — which is all this used to do — reads
+  // '#FDCB03' as the single number 3, and every hex primary came back needing
+  // white ink, including the bright yellow ones.
+  function channelsOf(color) {
+    const value = String(color || '').trim();
+
+    const hex = value.match(/^#([0-9a-f]{6})$/i);
+    if (hex) {
+      return [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16));
+    }
+
+    const parts = value.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number);
+    return parts && parts.length === 3 ? parts : null;
+  }
+
+  function textColorFor(color) {
+    const channels = channelsOf(color);
+    // No idea what it is: white ink over an unknown fill is the safer guess,
+    // because the fill failed to parse and is most likely the dark default.
+    if (!channels) return '#FFFFFF';
+
     const [r, g, b] = channels;
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.58 ? '#0D0D0D' : '#FFFFFF';

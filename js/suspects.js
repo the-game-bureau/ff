@@ -154,7 +154,7 @@ function renderSuspects(suspects){
       : '';
 
     return `
-      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}">
+      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
           <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
@@ -188,18 +188,25 @@ function paintPlacardStripes(grid){
     const placard = card.querySelector('.suspect-avatar-frame');
     if(!img || !placard) continue;
 
+    const apply = (colors) => {
+      if(!colors) return;
+      placard.style.setProperty('--stripe-a', colors[0]);
+      placard.style.setProperty('--stripe-b', colors[1]);
+    };
+
+    // The same exception list the Suspect Tracker reads, so a suspect whose
+    // colours were chosen by hand looks identical on both pages rather than
+    // sampled here and overridden there. See js/suspect-colors.js.
+    const override = window.suspectColorOverride?.(card.dataset.username);
+    if(override){ apply(override); continue; }
+
     // decode() resolves once the pixels are actually available, including for
     // an image already in cache, where load may never fire again.
     const ready = img.complete && img.naturalWidth
       ? Promise.resolve()
       : img.decode().catch(() => null);
 
-    ready.then(() => {
-      const colors = dominantPair(img);
-      if(!colors) return;
-      placard.style.setProperty('--stripe-a', colors[0]);
-      placard.style.setProperty('--stripe-b', colors[1]);
-    }).catch(() => {});
+    ready.then(() => apply(dominantPair(img))).catch(() => {});
   }
 }
 

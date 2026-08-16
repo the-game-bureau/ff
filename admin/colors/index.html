@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Colour Lab &mdash; Law &amp; Order: Special Victory Unit</title>
+
+  <link rel="icon" type="image/x-icon" href="../../src/lawandorder.jpg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="../../src/lawandorder.jpg"/>
+
+  <meta name="robots" content="noindex"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="Colour Lab &mdash; Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:description" content="Choosing each suspect's colours by eye."/>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+  <script src="../../js/supabase-config.js"></script>
+
+  <link rel="stylesheet" href="../../css/site.css"/>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="header-logo-text">
+      <div class="law-text">LAW<span class="ampersand">&</span></div>
+      <div class="order-text">ORDER</div>
+    </div>
+    <div class="svu-subtitle">Colour Lab</div>
+    <div id="weekBadge" class="week-badge" aria-live="polite"></div>
+    <h1>Law &amp; Order: Special Victory Unit</h1>
+    <p class="tagline">"Every suspect gets their own colours. Some need help choosing."</p>
+  </header>
+
+  <div id="siteNav" data-current="admin" data-prefix="../../"></div>
+
+  <div class="container">
+    <section class="game-info admin-panel" aria-labelledby="labTitle">
+      <h2 id="labTitle">Mugshot Colour Lab</h2>
+
+      <div id="labStatus" class="join-status" role="status" aria-live="polite">Checking credentials...</div>
+
+      <div id="labTools" hidden>
+        <!-- Written as prose rather than as a tooltip: the arm-then-click model
+             is not guessable, and this page is used a few times a season. -->
+        <p class="lab-lede">
+          A suspect's two colours are normally sampled from their mugshot, and the
+          sampler takes whatever covers the most pixels &mdash; which in a dark room
+          or against a grey wall is the background, not the person. This is where
+          those get fixed by hand.
+        </p>
+        <p class="lab-lede">
+          <strong>Click a Primary or Secondary chip to arm it, then click anywhere on a
+          mugshot to take that pixel.</strong> Hover first: the loupe magnifies what is
+          under the cursor and the readout names the hex. The chip stays armed, so keep
+          clicking until it looks right. Any mugshot works, not only that suspect's, so
+          a colour can be lifted off someone else's photo. Edits live in this browser
+          until you paste them into the source.
+        </p>
+
+        <div class="lab-bar">
+          <span id="labCount" class="lab-count">No edits yet</span>
+          <button id="btnLabCopy" class="btn btn-primary" type="button">Copy Lines</button>
+          <button id="btnLabReset" class="btn btn-secondary" type="button">Reset All</button>
+          <span id="labHint" class="lab-hint" role="status" aria-live="polite"></span>
+        </div>
+
+        <label class="lab-out-label" for="labOut">
+          Paste these into <code>SUSPECT_COLORS</code> in <code>js/suspect-colors.js</code>
+        </label>
+        <textarea id="labOut" class="lab-out" readonly spellcheck="false" rows="4"></textarea>
+
+        <ul id="labGrid" class="lab-grid"></ul>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p class="credit-role">Executive Producer</p>
+    <p class="credit-name">Kevin Kolb</p>
+  </footer>
+
+  <script src="../../js/nfl-schedule.js"></script>
+  <script src="../../js/season.js"></script>
+  <script src="../../js/nav.js"></script>
+  <script src="../../js/auth-corner.js"></script>
+  <script src="../../js/color-lab.js"></script>
+</body>
+</html>
