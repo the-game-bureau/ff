@@ -1,11 +1,11 @@
 (function () {
   const ADMIN_CONFIG = window.FF_SUPABASE_CONFIG || {};
-  const ADMIN_SUPABASE_URL = ADMIN_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const ADMIN_SUPABASE_ANON_KEY = ADMIN_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const ADMIN_SUPABASE_URL = ADMIN_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
+  const ADMIN_SUPABASE_ANON_KEY = ADMIN_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
   const ADMIN_PROFILE_TABLE = ADMIN_CONFIG.tables?.profiles || 'ff_profiles';
   const ADMIN_SCHEDULE_TABLE = ADMIN_CONFIG.tables?.schedule || 'ff_nfl_schedule';
   const ADMIN_RPCS = ADMIN_CONFIG.rpcs || {};
-  const ADMIN_PROJECT_REF = ADMIN_CONFIG.projectRef || 'qmaafbncpzrdmqapkkgr';
+  const ADMIN_PROJECT_REF = ADMIN_CONFIG.projectRef || 'vkoczgzizzppdrpvpemh';
   const ADMIN_SCHEDULE_TABLE_URL = ADMIN_CONFIG.dashboard?.scheduleTableUrl ||
     `https://supabase.com/dashboard/project/${ADMIN_PROJECT_REF}/editor/table/${ADMIN_SCHEDULE_TABLE}?schema=public`;
   const ADMIN_ALLOWED_USERNAME = 'theclarinetofjustice';
@@ -17,7 +17,7 @@
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      storageKey: ADMIN_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+      storageKey: ADMIN_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
       storage: window.localStorage,
     },
   });

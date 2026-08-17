@@ -1,9 +1,23 @@
 -- Tell me when somebody joins.
 --
--- An INSERT into ff_profiles fires a repository_dispatch at GitHub, and
+-- An INSERT into _2026_profiles fires a repository_dispatch at GitHub, and
 -- .github/workflows/new-suspect.yml opens an issue. Watching the repo is what
 -- turns that into an email, so nothing here has to know an address or run a
 -- mail server.
+--
+-- THE VAULT SECRET DOES NOT SURVIVE A PROJECT MOVE. This bit here.
+-- Restoring this database into a new Supabase project brought the table, the
+-- function and the trigger across intact — and left the token behind, because
+-- vault secrets are encrypted per project and are not part of a dump. The
+-- trigger then did exactly what it is written to do with no token: logged a
+-- warning and returned, so four people joined over three days and nothing was
+-- ever sent. Nothing was broken and nothing looked broken. After ANY move,
+-- re-create the secret in step 2 and fire a real test signup.
+--
+-- The old project keeps its copy of the token and its own trigger, so it can
+-- still open issues in this repo long after the site stopped pointing at it.
+-- If you have finished with a project, revoke that token at GitHub rather than
+-- leaving a live credential in a database nobody is watching.
 --
 -- ONLY THE USERNAME TRAVELS. Not the email, not the real name. A GitHub issue
 -- is readable by everyone with access to the repo and is effectively permanent;
@@ -61,7 +75,7 @@ create extension if not exists pg_net;
 -- The trigger. AFTER INSERT, so the row is already committed to disk before
 -- anything is announced — no notification for a signup that then rolled back.
 -- ---------------------------------------------------------------------------
-create or replace function public.ff_notify_new_suspect()
+create or replace function public._2026_notify_new_suspect()
 returns trigger
 language plpgsql
 security definer
@@ -80,7 +94,7 @@ begin
   -- fail the insert: someone joining the league matters more than telling me
   -- about it.
   if github_token is null then
-    raise warning 'ff_notify_new_suspect: no github_dispatch_token in vault, skipping';
+    raise warning '_2026_notify_new_suspect: no github_dispatch_token in vault, skipping';
     return new;
   end if;
 
@@ -104,38 +118,53 @@ exception
   -- Any failure here — network, GitHub down, a revoked token — is logged and
   -- swallowed. The signup stands.
   when others then
-    raise warning 'ff_notify_new_suspect failed: %', sqlerrm;
+    raise warning '_2026_notify_new_suspect failed: %', sqlerrm;
     return new;
 end;
 $$;
 
-drop trigger if exists ff_notify_new_suspect_after_insert on public.ff_profiles;
-create trigger ff_notify_new_suspect_after_insert
-after insert on public.ff_profiles
+drop trigger if exists _2026_notify_new_suspect_after_insert on public._2026_profiles;
+create trigger _2026_notify_new_suspect_after_insert
+after insert on public._2026_profiles
 for each row
-execute function public.ff_notify_new_suspect();
+execute function public._2026_notify_new_suspect();
 
 
 -- ---------------------------------------------------------------------------
--- Verify.
+-- Verify. One statement on purpose: the Supabase editor shows only the LAST
+-- result of a batch, so three separate selects means seeing one of them and
+-- assuming the other two passed. That is how a missing token went unnoticed
+-- through four signups. Every row is always returned, and an absent thing says
+-- so in words rather than by not being there.
+--
+-- Expected: the trigger enabled (O), the token present, and — after a real
+-- test signup — a dispatch with status 204, which is how GitHub answers a
+-- repository_dispatch. 401 means the token is wrong or expired; 404 means it
+-- cannot see the repo, usually the wrong repository on a fine-grained token.
 -- ---------------------------------------------------------------------------
-
--- 1. The token is in the vault. Expect one row. (Never select the secret
---    itself into a shared SQL editor — the name is enough to confirm.)
-select name, created_at from vault.secrets where name = 'github_dispatch_token';
-
--- 2. The trigger is attached. Expect one row.
-select tgname, tgenabled
-from pg_trigger
-where tgrelid = 'public.ff_profiles'::regclass
-  and not tgisinternal;
-
--- 3. Fire it for real by joining with a throwaway account, then read the
---    delivery log. status_code 204 is success — GitHub answers a dispatch with
---    No Content. 401 means the token is wrong or expired, 404 means the token
---    cannot see the repo (usually the wrong repository selected on a
---    fine-grained token).
-select id, status_code, error_msg, created
-from net._http_response
-order by created desc
-limit 5;
+select 'trigger on _2026_profiles' as check,
+       coalesce(
+         (select string_agg(tgname || ' (' || tgenabled::text || ')', ', ')
+            from pg_trigger
+           where tgrelid = 'public._2026_profiles'::regclass
+             and not tgisinternal),
+         '*** NONE — nothing fires on signup ***') as result
+union all
+select 'github_dispatch_token in vault',
+       coalesce(
+         -- The name and the date only. Never select the secret itself into the
+         -- editor: the result sits in the query history afterwards.
+         (select 'present, created ' || created_at::text
+            from vault.secrets
+           where name = 'github_dispatch_token'),
+         '*** MISSING — trigger logs a warning and skips ***')
+union all
+select 'most recent dispatch attempt',
+       coalesce(
+         (select 'status ' || coalesce(status_code::text, '?')
+                 || ' at ' || created::text
+                 || coalesce(' — ' || nullif(error_msg, ''), '')
+            from net._http_response
+           order by created desc
+           limit 1),
+         '*** none ever sent from this project ***');

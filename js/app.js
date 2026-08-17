@@ -1,6 +1,6 @@
 const FF_CONFIG = window.FF_SUPABASE_CONFIG || {};
-const SUPABASE_URL = FF_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-const SUPABASE_ANON_KEY = FF_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+const SUPABASE_URL = FF_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
+const SUPABASE_ANON_KEY = FF_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
 const PROFILES_TABLE = FF_CONFIG.tables?.profiles || 'ff_profiles';
 const PICKS_TABLE = FF_CONFIG.tables?.picks || 'ff_picks';
 // Where Supabase sends the password-recovery link. This exact URL must be
@@ -14,7 +14,7 @@ const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email.\n\n'
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
-    storageKey: FF_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+    storageKey: FF_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
     storage: window.localStorage
   }
 });

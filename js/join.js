@@ -10,10 +10,10 @@
 // is a parse error that kills both files.
 (function () {
 const JOIN_CONFIG = window.FF_SUPABASE_CONFIG || {};
-const JOIN_SUPABASE_URL = JOIN_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-const JOIN_SUPABASE_ANON_KEY = JOIN_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+const JOIN_SUPABASE_URL = JOIN_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
+const JOIN_SUPABASE_ANON_KEY = JOIN_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
 const JOIN_PROFILES_TABLE = JOIN_CONFIG.tables?.profiles || 'ff_profiles';
-const JOIN_AUTH_STORAGE_KEY = JOIN_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
+const JOIN_AUTH_STORAGE_KEY = JOIN_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh';
 const PENDING_JOIN_STORAGE_KEY = `ff-pending-join-${JOIN_CONFIG.projectRef || JOIN_SUPABASE_URL}`;
 const PENDING_JOIN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;

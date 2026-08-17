@@ -9,9 +9,9 @@
 // client when that exists rather than spinning up a second one.
 (function () {
   const RESET_CONFIG = window.FF_SUPABASE_CONFIG || {};
-  const RESET_SUPABASE_URL = RESET_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const RESET_SUPABASE_ANON_KEY = RESET_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
-  const RESET_STORAGE_KEY = RESET_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr';
+  const RESET_SUPABASE_URL = RESET_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
+  const RESET_SUPABASE_ANON_KEY = RESET_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
+  const RESET_STORAGE_KEY = RESET_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh';
 
   const MIN_PASSWORD_LENGTH = 8;
 

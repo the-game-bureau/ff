@@ -2,8 +2,8 @@
 // Every rostered suspect gets a full 18-week pool card under the legal pad.
 (function () {
   const LINEUP_CONFIG = window.FF_SUPABASE_CONFIG || {};
-  const LINEUP_SUPABASE_URL = LINEUP_CONFIG.url || 'https://qmaafbncpzrdmqapkkgr.supabase.co';
-  const LINEUP_SUPABASE_ANON_KEY = LINEUP_CONFIG.publishableKey || 'sb_publishable_6a9XqxYa0-AZtyrwz4ZeUg_aiMsVH-3';
+  const LINEUP_SUPABASE_URL = LINEUP_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
+  const LINEUP_SUPABASE_ANON_KEY = LINEUP_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
   const PROFILES_TABLE = LINEUP_CONFIG.tables?.profiles || 'ff_profiles';
   const PICKS_TABLE = LINEUP_CONFIG.tables?.picks || 'ff_picks';
   const ACTIVE_PICKS_VIEW = LINEUP_CONFIG.views?.activePicks || 'ff_active_picks';
@@ -79,7 +79,7 @@
     ? window.supabase.createClient(LINEUP_SUPABASE_URL, LINEUP_SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
-          storageKey: LINEUP_CONFIG.storageKey || 'law-order-svu-auth-qmaafbncpzrdmqapkkgr',
+          storageKey: LINEUP_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
           storage: window.localStorage
         }
       })

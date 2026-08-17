@@ -222,6 +222,22 @@ hotlink; nothing is copied into the repo.
   the week is **derived, not set**: `getCurrentNflWeek()` returns the first week whose
   last kickoff is still in the future, so it advances on its own once Monday night
   starts. Nothing else should hardcode a year or a week.
+- **Every local `js/` and `css/` reference carries `?v=YYYYMMDD`.** Bump the date on
+  every page whenever you deploy a change to shared JS or CSS — one find-and-replace of
+  the old `?v=` value across all the HTML pages. It exists because a stale cached bundle
+  once kept a returning player pointed at the previous Supabase project (see the next
+  point); the version query forces a clean fetch on the next visit. Add the same `?v=`
+  to any new `<script>` or `<link>` you introduce. The pinned Supabase CDN tag is the
+  one asset that stays unversioned — it is already pinned to an exact release.
+- **The Supabase project the site talks to is set in exactly one place**,
+  [js/supabase-config.js](js/supabase-config.js). Every `js/*.js` file also carries a
+  hardcoded fallback URL/key, used only if that config fails to load — those fallbacks
+  now point at the **live** project (`vkoczgzizzppdrpvpemh`). They used to point at the
+  previous project, which meant a bad deploy or a stale page could silently sign people
+  into a database the site had abandoned; that actually happened. When you migrate
+  projects, update `supabase-config.js` **and** the fallbacks together, and retire the
+  old project (pause/delete + revoke any tokens in its vault) rather than leaving it
+  running to catch stale traffic.
 
 ## The archive rule
 
