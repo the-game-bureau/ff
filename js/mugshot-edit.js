@@ -3,7 +3,7 @@
 // The photo used to be settable once, at booking, and after that the only way
 // to replace it was to go back through the join form. This puts a REPHOTOGRAPH
 // button on one card and one card only: yours. Everybody else's is read-only,
-// and that is enforced twice — this script never offers the control on another
+// and that is enforced twice - this script never offers the control on another
 // card, and supabase/sql/ff_own_mugshot_only.sql restricts the UPDATE to the
 // signed-in user's own row and to the mugshot column alone, so a hand-written
 // request cannot repaint someone else's file either.
@@ -50,7 +50,7 @@
       picker.style.display = 'none';
       picker.addEventListener('change', () => {
         const file = picker.files?.[0];
-        // Cleared so choosing the same file twice still fires a change event —
+        // Cleared so choosing the same file twice still fires a change event -
         // a retry after a failed save is the obvious case.
         picker.value = '';
         if (file) saveMugshot(file);

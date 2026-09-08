@@ -1,7 +1,7 @@
 // ===== WELCOME =====
 // What a stranger sees first. The QR code and every shared link point at
 // /#welcome, so this is the landing mat for anyone arriving from a text, an
-// email, or someone's phone screen — people who have no idea what this is.
+// email, or someone's phone screen - people who have no idea what this is.
 //
 // Two ways out, and neither is a dead end: BROWSE just closes it and leaves
 // them on the site, JOIN hands off to the Identify Yourself popup, which is
@@ -28,7 +28,7 @@
   });
 
   // Arriving on /#welcome a second time in the same tab changes the fragment
-  // and nothing else — no reload, so DOMContentLoaded never fires again and the
+  // and nothing else - no reload, so DOMContentLoaded never fires again and the
   // card stayed shut. Easy to hit, because closing it strips the hash: the next
   // /#welcome link from this page is a fragment change, not a navigation.
   window.addEventListener('hashchange', () => {
@@ -62,7 +62,7 @@
              apposition on first use, and elimination is phrased as the case
              closing, which is the same language the game-over card uses. -->
         <ul class="welcome-facts">
-          <li>Each week you name a <strong>victim</strong> &mdash; one NFL team
+          <li>Each week you name a <strong>victim</strong> - one NFL team
             you suspect will lose. That&rsquo;s it.</li>
           <li>If your victim goes down then you keep playing. If they win, the
             case closes on you. <strong>Dun dun.</strong></li>
@@ -91,7 +91,7 @@
     // Straight to the booking form, as a popup in place of this one. It used to
     // open the Identify Yourself popup, which is the right door for someone who
     // already has an account and the wrong one for a stranger who followed the
-    // QR code — the people this card exists for. Falls back to the join page on
+    // QR code - the people this card exists for. Falls back to the join page on
     // the one page that is the join page.
     document.getElementById('btnWelcomeJoin')?.addEventListener('click', () => {
       closeWelcome();
@@ -117,7 +117,7 @@
     modal.hidden = false;
 
     // Focus the dialog itself, not a button. Focusing Join put it in its focus
-    // state — darker, shadow collapsed — so it sat looking pressed next to an
+    // state - darker, shadow collapsed - so it sat looking pressed next to an
     // untouched Investigate, as if the two had different styling. Moving focus
     // to the card keeps keyboard users inside the dialog without lighting up
     // one of the two choices before anyone has picked.

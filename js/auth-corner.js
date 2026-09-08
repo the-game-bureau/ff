@@ -61,7 +61,7 @@
     }
 
     // Escape on its own. The username is the third cell of the week badge on
-    // the left, built by season.js — which is why this checks for the stack
+    // the left, built by season.js - which is why this checks for the stack
     // rather than for #headerUser, an id that now always exists.
     if (!document.getElementById('headerIdStack')) {
       const stack = document.createElement('span');

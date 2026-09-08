@@ -1,6 +1,6 @@
 // ===== SUSPECT COLOURS =====
 // The two-tone theme each suspect's cards are painted in is normally sampled
-// from their own mugshot at render time — dominantPair(), one copy in
+// from their own mugshot at render time - dominantPair(), one copy in
 // js/suspect-lineup-chart.js for the Suspect Tracker and one in js/suspects.js
 // for the lineup placards. This file supplies the exceptions.
 //
@@ -13,14 +13,14 @@
 //
 // WHERE THEY LIVE NOW
 // They used to be a hand-maintained object literal in this file, which the
-// Colour Lab could only produce text for — so changing one colour meant a copy,
+// Colour Lab could only produce text for - so changing one colour meant a copy,
 // a paste, a commit and a deploy. Worse, the paste had to be merged by hand
 // every time, and one bad merge left this file with five duplicate keys and a
 // missing comma: a syntax error that silently took every override on the site
 // down with it.
 //
 // They are now two columns on the profile row, beside the mugshot they were
-// sampled from — see supabase/sql/ff_suspect_colors.sql. The Lab writes them
+// sampled from - see supabase/sql/ff_suspect_colors.sql. The Lab writes them
 // directly and this reads them back, so there is nothing to paste.
 //
 // WHY A SEPARATE REQUEST
@@ -29,7 +29,7 @@
 // columns and retries when one is missing, and threading two more through it
 // risks the whole lineup failing over a colour. This asks for exactly the three
 // columns it needs, on its own, and if it fails nothing but the overrides is
-// lost — every suspect simply falls back to sampling, which is what happened
+// lost - every suspect simply falls back to sampling, which is what happened
 // before the columns existed.
 (function () {
   const CONFIG = window.FF_SUPABASE_CONFIG || {};
@@ -41,7 +41,7 @@
   // matched case-insensitively everywhere else in the site.
   const COLORS = new Map();
 
-  // null for anyone without a pair on file, which is nearly everyone — the
+  // null for anyone without a pair on file, which is nearly everyone - the
   // caller then samples as before. Deliberately not a fallback pair: a suspect
   // with no entry and no readable mugshot should keep falling through to the
   // house colours the CSS already provides.

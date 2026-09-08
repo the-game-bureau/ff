@@ -1,7 +1,7 @@
 // ===== JOIN POPUP =====
 // The booking form as a lightbox, so JOIN never navigates away from whatever
-// somebody was reading. Every other popup on this site works this way — sign
-// in, welcome, the mugshot viewer — and the join form was the last thing that
+// somebody was reading. Every other popup on this site works this way - sign
+// in, welcome, the mugshot viewer - and the join form was the last thing that
 // still took over the page.
 //
 // The markup here is the same form as join/index.html, ids and all, and
@@ -54,7 +54,7 @@
           <div class="join-field">
             <label for="joinUsername">Username / Team Name <span class="privacy-tag privacy-tag-public">Public</span></label>
             <input id="joinUsername" name="username" type="text" autocomplete="nickname" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required/>
-            <p class="gate-help">3-20 characters. Letters, numbers, and underscores only &mdash; no spaces, no punctuation. This is the name on your mugshot placard and in every verdict.</p>
+            <p class="gate-help">3-20 characters. Letters, numbers, and underscores only - no spaces, no punctuation. This is the name on your mugshot placard and in every verdict.</p>
           </div>
 
           <div class="join-field avatar-field">

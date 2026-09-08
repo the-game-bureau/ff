@@ -3,7 +3,7 @@
 const NFL_SCHEDULE_SOURCE_URL = 'https://plaintextsports.com/nfl/2026/schedule';
 const NFL_SCHEDULE_SEASON = 2026;
 // The pick lock is a house rule, not schedule data, so it lives in
-// js/season.js and is read at call time — see getNflPickLockAtUtc(). This
+// js/season.js and is read at call time - see getNflPickLockAtUtc(). This
 // number is only the floor for a page that somehow loads without season.js.
 const NFL_PICK_LOCK_FALLBACK_MINUTES = 5;
 const NFL_SCHEDULE_GAMES = [

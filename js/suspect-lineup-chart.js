@@ -26,7 +26,7 @@
   const DOT_TEXT_SPACE_WIDTH = 3;
   // 5x7, the cell a real dot-matrix head prints. Started as just the letters in
   // SUSPECT TRACKER; the rest arrived when the booking names moved to dots too,
-  // so it now covers everything a username can legally contain — letters,
+  // so it now covers everything a username can legally contain - letters,
   // digits and the underscore (see the rules in js/join.js). The nine original
   // glyphs are untouched, because the title is drawn from them and any redraw
   // would show up as the heading changing shape.
@@ -362,7 +362,7 @@
     // width/height attributes as well as the viewBox, and they are load-bearing:
     // an SVG carrying only a viewBox has no intrinsic size, so `width: auto`
     // resolves against the containing block. Inside anything sized to its
-    // content — a max-content grid column, say — that is circular, and the
+    // content - a max-content grid column, say - that is circular, and the
     // browser settles it at zero. The label vanishes. With real dimensions the
     // element has an intrinsic box to be measured at, and the CSS ceilings then
     // scale it down from there.
@@ -401,7 +401,7 @@
   }
 
   // Just the number, printed large. The W is dropped because the column is
-  // already eighteen numbers in a row under a heading that says what they are —
+  // already eighteen numbers in a row under a heading that says what they are -
   // it was eighteen copies of a letter nobody needed to read. Screen readers
   // still get "Week 12" from the aria-label, which is the one place the word
   // still earns its keep.
@@ -530,7 +530,7 @@
 
   // The rest of the board's type. The legend and the cell captions live in the
   // page markup rather than in these templates, so they are converted in place
-  // after render instead of being templated — with the script blocked the page
+  // after render instead of being templated - with the script blocked the page
   // still reads as ordinary text, which is the state the markup is written for.
   //
   // Each one keeps its words on an aria-label, because the dots themselves are
@@ -577,7 +577,7 @@
         card.style.setProperty('--tracker-ink', textColorFor(colors[0]));
       };
 
-      // An overridden suspect skips sampling altogether — see
+      // An overridden suspect skips sampling altogether - see
       // js/suspect-colors.js. Checked before the image is even waited on, so an
       // override paints on the first frame instead of after a decode.
       const override = window.suspectColorOverride?.(username);
@@ -646,7 +646,7 @@
 
   // Takes either form, because it now gets both: the sampler hands it
   // 'rgb(r, g, b)' off the canvas, while an override from js/suspect-colors.js
-  // is a hex string. Scraping digits — which is all this used to do — reads
+  // is a hex string. Scraping digits - which is all this used to do - reads
   // '#FDCB03' as the single number 3, and every hex primary came back needing
   // white ink, including the bright yellow ones.
   function channelsOf(color) {

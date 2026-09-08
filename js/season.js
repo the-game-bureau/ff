@@ -8,14 +8,14 @@ var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 // so it lives here rather than in the generated schedule file, which would lose
 // it the next time that file is regenerated. js/nfl-schedule.js reads this at
 // call time, not at load time, which is what lets it sit in the file that loads
-// second. The server enforces the same number — see
-// supabase/sql/ff_pick_lock_minutes.sql — so changing it here alone only makes
+// second. The server enforces the same number - see
+// supabase/sql/ff_pick_lock_minutes.sql - so changing it here alone only makes
 // the browser stricter, never looser.
 var PICK_LOCK_MINUTES = 5;
 
 // The one handle that gets the admin room, and where the door is. Compared
 // case-insensitively, which is what js/admin.js does before its own check, so
-// the link appears exactly when the admin page would let you in — the stored
+// the link appears exactly when the admin page would let you in - the stored
 // handle is mixed case, and the badge's text-transform hides that.
 var ADMIN_USERNAME = 'theclarinetofjustice';
 var ADMIN_PATH = 'admin/index.html';
@@ -41,7 +41,7 @@ function renderWeekBadge(){
   // handle across the full width beneath them. The third cell carries its own
   // top rule, so while signed out the badge is simply the two-square block it
   // has always been. Display only, except for the one handle that gets a link
-  // to the admin room — see renderHeaderUser below.
+  // to the admin room - see renderHeaderUser below.
   el.innerHTML =
     '<span class="week-badge-row">' +
       `<span class="week-badge-week">Week ${CURRENT_WEEK}</span>` +
@@ -53,8 +53,8 @@ function renderWeekBadge(){
 // Puts the signed-in handle in the badge, and for the admin makes it the way
 // into the admin room. Nobody else's page carries the link at all.
 //
-// Both auth modules call this rather than writing the cell themselves —
-// js/auth-corner.js on most pages, js/app.js on the Precinct — so the two can
+// Both auth modules call this rather than writing the cell themselves -
+// js/auth-corner.js on most pages, js/app.js on the Precinct - so the two can
 // never drift on what the badge shows.
 //
 // This is a shortcut, not a gate: the admin page checks the username itself and

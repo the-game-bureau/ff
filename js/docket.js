@@ -4,7 +4,7 @@
 // the page should answer "how many are left" before anything else.
 //
 // Still walking, not booked. Everyone who ever joined is in ff_profiles for
-// good — being eliminated does not remove you from the league — so a row count
+// good - being eliminated does not remove you from the league - so a row count
 // would climb all season and never fall, which is the opposite of what a
 // survivor pool's headline number should do.
 (function () {
@@ -102,7 +102,7 @@
     };
 
     if (!docketDb) {
-      setScore('—', '—');
+      setScore('-', '-');
       setLabel(labelEl, 'Records Unavailable');
       return;
     }
@@ -114,7 +114,7 @@
       .select('username, game_status');
 
     // The view is a convenience and can refuse the query for reasons that have
-    // nothing to do with the data — a grant this role lacks, a column that
+    // nothing to do with the data - a grant this role lacks, a column that
     // moved. Falling back to a plain roster count is wrong by exactly the
     // players who have been eliminated, so it says so rather than quietly
     // reporting a bigger number.
@@ -126,12 +126,12 @@
 
       if (fallback.error) {
         console.error('Docket count failed:', fallback.error);
-        setScore('—', '—');
+        setScore('-', '-');
         setLabel(labelEl, 'Records Unavailable');
         return;
       }
 
-      // Everyone on file, and no way to tell who is out — so the second half of
+      // Everyone on file, and no way to tell who is out - so the second half of
       // the scoreboard says it does not know rather than showing a zero that
       // would read as "nobody has been eliminated yet".
       setScore(String(Number(fallback.count || 0)), '?');

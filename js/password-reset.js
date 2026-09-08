@@ -19,7 +19,7 @@
 
   function resolveClient() {
     // app.js publishes its client as a top-level `db`; share it when present.
-    // Reuse whatever client the page already built — a second GoTrue instance
+    // Reuse whatever client the page already built - a second GoTrue instance
     // on the same storage key triggers warnings and races.
     for (const name of ['db', 'victimsDb', 'suspectsDb', 'joinDb']) {
       const existing = window[name];

@@ -33,7 +33,7 @@
     dashboard: Object.freeze({
       // The admin page's Database button. 17649 is the table's own id in
       // this project, so unlike everything else here it does not follow
-      // projectRef — a new project would need a new number.
+      // projectRef - a new project would need a new number.
       databaseUrl: `https://supabase.com/dashboard/project/${projectRef}/editor/17649?schema=public`,
       scheduleTableUrl: `https://supabase.com/dashboard/project/${projectRef}/editor/table/_2026_nfl_schedule?schema=public`,
     }),

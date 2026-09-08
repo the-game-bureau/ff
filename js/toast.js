@@ -7,7 +7,7 @@
 // file" inside the roster panel, the APB said what it had drawn up inside the
 // APB panel, the mugshot editor reported a failed save inside a dialog you
 // might have scrolled past. On a page of collapsible panels that is the worst
-// place for it — the message can be inside something closed, below the fold, or
+// place for it - the message can be inside something closed, below the fold, or
 // behind a modal, and a save that failed says so somewhere nobody is looking.
 //
 // These sit above everything instead, in a fixed corner of the window.

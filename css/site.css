@@ -1,5 +1,5 @@
 /* =============================================================
-   LAW & ORDER: SVU — 2026
+   LAW & ORDER: SVU - 2026
    Neo-brutalist theme. Rules of the house:
      - Hard black rules, never a soft border.
      - Offset shadows with zero blur. Nothing floats, it stacks.
@@ -73,7 +73,7 @@
    engine: WebKit's prefix for Safari, Mozilla's for Firefox, and the unprefixed
    standard for Chrome/Edge, which support that one and not the prefixes.
    Dropping any one of the three loses a browser, so the editor warning about
-   whichever line it is looking at is unavoidable and wrong to act on — it is
+   whichever line it is looking at is unavoidable and wrong to act on - it is
    silenced for this property alone in .hintrc at the repo root. */
 html{
   background: var(--ink);
@@ -86,7 +86,7 @@ body{
   font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.5;
-  /* A long unbroken token — an email, a pasted link — should fold rather than
+  /* A long unbroken token - an email, a pasted link - should fold rather than
      push the page sideways on a phone. */
   overflow-wrap: break-word;
   color: var(--text-primary);
@@ -151,7 +151,7 @@ body{
 /* The subtitle is the SVU line under the logo, and every page fills it with its
    own name: Special Victory Unit, Victims, Suspects, Case File. It is
    the show's title card wherever it appears, so it wears the 2025 season's
-   treatment on all of them — white type with a gold neon bloom, no plaque.
+   treatment on all of them - white type with a gold neon bloom, no plaque.
    Copied from 2025/index.html, glow and all: this line is deliberately the one
    place the no-glow house rule is set aside, because the header is quoting a
    title sequence rather than presenting a control. */
@@ -915,7 +915,7 @@ body{
 .avatar-status-bad{ color: var(--error); }
 
 /* ===== AUTH BAR ===== */
-/* Deliberately card-less — it sits directly on the page. */
+/* Deliberately card-less - it sits directly on the page. */
 .auth-block{ margin: 0 0 28px; }
 
 /* ===== USERNAME GATE ===== */
@@ -1668,8 +1668,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   display: flex;
   /* flex-start plus margin:auto on the card, not align-items:center: a centred
      flex item that overflows its scroll container pushes its own top out of
-     reach, so on a short screen — a phone in landscape, or one with the
-     keyboard up — the card's heading could not be scrolled back to. */
+     reach, so on a short screen - a phone in landscape, or one with the
+     keyboard up - the card's heading could not be scrolled back to. */
   align-items: flex-start;
   justify-content: center;
   padding: 20px;
@@ -1712,7 +1712,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .modal-card input{ margin-bottom: 12px; }
 
 /* The sign-in fields sit in a <form> so password managers recognise them.
-   It is purely a wrapper — no box of its own. */
+   It is purely a wrapper - no box of its own. */
 .modal-form{ margin: 0; }
 
 .modal-actions{
@@ -1908,7 +1908,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
   .qr-code img{ width: 184px; height: 184px; }
 
-  /* The home page is a single screen — a QR code and one button — so it should
+  /* The home page is a single screen - a QR code and one button - so it should
      not ask to be scrolled on a desktop. These trims are all vertical padding,
      and they are scoped to the home page: every other page has real content to
      scroll through and keeps the roomier spacing. Nothing changes below 768px. */
@@ -1942,7 +1942,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Custom markers: the default disc is the one round thing in a design that has
    no round things.
-   Everything in this card shares one left edge — heading, lede, bullets, note.
+   Everything in this card shares one left edge - heading, lede, bullets, note.
    The list used to be pulled out by a negative margin so the squares hung in
    the card's padding, which left the bullet text starting 20px left of every
    other block and read as a layout bug once the note box arrived to measure it
@@ -2088,7 +2088,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding: 0;
   display: grid;
   /* Four across: every NFL division has exactly four teams, so each row is
-     one complete division. minmax(0, 1fr) is load-bearing — plain 1fr means
+     one complete division. minmax(0, 1fr) is load-bearing - plain 1fr means
      minmax(auto, 1fr), and the nowrap team names would then force the columns
      wider than the page and scroll the whole document sideways. */
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2147,7 +2147,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* Greyed per-child rather than on the card, because a filter on the card also
-   drains its status pill — and "Previous Selection" has to stay red to read as
+   drains its status pill - and "Previous Selection" has to stay red to read as
    a thing this player did. A child cannot undo an ancestor's filter, so the
    pill has to be left out of it rather than corrected afterwards. */
 .victim-card.disabled{ cursor: not-allowed; }
@@ -2171,7 +2171,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
    The wash is the same idea: a tenth of the team's primary over the paper, so
    the card the player has committed to is tinted in that team's colour rather
-   than in a house highlight. A tenth is deliberately weak — the card still has
+   than in a house highlight. A tenth is deliberately weak - the card still has
    to read as paper behind dark ink, and several primaries are near-black.
    Browsers without color-mix drop this declaration and keep the plain paper
    from .victim-card, which is a fine card, just an untinted one. */
@@ -2197,7 +2197,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-color: var(--error);
 }
 
-/* Named in a later week, and still takeable — so it gets the interaction
+/* Named in a later week, and still takeable - so it gets the interaction
    colour rather than the red of a team that is genuinely spent. Solid yellow
    on a black rule: the tints above borrow their own text colour, and yellow
    has no readable tint. */
@@ -2231,7 +2231,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   color: var(--ink);
 }
 
-/* Two fixed lines — place above, nickname below — so every card lines up
+/* Two fixed lines - place above, nickname below - so every card lines up
    whether the team is "Buffalo Bills" or "Tampa Bay Buccaneers". */
 .victim-place,
 .victim-nickname{
@@ -2325,7 +2325,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* Evenly out of phase, so exactly one face is up at a time. The delays are
-   negative — the animation starts already part-way through — which runs the
+   negative - the animation starts already part-way through - which runs the
    turn order backwards: the further back a face is started, the sooner it comes
    round. So the second face is the one held furthest back, not the nearest. */
 .victim-status-swap-2 .victim-status-face:nth-child(2){ animation-delay: -3.5s; }
@@ -2346,7 +2346,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* Nothing blinking for anyone who has asked motion to stop. One face is marked
-   as the one that carries the meaning — see cardStatusFaces() — and the rest is
+   as the one that carries the meaning - see cardStatusFaces() - and the rest is
    left to the tooltip and the screen-reader label. */
 @media (prefers-reduced-motion: reduce){
   .victim-status-face{ animation: none; }
@@ -2796,7 +2796,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .pick-clipboard-team{ font-weight: 900; }
 
 /* One pen wrote this page. The opponent used to be set in a lighter blue,
-   which read as a second ink — it is lighter only in weight now. */
+   which read as a second ink - it is lighter only in weight now. */
 .pick-clipboard-matchup{
   font-size: 1.05rem;
   font-weight: 700;
@@ -2877,8 +2877,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
      the legend below the board has to line up with the board and a sibling
      cannot read a variable declared on the list. --pool-row-w is how wide the
      printed grid actually is: one name column plus eighteen week columns and
-     the gaps between them. The row BOX is wider than that — grid tracks stop
-     at 220px and leave the remainder unallocated — so centring the legend on
+     the gaps between them. The row BOX is wider than that - grid tracks stop
+     at 220px and leave the remainder unallocated - so centring the legend on
      the row box is not the same as centring it on the ink. */
   --pool-name-col-w: 220px;
   --pool-week-size: 34px;
@@ -3018,7 +3018,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Every rule on this board is printed, not drawn: dotted borders out of the
    same head that prints the type, and no offset shadows anywhere. A shadow
-   implies a card lifted off a surface, and nothing here is lifted — it is all
+   implies a card lifted off a surface, and nothing here is lifted - it is all
    ink on one continuous sheet of tractor-feed paper. */
 .lineup-pool-corner,
 .lineup-week-label{
@@ -3031,7 +3031,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Same box metrics as a week label, so the heading prints on the same line as
    the numbers instead of floating above them. The header row is aligned to its
-   end, so matching the height is what makes the two line up — a taller corner
+   end, so matching the height is what makes the two line up - a taller corner
    set the row height and left the numbers sitting under it. */
 .lineup-pool-corner{
   justify-content: center;
@@ -3049,7 +3049,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* width:auto rather than a percentage so the element box hugs the drawing. A
    percentage width leaves the box wider than the dots whenever the height cap
    bites, and the SVG's xMin alignment then parks the title at the left of that
-   slack — it looks off-centre however the parent is aligned. Hugging the
+   slack - it looks off-centre however the parent is aligned. Hugging the
    drawing lets the flex centring above do its job. */
 .lineup-pool-corner-dot-svg{
   display: block;
@@ -3143,7 +3143,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Printed, not typeset: the name is a dot grid drawn by
    js/suspect-lineup-chart.js, the same 5x7 head that prints the SUSPECT TRACKER
-   heading. So there is no font here — the element is only the box the SVG has
+   heading. So there is no font here - the element is only the box the SVG has
    to fit inside, and its accessible name lives on the aria-label because the
    dots themselves are aria-hidden. */
 .lineup-booking-name{
@@ -3171,8 +3171,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Deliberately quieter than the username: the handle is who you are in the
    game, the first name is only there so signed-in players can tell each other
-   apart. Present only for them — see js/suspect-lineup-chart.js. Printed at
-   two thirds the username's cap height, which is now what "quieter" means —
+   apart. Present only for them - see js/suspect-lineup-chart.js. Printed at
+   two thirds the username's cap height, which is now what "quieter" means -
    the dots are all one weight, so size is the only register left. */
 .lineup-booking-first{
   display: flex;
@@ -3200,7 +3200,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .lineup-booking-first .lineup-label-dot-svg{ max-height: 13px; }
 .lineup-emoji-key dd .lineup-label-dot-svg{ max-height: 9px; }
 
-/* Smallest print on the board — it sits under a team logo inside a 30px cell,
+/* Smallest print on the board - it sits under a team logo inside a 30px cell,
    so it gets the shortest head of all. */
 .lineup-logo-marker-text .lineup-label-dot-svg{ max-height: 6px; }
 
@@ -3765,7 +3765,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* The board in the squad room: cork, a hard frame, and every suspect's photo
    pinned to it while the case is open. The wall it replaces was a height chart
-   for a lineup, which staged the players as one row of bodies — a corkboard
+   for a lineup, which staged the players as one row of bodies - a corkboard
    holds any number of faces and reads as an investigation rather than a parade.
 
    Cork is drawn, not photographed: a warm ground with three sizes of speckle
@@ -4068,7 +4068,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 }
 
 /* One line, always. suspects.js steps the size down until it fits, so this
-   must never wrap — and the clip is a backstop for the case where even the
+   must never wrap - and the clip is a backstop for the case where even the
    smallest size is too small. */
 .suspect-team{
   display: block;
@@ -4173,7 +4173,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
     margin: 0 auto 12px;
   }
 
-  /* Too narrow to park it in the corner without hitting the logo — the whole
+  /* Too narrow to park it in the corner without hitting the logo - the whole
      corner stack drops back into the flow, centred. */
   .header-corner{
     position: static;
@@ -4183,8 +4183,8 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 
   /* Unless the same two controls made it into the hamburger, in which case the
      corner is just a duplicate. The class is set by ensureNavAuthItems in
-     js/auth-corner.js, so index.html — which carries its own auth markup and
-     doesn't load that file — keeps the centred corner above. */
+     js/auth-corner.js, so index.html - which carries its own auth markup and
+     doesn't load that file - keeps the centred corner above. */
   .has-nav-auth .header-corner{ display: none; }
 
   .week-badge{
@@ -4275,7 +4275,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
      than a height transition: a collapsed row of bordered boxes still catches
      taps on some browsers, and this theme has no animation anywhere else.
 
-     The items themselves are the SAME buttons as the desktop row — hard rule,
+     The items themselves are the SAME buttons as the desktop row - hard rule,
      offset shadow, sublabel underneath, blue for the current page. They were
      briefly restyled into flat docket rows, which made the menu a different
      component depending on the width you opened it at. One nav, one look. */
@@ -4359,7 +4359,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .corkboard{ padding: 20px 10px 18px; }
   .suspect-grid{ grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
   /* The avatar fills its frame now, so only the card's width token needs
-     setting — the frame and the retake button both read it. */
+     setting - the frame and the retake button both read it. */
   .suspect-card{ --mugshot-width: 132px; }
   .victim-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .team-grid{ grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); }
@@ -4420,7 +4420,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   box-shadow: var(--shadow-sm);
 }
 
-/* An edited card is worth spotting from across the grid — it is the difference
+/* An edited card is worth spotting from across the grid - it is the difference
    between a colour the sampler chose and one a person did. */
 .lab-card.is-edited{ border-color: var(--accent-yellow); }
 .lab-card.is-edited .lab-edited{ display: inline; }

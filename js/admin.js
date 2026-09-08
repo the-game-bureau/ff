@@ -210,8 +210,8 @@
       return;
     }
 
-    // The mail client wants a To:. Nobody else belongs there — every recipient
-    // is in BCC — so the bulletin goes to the admin, who gets their own copy.
+    // The mail client wants a To:. Nobody else belongs there - every recipient
+    // is in BCC - so the bulletin goes to the admin, who gets their own copy.
     adminEmail = String(user.email || '').trim();
 
     els.tools.hidden = false;
@@ -285,7 +285,7 @@
     setRecordsStatus('Loading records.', 'note');
 
     // The week the APB asks about is the open one, the same week the rest of
-    // the site is on — season.js derives it from the schedule.
+    // the site is on - season.js derives it from the schedule.
     const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListProfiles || 'ff_admin_list_profiles', {
       for_season: Number(window.SEASON) || null,
       for_week: Number(window.CURRENT_WEEK) || null
@@ -1099,10 +1099,10 @@
     const week = Number(window.CURRENT_WEEK) || 0;
 
     if (els.apbAllTitle) {
-      els.apbAllTitle.textContent = week ? 'Victim Named — Week ' + week : 'Victim Named';
+      els.apbAllTitle.textContent = week ? 'Victim Named - Week ' + week : 'Victim Named';
     }
     if (els.apbNoPickTitle) {
-      els.apbNoPickTitle.textContent = week ? 'No Victim Named — Week ' + week : 'No Victim Named';
+      els.apbNoPickTitle.textContent = week ? 'No Victim Named - Week ' + week : 'No Victim Named';
     }
 
     const named = apbRecipients('named');
@@ -1157,7 +1157,7 @@
     if (!namesEl) return;
 
     if (!rows.length) {
-      namesEl.innerHTML = '<li class="apb-name-empty">Nobody — ' +
+      namesEl.innerHTML = '<li class="apb-name-empty">Nobody - ' +
         escapeAdminHtml(emptyLabel) + '.</li>';
       return;
     }
@@ -1202,7 +1202,7 @@
   //
   // It comes from the database, not from 2025/data/profiles.json, even though
   // that file is right there. The names and addresses used to live in it, and a
-  // file under the served root is public no matter which page fetches it —
+  // file under the served root is public no matter which page fetches it -
   // publishing 32 people's emails to fill in one admin table is not a trade
   // worth making. They sit in ff_archive_players now, behind RLS with no
   // policies and an admin-checked function.
@@ -1268,7 +1268,7 @@
   // phone, so it is short, has one link, and leads with the thing that will
   // make them read the rest: how they did.
   const INVITE_URL = 'https://thegamebureau.com/ff/#welcome';
-  // The 2025 winner. Their message says so instead of counting weeks — telling
+  // The 2025 winner. Their message says so instead of counting weeks - telling
   // the champion how long they lasted would be a strange way to invite them.
   const WINNER_2025 = 'munch';
 
@@ -1306,7 +1306,7 @@
   }
 
   // The invite carries a blank line before the link. Attribute parsing keeps a
-  // literal newline, but only by the letter of the spec — encoding it is one
+  // literal newline, but only by the letter of the spec - encoding it is one
   // character and removes the doubt.
   function attrText(value) {
     return escapeAdminHtml(value).replace(/\n/g, '&#10;');

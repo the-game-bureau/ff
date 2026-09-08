@@ -94,7 +94,7 @@
         // Clipboard access needs a secure context and can be blocked outright.
         // Back to the plain label: nothing was copied.
         copyBtn.textContent = COPY_LABEL;
-        setStatus('Copy blocked — select the link below instead.', true);
+        setStatus('Copy blocked - select the link below instead.', true);
       }
     });
 

@@ -75,7 +75,7 @@ function renderSiteNav(){
   // The toggle is always in the markup and always focusable; CSS hides it above
   // the phone breakpoint, where the full row of buttons fits on one line. The
   // list is never removed from the DOM, so nothing here depends on JS to make
-  // the menu readable — a phone with the script blocked still shows every item.
+  // the menu readable - a phone with the script blocked still shows every item.
   mount.innerHTML = `
     <nav class="main-nav" role="navigation" aria-label="Main menu">
       <button class="nav-toggle" id="navToggle" type="button"
@@ -95,8 +95,8 @@ function renderSiteNav(){
 // the foot of the hamburger. CSS keeps them out of the desktop button bar.
 //
 // They are proxies, not a second implementation. Two different modules build
-// the header corner — js/auth-corner.js injects it on most pages, index.html
-// carries it in markup and drives it from js/app.js — but both end up with the
+// the header corner - js/auth-corner.js injects it on most pages, index.html
+// carries it in markup and drives it from js/app.js - but both end up with the
 // same ids, and both mark signed-in state by toggling `hidden` on the two
 // stacks. So this reads that state and forwards clicks, which is why it works
 // the same on every page including the Precinct. It used to live in

@@ -366,7 +366,7 @@ async function loadCurrentSuspects(){
 
   // The view is a convenience, not the source of truth: ff_profiles holds the
   // same rows. It used to fall back only when the view was missing, which left
-  // the page dead whenever the view existed but refused the query — a grant
+  // the page dead whenever the view existed but refused the query - a grant
   // the current role lacks, a column that moved. Any failure now falls through
   // to the table, and only a failure of both is reported.
   if(error){

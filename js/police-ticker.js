@@ -1,6 +1,6 @@
 // ===== POLICE TICKER =====
 // The wire at the top of the Case File: one entry per player, their most recent
-// accusation, scrolling forever. Not a feed of every pick — a roll call of who
+// accusation, scrolling forever. Not a feed of every pick - a roll call of who
 // has named whom lately, which is the thing worth glancing at.
 //
 // Reads ff_active_picks, the view that already collapses the append-only picks
@@ -123,7 +123,7 @@
       .sort((a, b) => pickTime(b) - pickTime(a));
   }
 
-  // "Sun, Sep 7, 2:14 PM" — day and time both matter on a ticker where the
+  // "Sun, Sep 7, 2:14 PM" - day and time both matter on a ticker where the
   // interesting thing is often how close to kickoff somebody filed.
   function stamp(pick) {
     const when = pick.submitted_at_utc || pick.created_at;
@@ -154,8 +154,8 @@
     track.innerHTML = items + items;
     track.style.animationDuration = `${Math.max(12, entries.length * SECONDS_PER_ITEM)}s`;
 
-    // The strip itself is aria-hidden — a marquee is a terrible thing to read
-    // with a screen reader — so the same entries go out once, statically, here.
+    // The strip itself is aria-hidden - a marquee is a terrible thing to read
+    // with a screen reader - so the same entries go out once, statically, here.
     if (list) {
       list.innerHTML = entries.map((pick) => {
         const opponent = opponentFor(pick);

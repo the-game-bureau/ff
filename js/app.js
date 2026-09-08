@@ -291,7 +291,7 @@ async function refreshAuthUI(){
     
     // Ask for the one column this code actually reads. "*" demands every
     // column, so a single field the role is not granted fails the whole
-    // request — and it pulls the email down to the browser for nothing.
+    // request - and it pulls the email down to the browser for nothing.
     const { data: profile, error } = await db
       .from(PROFILES_TABLE)
       .select('username')
@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
     submitPickEl.addEventListener('click', submitPick);
   }
 
-  // Pick Ticker — an inline section on the page now, not a floating panel.
+  // Pick Ticker - an inline section on the page now, not a floating panel.
   const prevPickWeekBtn = document.getElementById('prevPickWeekBtn');
   const nextPickWeekBtn = document.getElementById('nextPickWeekBtn');
   const pickTickerWeekEl = document.getElementById('pickTickerWeek');
@@ -655,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // authEmail / authPass are inside #signInForm, which submits on Enter on
-    // its own — no key handling needed here.
+    // its own - no key handling needed here.
   });
 
   window.addEventListener('ff-auth-changed', async () => {

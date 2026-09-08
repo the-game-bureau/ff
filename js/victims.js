@@ -194,8 +194,8 @@ function isCurrentSeasonPick(pick){
   return !pick.season || Number(pick.season) === Number(SEASON);
 }
 
-// How a week gets un-picked. Nothing is ever deleted from ff_picks — the newest
-// row for a week is the pick — so releasing a team is a new row for that week
+// How a week gets un-picked. Nothing is ever deleted from ff_picks - the newest
+// row for a week is the pick - so releasing a team is a new row for that week
 // carrying this marker. Everything downstream reads a skipped latest row as
 // "that week has no victim", which is what frees the team up for another week.
 // js/app.js carries the same pair; keep them in step.
@@ -401,8 +401,8 @@ async function refreshVictimState(){
   renderVictimIntro();
 }
 
-// Only the two states about this player's own picks get a colour. The rest —
-// bye, kickoff passed, earlier week first — are facts about the schedule and
+// Only the two states about this player's own picks get a colour. The rest -
+// bye, kickoff passed, earlier week first - are facts about the schedule and
 // stay neutral, so the colour means "you did this", not "blocked".
 function statusModifier(status){
   if(status === 'Your Current Selection') return ' victim-status-current';
@@ -433,7 +433,7 @@ function cardStatus(teamName, info){
   if(info.isBye) return 'Not Playing';
   // Not "Past Kickoff": the card closes PICK_LOCK_MINUTES before the game
   // starts, so for those last minutes that label would be a lie. "Locked Up" is
-  // true from the moment the card goes dead until the game is over — and it is
+  // true from the moment the card goes dead until the game is over - and it is
   // the booking-cell version of the same fact, which is the register the rest
   // of the site speaks in.
   //
@@ -441,11 +441,11 @@ function cardStatus(teamName, info){
   // week's victim has locked, the week is settled and nothing else on the board
   // can be taken, whatever its own kickoff says. isCardDisabled() has always
   // killed those cards; without this they went on reading "Available" while
-  // refusing every click — a Monday night team still saying it was free at
+  // refusing every click - a Monday night team still saying it was free at
   // Sunday teatime.
   if(info.locked || currentPickLocked()) return 'Locked Up';
 
-  // Named further down the schedule, and this week is otherwise open — so it
+  // Named further down the schedule, and this week is otherwise open - so it
   // really is takeable, and taking it releases the later week.
   if(usedPick) return 'Future Selection';
   return 'Available';
@@ -467,7 +467,7 @@ function cardStatusWeek(status, teamName){
 //
 // Future Selection leads with "Available But" because that is the fact a player
 // scanning the grid needs first: the card is takeable. The dangling "but" is
-// doing real work — it holds the sentence open so the two faces after it read
+// doing real work - it holds the sentence open so the two faces after it read
 // as the catch rather than as three unrelated labels. The team is spoken for,
 // and here is the week taking it back would empty. Previous Selection has no
 // such catch; it is just the label and the week.
@@ -501,7 +501,7 @@ function cardHint(teamName){
 
   return reclaimableLaterPick(teamName)
     ? `Your Week ${laterPick.week} victim. Picking here clears Week ${laterPick.week}.`
-    : `Locked into Week ${laterPick.week} — that game has already started.`;
+    : `Locked into Week ${laterPick.week} - that game has already started.`;
 }
 
 function isCardDisabled(teamName, info){
@@ -654,7 +654,7 @@ async function releaseLaterPick(pick){
 }
 
 // Taking a team back from a later week empties that week, and the only warning
-// used to be a title tooltip — which does not exist on a phone. So the release
+// used to be a title tooltip - which does not exist on a phone. So the release
 // asks first. Only the swap asks: naming an Available team, or changing this
 // week's victim, costs nothing and stays one click.
 function confirmVictimRelease(teamName, fromWeek, toWeek){
@@ -712,7 +712,7 @@ function confirmVictimRelease(teamName, fromWeek, toWeek){
 }
 
 // One pick at a time. Clicks land faster than the round trip that refreshes
-// victimState, so a second click was being judged against pre-insert state —
+// victimState, so a second click was being judged against pre-insert state -
 // the pool has a pair of identical rows two seconds apart from exactly that.
 // On a Future Selection card it is worse than a duplicate: the second click
 // releases another week, so two weeks empty to fill one.
@@ -758,7 +758,7 @@ async function runVictimPick(teamName){
     const laterPick = usedInLaterWeek(teamName);
     setVictimStatus(
       laterPick
-        ? `${teamName} is locked into Week ${laterPick.week} — that game has already started.`
+        ? `${teamName} is locked into Week ${laterPick.week} - that game has already started.`
         : `${teamName} was already named in Week ${spentPick.week}.`,
       'bad'
     );

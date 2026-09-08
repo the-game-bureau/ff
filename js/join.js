@@ -5,7 +5,7 @@
 // whichever one is on the page.
 //
 // Wrapped in an IIFE because it is now loaded site-wide, and its top-level
-// names would otherwise collide with another page script's — suspects.js
+// names would otherwise collide with another page script's - suspects.js
 // declares its own DEFAULT_MUGSHOT_URL, and two top-level consts of one name
 // is a parse error that kills both files.
 (function () {
@@ -18,7 +18,7 @@ const PENDING_JOIN_STORAGE_KEY = `ff-pending-join-${JOIN_CONFIG.projectRef || JO
 const PENDING_JOIN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MUGSHOT_STORAGE_SIZE = 256;
-// Mugshots are photographs, which PNG stores badly — the same 256px image is
+// Mugshots are photographs, which PNG stores badly - the same 256px image is
 // roughly 12x smaller as JPEG. Every stored mugshot is fetched again for each
 // player in the lineup, so the saving is per row, per visitor. Both mugshot
 // canvases paint an opaque white ground first, so there is no transparency for
@@ -84,7 +84,7 @@ function flagJoinField(fieldId){
 
 // "Already booked" would claim they are in this league, which is not something
 // this error proves: the login may have been created on another site sharing
-// this Supabase project. Logging in is the right next step either way — the
+// this Supabase project. Logging in is the right next step either way - the
 // join form fills in the league record afterwards for an account that has none.
 const EMAIL_TAKEN_MESSAGE =
   'That email already has a login. Log in, then come back here to finish joining ' +
@@ -774,8 +774,8 @@ document.addEventListener('DOMContentLoaded', () => {
           // The mugshot must NOT go in here. Everything in `data` becomes
           // user_metadata, which Supabase embeds in the JWT, which then rides
           // in the Authorization header of every authenticated request. A
-          // 256px PNG data URL is around 234 KB — roughly 29x the ~8 KB header
-          // limit — so the gateway rejects every request with a bodyless 400
+          // 256px PNG data URL is around 234 KB - roughly 29x the ~8 KB header
+          // limit - so the gateway rejects every request with a bodyless 400
           // "Bad Request" before PostgREST is ever reached, and the whole site
           // breaks for that account the moment it signs in. The mugshot lives
           // in ff_profiles.avatar_data_url, which is a column, not a header.
@@ -803,7 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // With email confirmation switched on, Supabase will not admit that an
-      // address is taken — it returns a normal-looking user with an empty
+      // address is taken - it returns a normal-looking user with an empty
       // identities array and no error, so this is the only way to spot it.
       //
       // Only in that flow, though: the tell is a user with no session. This
