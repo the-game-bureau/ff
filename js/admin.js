@@ -3,14 +3,11 @@
   const ADMIN_SUPABASE_URL = ADMIN_CONFIG.url || 'https://vkoczgzizzppdrpvpemh.supabase.co';
   const ADMIN_SUPABASE_ANON_KEY = ADMIN_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
   const ADMIN_PROFILE_TABLE = ADMIN_CONFIG.tables?.profiles || 'ff_profiles';
-  const ADMIN_SCHEDULE_TABLE = ADMIN_CONFIG.tables?.schedule || 'ff_nfl_schedule';
   const ADMIN_RPCS = ADMIN_CONFIG.rpcs || {};
   const ADMIN_PROJECT_REF = ADMIN_CONFIG.projectRef || 'vkoczgzizzppdrpvpemh';
-  const ADMIN_SCHEDULE_TABLE_URL = ADMIN_CONFIG.dashboard?.scheduleTableUrl ||
-    `https://supabase.com/dashboard/project/${ADMIN_PROJECT_REF}/editor/table/${ADMIN_SCHEDULE_TABLE}?schema=public`;
+  const ADMIN_DATABASE_URL = ADMIN_CONFIG.dashboard?.databaseUrl ||
+    `https://supabase.com/dashboard/project/${ADMIN_PROJECT_REF}/editor/17649?schema=public`;
   const ADMIN_ALLOWED_USERNAME = 'theclarinetofjustice';
-  const SOURCE_URL = window.NFL_SCHEDULE_SOURCE_URL || 'https://plaintextsports.com/nfl/2026/schedule';
-  const SOURCE_SEASON = window.NFL_SCHEDULE_SEASON || 2026;
 
   const adminDb = window.supabase?.createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON_KEY, {
     auth: {
@@ -23,26 +20,51 @@
   });
 
   const els = {};
-  let lastTableRows = null;
-  let lastPrompt = '';
+  // The roster as last loaded, kept whole so the APB can address it. Suspect
+  // Records only keeps the editable fields.
+  let recordRows = [];
+  let adminEmail = '';
+  // Which group the draft below the cards was written for, or '' for none.
+  let apbKind = '';
 
   document.addEventListener('DOMContentLoaded', () => {
-    els.status = document.getElementById('adminStatus');
     els.tools = document.getElementById('adminTools');
-    els.reconcile = document.getElementById('btnReconcileSchedule');
-    els.copyPrompt = document.getElementById('btnCopyReconcilePrompt');
-    els.scheduleTableLink = document.getElementById('adminScheduleTableLink');
-    els.summary = document.getElementById('adminSummary');
-    els.diffBody = document.getElementById('adminDiffBody');
-    els.prompt = document.getElementById('reconcilePrompt');
+
+    els.databaseLink = document.getElementById('adminDatabaseLink');
+    els.schedulePanel = document.getElementById('adminSchedulePanel');
+    els.weekLinks = document.getElementById('adminWeekLinks');
+    els.apbPanel = document.getElementById('adminApbPanel');
+    els.apbNoPickTitle = document.getElementById('apbNoPickTitle');
+    els.apbAllCount = document.getElementById('apbAllCount');
+    els.apbAllNames = document.getElementById('apbAllNames');
+    els.apbNoPickCount = document.getElementById('apbNoPickCount');
+    els.apbNoPickNames = document.getElementById('apbNoPickNames');
+    els.apbAllEmail = document.getElementById('btnApbAllEmail');
+    els.apbAllCopy = document.getElementById('btnApbAllCopy');
+    els.apbNoPickEmail = document.getElementById('btnApbNoPickEmail');
+    els.apbNoPickCopy = document.getElementById('btnApbNoPickCopy');
+    els.apbAllTitle = document.getElementById('apbAllTitle');
+    els.apbSubject = document.getElementById('apbSubject');
+    els.apbBody = document.getElementById('apbBody');
+    els.apbSend = document.getElementById('btnApbSend');
+    els.apbDraftNote = document.getElementById('apbDraftNote');
 
     els.recordsPanel = document.getElementById('adminRecordsPanel');
-    els.recordsStatus = document.getElementById('adminRecordsStatus');
     els.recordsBody = document.getElementById('adminRecordsBody');
     els.refreshRecords = document.getElementById('btnRefreshRecords');
     els.archivePanel = document.getElementById('adminArchivePanel');
-    els.archiveStatus = document.getElementById('adminArchiveStatus');
     els.archiveBody = document.getElementById('adminArchiveBody');
+
+    els.mugshotModal = document.getElementById('mugshotModal');
+    els.mugshotTitle = document.getElementById('mugshotTitle');
+    els.mugshotCanvas = document.getElementById('mugshotCanvas');
+    els.mugshotLoupe = document.getElementById('mugshotLoupe');
+    els.mugshotReadout = document.getElementById('mugshotReadout');
+    els.mugshotFrame = document.getElementById('mugshotFrame');
+    els.mugshotPicker = document.getElementById('mugshotPicker');
+    els.mugshotPreview = document.getElementById('mugshotPreview');
+    els.mugshotFlags = document.getElementById('mugshotFlags');
+    els.saveMugshotColors = document.getElementById('btnSaveMugshotColors');
 
     els.deleteModal = document.getElementById('adminDeleteModal');
     els.deleteSummary = document.getElementById('adminDeleteSummary');
@@ -51,9 +73,13 @@
     els.deleteError = document.getElementById('adminDeleteError');
     els.confirmDelete = document.getElementById('btnConfirmDelete');
 
-    els.reconcile?.addEventListener('click', reconcileSchedule);
-    els.copyPrompt?.addEventListener('click', copyReconcilePrompt);
     els.refreshRecords?.addEventListener('click', loadRecords);
+
+    els.apbAllEmail?.addEventListener('click', () => drawUpApb('named'));
+    els.apbNoPickEmail?.addEventListener('click', () => drawUpApb('nopick'));
+    els.apbSend?.addEventListener('click', openApbMail);
+    els.apbAllCopy?.addEventListener('click', (event) => copyApbAddresses('named', event.currentTarget));
+    els.apbNoPickCopy?.addEventListener('click', (event) => copyApbAddresses('nopick', event.currentTarget));
 
     // Delegated: the archive rows are rebuilt on every load.
     els.archiveBody?.addEventListener('click', (event) => {
@@ -74,7 +100,7 @@
       }
 
       const mugshot = event.target.closest('[data-record-mugshot]');
-      if (mugshot) pickRecordMugshot(mugshot.dataset.recordMugshot);
+      if (mugshot) openMugshotEditor(mugshot.dataset.recordMugshot);
     });
 
     // Enter saves the row you are in, so a one-field fix does not need a mouse.
@@ -86,6 +112,34 @@
       saveRecord(field.closest('tr')?.dataset.recordId);
     });
 
+    document.getElementById('btnCloseMugshot')?.addEventListener('click', closeMugshotEditor);
+    document.getElementById('btnReplaceMugshot')?.addEventListener('click', () => {
+      if (shot) pickRecordMugshot(shot.userId);
+    });
+    els.saveMugshotColors?.addEventListener('click', () => saveMugshotColors(false));
+    document.getElementById('btnSampleMugshotColors')?.addEventListener('click', () => saveMugshotColors(true));
+
+    els.mugshotPicker?.addEventListener('input', (event) => setMugshotSlot(event.target.value.toUpperCase()));
+
+    els.mugshotModal?.addEventListener('click', (event) => {
+      if (event.target === els.mugshotModal) { closeMugshotEditor(); return; }
+
+      const chip = event.target.closest('[data-shot-slot]');
+      if (chip) { armMugshotSlot(chip.dataset.shotSlot); return; }
+
+      if (event.target === els.mugshotCanvas) {
+        if (!shot?.armed) {
+          setMugshotStatus('Arm Primary or Secondary first, then click the mugshot.', 'note');
+          return;
+        }
+        const pixel = mugshotPixelAt(event);
+        if (pixel) setMugshotSlot(pixel.hex);
+      }
+    });
+
+    els.mugshotCanvas?.addEventListener('mousemove', onMugshotMove);
+    els.mugshotCanvas?.addEventListener('mouseleave', clearLoupe);
+
     els.confirmDelete?.addEventListener('click', confirmDelete);
     els.deleteConfirm?.addEventListener('input', syncDeleteButton);
     document.getElementById('btnCancelDelete')?.addEventListener('click', closeDeleteModal);
@@ -94,7 +148,9 @@
       if (event.target === els.deleteModal) closeDeleteModal();
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && els.deleteModal && !els.deleteModal.hidden) closeDeleteModal();
+      if (event.key !== 'Escape') return;
+      if (els.deleteModal && !els.deleteModal.hidden) closeDeleteModal();
+      if (els.mugshotModal && !els.mugshotModal.hidden) closeMugshotEditor();
     });
 
     guardAdmin();
@@ -107,9 +163,11 @@
       guardAdmin();
     });
 
-    if (els.scheduleTableLink) {
-      els.scheduleTableLink.href = ADMIN_SCHEDULE_TABLE_URL;
+    if (els.databaseLink) {
+      els.databaseLink.href = ADMIN_DATABASE_URL;
     }
+
+    renderWeekLinks();
   });
 
   async function guardAdmin() {
@@ -150,13 +208,52 @@
       return;
     }
 
+    // The mail client wants a To:. Nobody else belongs there — every recipient
+    // is in BCC — so the bulletin goes to the admin, who gets their own copy.
+    adminEmail = String(user.email || '').trim();
+
     els.tools.hidden = false;
     if (els.recordsPanel) els.recordsPanel.hidden = false;
+    if (els.schedulePanel) els.schedulePanel.hidden = false;
+    if (els.apbPanel) els.apbPanel.hidden = false;
     if (els.archivePanel) els.archivePanel.hidden = false;
-    setAdminStatus('Admin access granted. Schedule audit tools are ready.', 'good');
-    await ensurePrompt();
+    // Nothing to announce: the panels below only exist for someone who got in,
+    // so their being on screen is the message. The status line is kept for the
+    // ways in that fail, and hides itself when it has nothing to say.
+    setAdminStatus('');
     await loadRecords();
     await loadArchivePlayers();
+  }
+
+  // ===== NFL SCHEDULE =====
+  // One button per week, out to Plain Text Sports, which is where the schedule
+  // gets checked by hand now that the reconcile tool is gone.
+  //
+  // The weeks come from the generated schedule rather than a hardcoded 18, so
+  // this stays right if a season is ever shaped differently. The #week anchor
+  // is the form the old reconcile prompt used for the same site.
+  function renderWeekLinks() {
+    if (!els.weekLinks) return;
+
+    const games = window.NFL_SCHEDULE_GAMES || [];
+    const weeks = [...new Set(games.map((game) => Number(game.week)).filter(Boolean))]
+      .sort((a, b) => a - b);
+
+    if (!weeks.length) {
+      els.weekLinks.innerHTML = '<p class="gate-help">No schedule loaded.</p>';
+      return;
+    }
+
+    const current = Number(window.CURRENT_WEEK) || 0;
+    const base = window.NFL_SCHEDULE_SOURCE_URL || 'https://plaintextsports.com/nfl/2026/schedule';
+
+    els.weekLinks.innerHTML = weeks.map((week) => {
+      const isCurrent = week === current;
+      return `<a class="btn btn-secondary week-link${isCurrent ? ' week-link-current' : ''}"
+                 href="${escapeAdminHtml(base)}#week${week}"
+                 target="_blank" rel="noopener noreferrer"
+                 ${isCurrent ? 'aria-current="true"' : ''}>Week ${week}</a>`;
+    }).join('');
   }
 
   // ===== SUSPECT RECORDS =====
@@ -166,7 +263,10 @@
   // browser role able to update one column of its own row and nothing else, so
   // an admin edit cannot go through the table at all.
   // See supabase/sql/ff_admin_edit_profiles.sql.
-  const RECORD_FIELDS = ['username', 'first_name', 'last_name', 'email'];
+  const RECORD_FIELDS = ['username', 'first_name', 'last_name', 'email', 'sms'];
+  // type=tel gets a phone keypad on a touch device and stops a browser
+  // offering an email autofill for a phone number.
+  const RECORD_FIELD_TYPES = { email: 'email', sms: 'tel' };
   const MUGSHOT_SIZE = 256;
   const MAX_MUGSHOT_BYTES = 5 * 1024 * 1024;
 
@@ -182,7 +282,12 @@
 
     setRecordsStatus('Loading records.', 'note');
 
-    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListProfiles || 'ff_admin_list_profiles');
+    // The week the APB asks about is the open one, the same week the rest of
+    // the site is on — season.js derives it from the schedule.
+    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminListProfiles || 'ff_admin_list_profiles', {
+      for_season: Number(window.SEASON) || null,
+      for_week: Number(window.CURRENT_WEEK) || null
+    });
 
     if (error) {
       const missing = error.code === 'PGRST202' ||
@@ -195,20 +300,24 @@
       );
       console.error('ff_admin_list_profiles failed:', error);
       renderRecords([]);
+      renderApb();
       return;
     }
 
     renderRecords(data || []);
+    renderApb();
     setRecordsStatus(`${(data || []).length} record${(data || []).length === 1 ? '' : 's'} on file.`, 'good');
   }
 
   function renderRecords(rows) {
+    recordRows = rows || [];
+
     if (!els.recordsBody) return;
 
     recordSnapshot = new Map();
 
     if (!rows.length) {
-      els.recordsBody.innerHTML = '<tr><td colspan="8" class="table-empty">No records.</td></tr>';
+      els.recordsBody.innerHTML = '<tr><td colspan="9" class="table-empty">No records.</td></tr>';
       return;
     }
 
@@ -221,6 +330,7 @@
         // when the two have drifted apart, because that is a fault worth
         // seeing rather than hiding behind one tidy value.
         email: row.email || row.login_email || '',
+        sms: row.sms || '',
         avatar_data_url: row.avatar_data_url || ''
       });
 
@@ -242,7 +352,7 @@
             </button>
           </td>
           ${RECORD_FIELDS.map((field) => `
-          <td><input class="admin-cell-input" type="${field === 'email' ? 'email' : 'text'}"
+          <td><input class="admin-cell-input" type="${RECORD_FIELD_TYPES[field] || 'text'}"
                      data-record-field="${field}"
                      value="${escapeAdminHtml(recordSnapshot.get(row.id)[field])}"
                      aria-label="${field.replace('_', ' ')} for ${escapeAdminHtml(row.username || 'member')}"/></td>`).join('')}
@@ -312,7 +422,8 @@
       new_first_name: changes.first_name ?? null,
       new_last_name: changes.last_name ?? null,
       new_email: changes.email ?? null,
-      new_avatar_data_url: changes.avatar_data_url ?? null
+      new_avatar_data_url: changes.avatar_data_url ?? null,
+      new_sms: changes.sms ?? null
     });
 
     if (error) {
@@ -350,7 +461,16 @@
             throw new Error('Mugshot image must be 5 MB or smaller.');
           }
           const dataUrl = await fileToMugshotDataUrl(file);
-          await saveRecord(pendingMugshotId, { avatar_data_url: dataUrl });
+          const target = pendingMugshotId;
+          await saveRecord(target, { avatar_data_url: dataUrl });
+
+          // The editor is almost certainly what opened the picker, and the new
+          // photo has to be redrawn and re-sampled before its colours mean
+          // anything. loadRecords() has already run inside saveRecord.
+          if (shot && shot.userId === target) {
+            const row = recordRows.find((record) => record.id === target);
+            if (row) await loadMugshotInto(row);
+          }
         } catch (error) {
           setRecordsStatus(error?.message || 'Mugshot could not be read.', 'bad');
         }
@@ -402,10 +522,564 @@
   }
 
   function setRecordsStatus(message, kind) {
-    if (!els.recordsStatus) return;
-    els.recordsStatus.textContent = message;
-    els.recordsStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
-    if (kind) els.recordsStatus.classList.add(`join-status-${kind}`);
+    window.ffToast?.(message, kind, 'records');
+  }
+
+  // ===== MUGSHOT EDITOR =====
+  // One suspect's photo and the two colours their cards are painted in, shown
+  // together in front of the photo those colours come off. Replacing the photo
+  // used to be a bare file picker on the thumbnail with no preview, and
+  // choosing the colours used to be the Colour Lab, a separate panel showing
+  // all 32 suspects at once. Both are about a single mugshot, so both are here.
+  //
+  // The sampler, the loupe and the pixel picking are the Colour Lab's, moved
+  // across rather than rewritten.
+  const SHOT_PX = 168;      // on-screen size of the pickable mugshot
+  const LOUPE_PX = 84;      // on-screen size of the magnifier
+  const LOUPE_SRC = 12;     // how many source pixels the magnifier covers
+  const SAMPLE_PX = 24;     // the sampler works on a 24x24 reduction
+  const MIN_DISTANCE = 60;  // how far apart two sampled colours must be
+
+  // The suspect in front of the editor, or null when it is closed.
+  let shot = null;
+
+  const colourDistance = (a, b) => Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+  const toHex = (c) => '#' + [c.r, c.g, c.b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+  const toRgb = (h) => ({ r: parseInt(h.slice(1, 3), 16), g: parseInt(h.slice(3, 5), 16), b: parseInt(h.slice(5, 7), 16) });
+  const saturationOf = (c) => { const mx = Math.max(c.r, c.g, c.b), mn = Math.min(c.r, c.g, c.b); return mx ? (mx - mn) / mx : 0; };
+
+  function inkFor(hex) {
+    const c = toRgb(hex);
+    return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255 > 0.58 ? '#0D0D0D' : '#FFFFFF';
+  }
+
+  const savedPairOf = (row) =>
+    row && row.color_primary && row.color_secondary
+      ? [row.color_primary, row.color_secondary]
+      : null;
+
+  // Every colour in the photo with the share of the frame it covers, biggest
+  // first. dominantPair() on the public pages takes the top two of this.
+  function bucketsOf(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SAMPLE_PX;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, SAMPLE_PX, SAMPLE_PX);
+    const px = ctx.getImageData(0, 0, SAMPLE_PX, SAMPLE_PX).data;
+
+    const map = new Map();
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < 128) continue;
+      const key = ((px[i] >> 5) << 10) | ((px[i + 1] >> 5) << 5) | (px[i + 2] >> 5);
+      const entry = map.get(key) || { count: 0, r: 0, g: 0, b: 0 };
+      entry.count++; entry.r += px[i]; entry.g += px[i + 1]; entry.b += px[i + 2];
+      map.set(key, entry);
+    }
+
+    const total = [...map.values()].reduce((n, e) => n + e.count, 0) || 1;
+    return [...map.values()]
+      .map(e => ({
+        share: e.count / total,
+        r: Math.round(e.r / e.count),
+        g: Math.round(e.g / e.count),
+        b: Math.round(e.b / e.count)
+      }))
+      .sort((a, b) => b.share - a.share);
+  }
+
+  // Why this photo may be about to produce a bad pair. Worth saying out loud:
+  // the whole reason to pick by hand is that the sampler cannot tell a suspect
+  // from the wall behind them.
+  function mugshotFlags(ranked, first, second) {
+    const flags = [];
+    if (colourDistance(first, second) < MIN_DISTANCE) {
+      flags.push('Only one distinct colour in this photo.');
+    }
+    if (saturationOf(first) < 0.18 && saturationOf(second) < 0.18) {
+      flags.push('Both sampled colours are near-neutral, so the card reads as grey.');
+    }
+    if (first.share > 0.55) {
+      flags.push(Math.round(first.share * 100) + '% of the frame is one colour, probably the background.');
+    }
+    return flags.join(' ');
+  }
+
+  function openMugshotEditor(userId) {
+    const row = recordRows.find((record) => record.id === userId);
+    if (!row || !els.mugshotModal) return;
+
+    shot = { userId: userId, username: row.username || '', sampled: null, pair: null, armed: null };
+
+    els.mugshotTitle.textContent = row.username || 'Mugshot';
+    els.mugshotPreview.querySelector('span').textContent = row.username || '';
+    els.mugshotModal.hidden = false;
+    setMugshotStatus('');
+    clearLoupe();
+
+    loadMugshotInto(row);
+  }
+
+  async function loadMugshotInto(row) {
+    const ctx = els.mugshotCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.clearRect(0, 0, SHOT_PX, SHOT_PX);
+    els.mugshotFlags.textContent = '';
+
+    const src = safeMugshot(row.avatar_data_url);
+
+    if (!src) {
+      shot.sampled = null;
+      shot.pair = savedPairOf(row) || ['#1A1A1A', '#F2EFE6'];
+      setMugshotStatus('No mugshot on file. Replace Photo to add one.', 'note');
+      paintMugshotEditor();
+      return;
+    }
+
+    const img = new Image();
+    img.src = src;
+    try {
+      await img.decode();
+    } catch (error) {
+      setMugshotStatus('That mugshot could not be read.', 'bad');
+      return;
+    }
+
+    // Cover, not fit: the frame is square and so is a stored mugshot, but a
+    // photo that is not gets cropped rather than letterboxed.
+    const scale = Math.max(SHOT_PX / img.naturalWidth, SHOT_PX / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    ctx.drawImage(img, (SHOT_PX - w) / 2, (SHOT_PX - h) / 2, w, h);
+
+    const ranked = bucketsOf(img);
+    if (ranked.length) {
+      const first = ranked[0];
+      const second = ranked.find((c) => colourDistance(c, first) > MIN_DISTANCE) || ranked[1] || first;
+      shot.sampled = [toHex(first), toHex(second)];
+      els.mugshotFlags.textContent = mugshotFlags(ranked, first, second);
+    }
+
+    // What is on file wins; failing that, what the sampler would have chosen.
+    shot.pair = savedPairOf(row) || (shot.sampled ? shot.sampled.slice() : ['#1A1A1A', '#F2EFE6']);
+    paintMugshotEditor();
+  }
+
+  function paintMugshotEditor() {
+    if (!shot || !shot.pair) return;
+
+    const primary = shot.pair[0];
+    const secondary = shot.pair[1];
+
+    for (const chip of els.mugshotModal.querySelectorAll('[data-shot-slot]')) {
+      chip.style.background = chip.dataset.shotSlot === 'primary' ? primary : secondary;
+      chip.classList.toggle('is-armed', shot.armed === chip.dataset.shotSlot);
+    }
+
+    for (const hex of els.mugshotModal.querySelectorAll('[data-shot-hex]')) {
+      hex.textContent = hex.dataset.shotHex === 'primary' ? primary : secondary;
+    }
+
+    els.mugshotPicker.value = shot.armed === 'secondary' ? secondary : primary;
+
+    // The placard stripe down the mugshot, exactly as suspects/ draws it.
+    els.mugshotFrame.style.setProperty('--stripe-a', primary);
+    els.mugshotFrame.style.setProperty('--stripe-b', secondary);
+
+    // ...and the tracker's booking card, which uses the pair as a fill.
+    els.mugshotPreview.style.background = primary;
+    els.mugshotPreview.style.color = inkFor(primary);
+    els.mugshotPreview.style.borderColor = secondary;
+    els.mugshotPreview.querySelector('i').style.color = secondary;
+  }
+
+  function armMugshotSlot(slot) {
+    if (!shot) return;
+    shot.armed = shot.armed === slot ? null : slot;
+    paintMugshotEditor();
+  }
+
+  function setMugshotSlot(value) {
+    if (!shot || !shot.armed) return;
+    shot.pair = shot.armed === 'primary'
+      ? [value, shot.pair[1]]
+      : [shot.pair[0], value];
+    paintMugshotEditor();
+  }
+
+  function mugshotPixelAt(event) {
+    const canvas = els.mugshotCanvas;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+
+    const x = Math.floor((event.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((event.clientY - rect.top) * (canvas.height / rect.height));
+    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return null;
+
+    const data = canvas.getContext('2d', { willReadFrequently: true })
+      .getImageData(x, y, 1, 1).data;
+    return { x: x, y: y, hex: toHex({ r: data[0], g: data[1], b: data[2] }) };
+  }
+
+  function onMugshotMove(event) {
+    const pixel = mugshotPixelAt(event);
+    if (!pixel) return;
+
+    const loupe = els.mugshotLoupe;
+    const ctx = loupe.getContext('2d');
+    const half = Math.floor(LOUPE_SRC / 2);
+    const cell = LOUPE_PX / LOUPE_SRC;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, LOUPE_PX, LOUPE_PX);
+    ctx.drawImage(els.mugshotCanvas, pixel.x - half, pixel.y - half,
+      LOUPE_SRC, LOUPE_SRC, 0, 0, LOUPE_PX, LOUPE_PX);
+    ctx.strokeStyle = '#C8102E';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(half * cell, half * cell, cell, cell);
+
+    loupe.classList.add('is-on');
+    // Sits in a corner and jumps to the opposite one as the cursor approaches,
+    // so it never covers the pixel being aimed at.
+    loupe.style.left = (pixel.x > SHOT_PX / 2 ? 4 : SHOT_PX - LOUPE_PX - 4) + 'px';
+    loupe.style.top = (pixel.y > SHOT_PX / 2 ? 4 : SHOT_PX - LOUPE_PX - 4) + 'px';
+
+    els.mugshotReadout.querySelector('i').style.background = pixel.hex;
+    els.mugshotReadout.querySelector('span').textContent =
+      pixel.hex + (shot && shot.armed ? ' - click to take' : ' - arm a chip first');
+  }
+
+  function clearLoupe() {
+    if (els.mugshotLoupe) els.mugshotLoupe.classList.remove('is-on');
+    if (!els.mugshotReadout) return;
+    els.mugshotReadout.querySelector('i').style.background = 'transparent';
+    els.mugshotReadout.querySelector('span').textContent = 'Hover the mugshot';
+  }
+
+  function closeMugshotEditor() {
+    if (!els.mugshotModal) return;
+    els.mugshotModal.hidden = true;
+    shot = null;
+  }
+
+  // clearing = hand this suspect back to the sampler, which is what saving a
+  // pair that matches the sampled one would mean anyway.
+  async function saveMugshotColors(clearing) {
+    if (!shot) return;
+
+    const pair = clearing ? null : shot.pair;
+    const userId = shot.userId;
+
+    els.saveMugshotColors.disabled = true;
+    setMugshotStatus('Saving colours.', 'note');
+
+    const result = await adminDb.rpc(ADMIN_RPCS.adminSetSuspectColors || 'ff_admin_set_suspect_colors', {
+      target_user_id: userId,
+      new_primary: pair ? pair[0] : null,
+      new_secondary: pair ? pair[1] : null
+    });
+
+    els.saveMugshotColors.disabled = false;
+
+    if (result.error) {
+      const error = result.error;
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      setMugshotStatus(missing
+        ? 'Run supabase/sql/ff_suspect_colors.sql first.'
+        : 'Save failed: ' + error.message, 'bad');
+      console.error('admin_set_suspect_colors failed:', error);
+      return;
+    }
+
+    setMugshotStatus(clearing
+      ? 'Cleared. This suspect is sampled from their mugshot again.'
+      : 'Saved. Live on the Suspects page and the tracker now.', 'good');
+
+    // Reload so the row behind the popup carries what is actually on file.
+    await loadRecords();
+
+    if (!shot) return;
+    const row = recordRows.find((record) => record.id === userId);
+    if (row) {
+      shot.pair = savedPairOf(row) || (shot.sampled ? shot.sampled.slice() : shot.pair);
+      paintMugshotEditor();
+    }
+  }
+
+  function setMugshotStatus(message, kind) {
+    window.ffToast?.(message, kind, 'mugshot');
+  }
+
+  // ===== APB =====
+  // An all points bulletin: one message to the whole league, or to just the
+  // suspects who still owe the open week a victim.
+  //
+  // It hands off to the admin's own mail client with a mailto: rather than
+  // sending anything itself. There is no server here to send from, the site is
+  // static, and the handoff has a real virtue besides: a bulletin to thirty
+  // people gets read once more, by a human, before it goes.
+  //
+  // Everyone is addressed in BCC. A survivor pool is a small league of people
+  // who mostly know each other, but publishing thirty addresses to thirty
+  // inboxes is still not the admin's to do.
+
+  // Past roughly this length a mailto: gets truncated by some clients, and a
+  // truncated BCC line silently drops recipients. At league size the list is
+  // nowhere near it; the check is here so that if it ever is, the page says so
+  // instead of quietly mailing half the league.
+  const APB_MAILTO_LIMIT = 1800;
+
+  function apbAddress(row) {
+    // The profile copy is the one the league is reached at; login_email is the
+    // fallback for a record where the two have drifted.
+    return String(row.email || row.login_email || '').trim();
+  }
+
+  // Their run is over, so there is no pick to chase. Same free-text match the
+  // rest of the site makes on result.
+  function apbEliminated(row) {
+    return /dun\s*dun/i.test(String(row.game_status || ''));
+  }
+
+  // Two halves of the same question: who has named a victim this week and who
+  // has not. Eliminated suspects are in neither, because their season is over
+  // and neither bulletin is addressed to them.
+  function apbRecipients(kind) {
+    const live = recordRows.filter((row) => apbAddress(row) && !apbEliminated(row));
+    return kind === 'named'
+      ? live.filter((row) => row.week_pick)
+      : live.filter((row) => !row.week_pick);
+  }
+
+  // The bulletin each group gets, as a starting point. It lands in the two
+  // fields below the cards rather than going straight to the mail client, so it
+  // can be read and changed first.
+  //
+  // Plain ASCII only, em dashes included: this text goes through
+  // encodeURIComponent into a mailto: and out to thirty different mail clients,
+  // and the ones that mangle a character mangle it in someone else's inbox
+  // where nobody here will see it.
+  function apbDraft(kind) {
+    const week = Number(window.CURRENT_WEEK) || 0;
+
+    // The tally the bulletin quotes. Everyone still in the game counts, whether
+    // or not they have an email on file - "3 of 12 picks in" is a fact about
+    // the league, not about who this particular bulletin reaches. Eliminated
+    // suspects are out of both halves: they cannot pick, so counting them would
+    // make the league look permanently behind.
+    const live = recordRows.filter((row) => !apbEliminated(row));
+    const picksIn = live.filter((row) => row.week_pick).length;
+
+    // The house rule, read from js/season.js rather than typed in, so the
+    // number in the email cannot drift from the one the site enforces.
+    const lockMinutes = Number(window.PICK_LOCK_MINUTES) || 5;
+
+    const subject = "(Fantasy Football) Week " + week +
+      " All Points Bulletin: Law & Order: Special Victory Unit";
+
+    // Week 1 only, and first, on both bulletins. The league is still open until
+    // the last kickoff of the opening week, and that is the one week where the
+    // most useful thing a member can do is bring somebody else in. From Week 2
+    // the door is shut and the paragraph would be a lie, so it does not appear.
+    const recruiting = week === 1
+      ? [
+          "It's not too late to get your friends to play! They have until " + lockMinutes +
+            " minutes until kickoff of the LAST game of week " + week +
+            ". Finger fellow suspects here: https://thegamebureau.com/ff",
+          ""
+        ]
+      : [];
+
+    if (kind === 'named') {
+      return {
+        subject: subject,
+        body: recruiting.concat([
+          "Your victim for Week " + week + " is named and on the record. You can change " +
+            "your choice up to " + lockMinutes + " minutes before the kickoff of your " +
+            "victim's game. You can only change it to a team that has not kicked off. " +
+            "Visit https://thegamebureau.com/ff/law/index.html for all of the rules.",
+          "",
+          "You can make your picks for the whole season right now and change them week " +
+            "by week if you'd like.",
+          "",
+          "As of this email, there are " + picksIn + " picks out of " + live.length +
+            " in. See live league info here: https://thegamebureau.com/ff/reports/index.html",
+          ""
+        ]).join('\n')
+      };
+    }
+
+    return {
+      subject: subject,
+      body: recruiting.concat([
+        "You have not named a victim for Week " + week + ". Name a team you expect to " +
+          "lose, before their game kicks off. Miss it and the case closes on you. You " +
+          "can change your choice up to " + lockMinutes + " minutes before that kickoff, " +
+          "and only to a team that has not kicked off. Visit " +
+          "https://thegamebureau.com/ff/law/index.html for all of the rules.",
+        "",
+        "You can make your picks for the whole season right now and change them week " +
+          "by week if you'd like.",
+        "",
+        "As of this email, there are " + picksIn + " picks out of " + live.length +
+          " in. Name yours here: https://thegamebureau.com/ff/victims/index.html?week=" + week,
+        ""
+      ]).join('\n')
+    };
+  }
+
+  function drawUpApb(kind) {
+    const rows = apbRecipients(kind);
+    if (!rows.length) {
+      setApbStatus('Nobody to send to.', 'note');
+      return;
+    }
+
+    const draft = apbDraft(kind);
+    apbKind = kind;
+    els.apbSubject.value = draft.subject;
+    els.apbBody.value = draft.body;
+    els.apbSend.disabled = false;
+
+    els.apbDraftNote.textContent =
+      rows.length + ' recipient' + (rows.length === 1 ? '' : 's') +
+      ', all in BCC. Edit it, then open it in your mail client.';
+
+    setApbStatus('Bulletin drawn up. Nothing is sent until you send it.', 'good');
+    els.apbSubject.focus();
+  }
+
+  function openApbMail() {
+    if (!apbKind) return;
+
+    const rows = apbRecipients(apbKind);
+    if (!rows.length) {
+      setApbStatus('Nobody to send to any more. Reload Records and try again.', 'bad');
+      return;
+    }
+
+    const bcc = rows.map(apbAddress).join(',');
+    const params = [
+      'bcc=' + encodeURIComponent(bcc),
+      'subject=' + encodeURIComponent(els.apbSubject.value),
+      'body=' + encodeURIComponent(els.apbBody.value)
+    ];
+    // The admin is the To: line - a mail client wants one, and every actual
+    // recipient is in BCC. It also means the sender keeps a copy.
+    const href = 'mailto:' + adminEmail + '?' + params.join('&');
+
+    if (href.length > APB_MAILTO_LIMIT) {
+      setApbStatus(
+        rows.length + ' addresses and this much text make a ' + href.length +
+        '-character link, long enough that some mail clients cut it short. ' +
+        'Check the BCC line and the message in the draft before sending.',
+        'bad'
+      );
+    } else {
+      setApbStatus('Draft opened for ' + rows.length + ' recipient' +
+        (rows.length === 1 ? '' : 's') + ', all in BCC.', 'good');
+    }
+
+    window.location.href = href;
+  }
+
+  function renderApb() {
+    const week = Number(window.CURRENT_WEEK) || 0;
+
+    if (els.apbAllTitle) {
+      els.apbAllTitle.textContent = week ? 'Victim Named — Week ' + week : 'Victim Named';
+    }
+    if (els.apbNoPickTitle) {
+      els.apbNoPickTitle.textContent = week ? 'No Victim Named — Week ' + week : 'No Victim Named';
+    }
+
+    const named = apbRecipients('named');
+    const noPick = apbRecipients('nopick');
+
+    apbFill(els.apbAllCount, els.apbAllNames, named, 'nobody has named a victim yet');
+    apbFill(els.apbNoPickCount, els.apbNoPickNames, noPick, 'everyone still in has named one');
+
+    const pairs = [
+      [els.apbAllEmail, named], [els.apbAllCopy, named],
+      [els.apbNoPickEmail, noPick], [els.apbNoPickCopy, noPick]
+    ];
+    for (const pair of pairs) {
+      if (pair[0]) pair[0].disabled = !pair[1].length;
+    }
+
+    // A group that has emptied out since the draft was written should not still
+    // have a live send button pointed at it.
+    if (apbKind && !apbRecipients(apbKind).length && els.apbSend) {
+      els.apbSend.disabled = true;
+    }
+
+    // What the two counts do not show: who could not be reached at all, and who
+    // is out of the game and so in neither bulletin.
+    const eliminated = recordRows.filter(apbEliminated).length;
+    const unreachable = recordRows.filter((row) => !apbAddress(row)).length;
+
+    if (!recordRows.length) {
+      setApbStatus('No roster loaded.', 'note');
+      return;
+    }
+
+    const notes = [recordRows.length + ' on the roster.'];
+    if (eliminated) notes.push(eliminated + ' eliminated, in neither bulletin.');
+    if (unreachable) notes.push(unreachable + ' with no email on file, unreachable.');
+    setApbStatus(notes.join(' '), unreachable ? 'note' : 'good');
+  }
+
+  // Who is on the list, spelled out: the handle, the address it is going to,
+  // and the team they named. A run of usernames was enough to count heads but
+  // not to check the list before sending it - the address is the thing that
+  // actually receives the bulletin, and the team is what the message is about.
+  //
+  // The no-pick card leaves the team column empty, which is the whole reason
+  // that card exists.
+  function apbFill(countEl, namesEl, rows, emptyLabel) {
+    if (countEl) {
+      countEl.textContent = rows.length + ' recipient' + (rows.length === 1 ? '' : 's');
+    }
+
+    if (!namesEl) return;
+
+    if (!rows.length) {
+      namesEl.innerHTML = '<li class="apb-name-empty">Nobody — ' +
+        escapeAdminHtml(emptyLabel) + '.</li>';
+      return;
+    }
+
+    namesEl.innerHTML = rows.map((row) => {
+      // A real name if there is one, because the admin panel is the one place
+      // the league's actual names live.
+      const real = [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
+      return '<li class="apb-name-row">' +
+        '<b>' + escapeAdminHtml(row.username || '(no handle)') +
+          (real ? ' <span class="apb-name-real">' + escapeAdminHtml(real) + '</span>' : '') + '</b>' +
+        '<span class="apb-name-email">' + escapeAdminHtml(apbAddress(row)) + '</span>' +
+        '<span class="apb-name-team">' + escapeAdminHtml(row.week_pick || '') + '</span>' +
+        '</li>';
+    }).join('');
+  }
+
+  async function copyApbAddresses(kind, button) {
+    const rows = apbRecipients(kind);
+    if (!rows.length || !button) return;
+
+    const copied = await copyToClipboard(rows.map(apbAddress).join(', '));
+
+    if (!copied) {
+      setApbStatus('Copy failed. Select the addresses by hand.', 'bad');
+      return;
+    }
+
+    const original = button.textContent;
+    button.textContent = 'Copied';
+    window.setTimeout(function () { button.textContent = original; }, 1200);
+    setApbStatus(rows.length + ' address' + (rows.length === 1 ? '' : 'es') + ' on the clipboard.', 'good');
+  }
+
+  function setApbStatus(message, kind) {
+    window.ffToast?.(message, kind, 'apb');
   }
 
   // ===== 2025 COLD CASES =====
@@ -524,12 +1198,14 @@
     return escapeAdminHtml(value).replace(/\n/g, '&#10;');
   }
 
-  async function copyInvite(button) {
-    const text = button.dataset.copyInvite || '';
-    if (!text) return;
+  // Shared by the invite buttons and the APB. Returns whether it worked, so
+  // each caller can report it wherever makes sense for that panel.
+  async function copyToClipboard(text) {
+    if (!text) return false;
 
     try {
       await navigator.clipboard.writeText(text);
+      return true;
     } catch (error) {
       // Clipboard access needs a secure context, which rules out plain http on
       // anything but localhost. Fall back to the old selection trick rather
@@ -541,14 +1217,26 @@
       scratch.style.opacity = '0';
       document.body.appendChild(scratch);
       scratch.select();
+
+      let copied = true;
       try {
         document.execCommand('copy');
       } catch (fallbackError) {
-        setArchiveStatus('Copy failed. Select the text by hand.', 'bad');
-        scratch.remove();
-        return;
+        copied = false;
       }
+
       scratch.remove();
+      return copied;
+    }
+  }
+
+  async function copyInvite(button) {
+    const text = button.dataset.copyInvite || '';
+    if (!text) return;
+
+    if (!(await copyToClipboard(text))) {
+      setArchiveStatus('Copy failed. Select the text by hand.', 'bad');
+      return;
     }
 
     // On the button itself, because a status line at the top of a 32-row table
@@ -559,10 +1247,7 @@
   }
 
   function setArchiveStatus(message, kind) {
-    if (!els.archiveStatus) return;
-    els.archiveStatus.textContent = message;
-    els.archiveStatus.classList.remove('join-status-good', 'join-status-bad', 'join-status-note');
-    if (kind) els.archiveStatus.classList.add(`join-status-${kind}`);
+    window.ffToast?.(message, kind, 'archive');
   }
 
   // ===== REMOVAL =====
@@ -638,361 +1323,8 @@
       .replace(/'/g, '&#39;');
   }
 
-  async function reconcileSchedule() {
-    setWorking(true);
-    renderSummary('Loading schedule table and source schedule.', 'note');
-
-    try {
-      const tableRows = await fetchScheduleRows();
-      lastTableRows = tableRows;
-      lastPrompt = buildReconcilePrompt(tableRows);
-      els.prompt.value = lastPrompt;
-
-      let sourceGames;
-      try {
-        sourceGames = await fetchPlainTextSportsGames();
-      } catch (sourceError) {
-        renderSummary(
-          `Direct fetch failed: ${sourceError.message}. Copy the audit prompt below and run it with web access.`,
-          'bad'
-        );
-        renderFallbackRow('Browser fetch was blocked or failed. The prompt contains the table snapshot.');
-        return;
-      }
-
-      const sourceRows = expandGamesToRows(sourceGames);
-      const diffs = compareScheduleRows(sourceRows, tableRows);
-      renderDiffs(diffs, sourceRows.length, tableRows.length);
-      lastPrompt = buildReconcilePrompt(tableRows, `In-browser comparison found ${diffs.length} differences.`);
-      els.prompt.value = lastPrompt;
-    } catch (error) {
-      renderSummary(`Schedule audit failed: ${error.message}`, 'bad');
-      renderFallbackRow('Could not read the schedule table.');
-      lastPrompt = buildReconcilePrompt([], `Schedule table read failed: ${error.message}`);
-      els.prompt.value = lastPrompt;
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function copyReconcilePrompt() {
-    setWorking(true);
-
-    try {
-      await ensurePrompt();
-      els.prompt.focus();
-      els.prompt.select();
-
-      try {
-        await navigator.clipboard.writeText(lastPrompt);
-      } catch (_error) {
-        document.execCommand('copy');
-      }
-
-      setAdminStatus('Audit prompt copied.', 'good');
-    } catch (error) {
-      setAdminStatus(`Could not build audit prompt: ${error.message}`, 'bad');
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function ensurePrompt() {
-    if (!lastTableRows) {
-      try {
-        lastTableRows = await fetchScheduleRows();
-      } catch (_error) {
-        lastTableRows = [];
-      }
-    }
-
-    lastPrompt = buildReconcilePrompt(lastTableRows);
-    if (els.prompt) {
-      els.prompt.value = lastPrompt;
-    }
-  }
-
-  async function fetchScheduleRows() {
-    const { data, error } = await adminDb
-      .from(ADMIN_SCHEDULE_TABLE)
-      .select('season,week,team,opponent,home_away,kickoff_at_utc,is_tbd,source_url')
-      .eq('season', SOURCE_SEASON)
-      .order('week', { ascending: true })
-      .order('team', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    return (data || []).map(normalizeScheduleRow);
-  }
-
-  async function fetchPlainTextSportsGames() {
-    const response = await fetch(SOURCE_URL, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Plain Text Sports returned HTTP ${response.status}`);
-    }
-
-    const html = await response.text();
-    const games = parsePlainTextSportsSchedule(html);
-    if (!games.length) {
-      throw new Error('No regular season games were parsed.');
-    }
-
-    return games;
-  }
-
-  function parsePlainTextSportsSchedule(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const slugLookup = new Map((window.NFL_TEAMS || []).map((team) => [slugify(team.name), team.name]));
-    const games = [];
-
-    for (let week = 1; week <= 18; week += 1) {
-      const weekToggle = doc.getElementById(`week${week}`);
-      const weekGames = weekToggle?.parentElement?.querySelector('.week-games');
-      if (!weekGames) {
-        continue;
-      }
-
-      Array.from(weekGames.children).forEach((dayBlock) => {
-        const pendingTeams = [];
-        const nodes = dayBlock.querySelectorAll('a[href*="/teams/"], time[data-format*="game-start-time"]');
-
-        nodes.forEach((node) => {
-          if (node.tagName === 'A') {
-            const team = teamNameFromHref(node.getAttribute('href'), slugLookup);
-            if (team) {
-              pendingTeams.push(team);
-            }
-            return;
-          }
-
-          if (node.tagName !== 'TIME' || pendingTeams.length < 2) {
-            return;
-          }
-
-          const home = pendingTeams.pop();
-          const away = pendingTeams.pop();
-          const rawKickoff = node.getAttribute('datetime') || '';
-          const isTbd = node.textContent.trim().toUpperCase() === 'TBD' || rawKickoff.startsWith('2100-');
-
-          games.push({
-            season: SOURCE_SEASON,
-            week,
-            away,
-            home,
-            kickoff_at_utc: isTbd ? null : normalizeUtc(rawKickoff),
-            is_tbd: isTbd,
-          });
-        });
-      });
-    }
-
-    return games;
-  }
-
-  function expandGamesToRows(games) {
-    return games.flatMap((game) => [
-      {
-        season: game.season,
-        week: game.week,
-        team: game.away,
-        opponent: game.home,
-        home_away: '@',
-        kickoff_at_utc: game.kickoff_at_utc,
-        is_tbd: Boolean(game.is_tbd),
-        source_url: `${SOURCE_URL}#week${game.week}`,
-      },
-      {
-        season: game.season,
-        week: game.week,
-        team: game.home,
-        opponent: game.away,
-        home_away: 'vs',
-        kickoff_at_utc: game.kickoff_at_utc,
-        is_tbd: Boolean(game.is_tbd),
-        source_url: `${SOURCE_URL}#week${game.week}`,
-      },
-    ]);
-  }
-
-  function compareScheduleRows(sourceRows, tableRows) {
-    const sourceMap = rowsByKey(sourceRows);
-    const tableMap = rowsByKey(tableRows);
-    const keys = new Set([...sourceMap.keys(), ...tableMap.keys()]);
-    const diffs = [];
-
-    Array.from(keys)
-      .sort(sortScheduleKey)
-      .forEach((key) => {
-        const source = sourceMap.get(key);
-        const table = tableMap.get(key);
-        const [week, team] = key.split('|');
-
-        if (!source) {
-          diffs.push({
-            type: 'Extra in table',
-            week,
-            team,
-            field: 'row',
-            tableValue: summarizeRow(table),
-            sourceValue: 'missing',
-          });
-          return;
-        }
-
-        if (!table) {
-          diffs.push({
-            type: 'Missing in table',
-            week,
-            team,
-            field: 'row',
-            tableValue: 'missing',
-            sourceValue: summarizeRow(source),
-          });
-          return;
-        }
-
-        ['opponent', 'home_away', 'kickoff_at_utc', 'is_tbd'].forEach((field) => {
-          if (String(table[field] ?? '') !== String(source[field] ?? '')) {
-            diffs.push({
-              type: 'Changed',
-              week,
-              team,
-              field,
-              tableValue: table[field] ?? '',
-              sourceValue: source[field] ?? '',
-            });
-          }
-        });
-      });
-
-    return diffs;
-  }
-
-  function rowsByKey(rows) {
-    const map = new Map();
-    rows.forEach((row) => {
-      map.set(`${Number(row.week)}|${row.team}`, row);
-    });
-    return map;
-  }
-
-  function normalizeScheduleRow(row) {
-    return {
-      season: Number(row.season),
-      week: Number(row.week),
-      team: row.team,
-      opponent: row.opponent,
-      home_away: row.home_away,
-      kickoff_at_utc: row.is_tbd ? null : normalizeUtc(row.kickoff_at_utc),
-      is_tbd: Boolean(row.is_tbd),
-      source_url: row.source_url,
-    };
-  }
-
-  function normalizeUtc(value) {
-    if (!value) {
-      return null;
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    return date.toISOString().replace('.000Z', 'Z');
-  }
-
-  function teamNameFromHref(href, slugLookup) {
-    const slug = String(href || '').split('/').filter(Boolean).pop();
-    if (!slug) {
-      return '';
-    }
-
-    return slugLookup.get(slug) || titleCaseSlug(slug);
-  }
-
-  function slugify(value) {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-  }
-
-  function titleCaseSlug(slug) {
-    return String(slug || '')
-      .split('-')
-      .filter(Boolean)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(' ');
-  }
-
-  function summarizeRow(row) {
-    if (!row) {
-      return '';
-    }
-
-    const kickoff = row.is_tbd ? 'TBD' : row.kickoff_at_utc;
-    return `${row.home_away} ${row.opponent}, ${kickoff}`;
-  }
-
-  function sortScheduleKey(a, b) {
-    const [weekA, teamA] = a.split('|');
-    const [weekB, teamB] = b.split('|');
-    return Number(weekA) - Number(weekB) || teamA.localeCompare(teamB);
-  }
-
-  function renderDiffs(diffs, sourceCount, tableCount) {
-    const summary = `${diffs.length} difference${diffs.length === 1 ? '' : 's'} found. Source rows: ${sourceCount}. Table rows: ${tableCount}.`;
-    renderSummary(summary, diffs.length ? 'bad' : 'good');
-
-    if (!diffs.length) {
-      renderFallbackRow('No differences found.');
-      return;
-    }
-
-    els.diffBody.innerHTML = diffs
-      .map(
-        (diff) => `
-          <tr>
-            <td>${escapeHtml(diff.week)}</td>
-            <td>${escapeHtml(diff.team)}</td>
-            <td>${escapeHtml(diff.type)}</td>
-            <td>${escapeHtml(diff.field)}</td>
-            <td>${escapeHtml(diff.tableValue)}</td>
-            <td>${escapeHtml(diff.sourceValue)}</td>
-          </tr>
-        `
-      )
-      .join('');
-  }
-
-  function renderFallbackRow(message) {
-    if (!els.diffBody) {
-      return;
-    }
-
-    els.diffBody.innerHTML = `<tr><td colspan="6">${escapeHtml(message)}</td></tr>`;
-  }
-
-  function renderSummary(message, kind) {
-    if (!els.summary) {
-      return;
-    }
-
-    els.summary.className = `admin-summary ${statusClass(kind)}`;
-    els.summary.textContent = message;
-  }
-
   function setAdminStatus(message, kind) {
-    if (!els.status) {
-      return;
-    }
-
-    els.status.className = `join-status ${statusClass(kind)}`;
-    els.status.textContent = message;
+    window.ffToast?.(message, kind, 'gate');
   }
 
   function hideTools() {
@@ -1002,66 +1334,17 @@
     if (els.recordsPanel) {
       els.recordsPanel.hidden = true;
     }
+    if (els.schedulePanel) {
+      els.schedulePanel.hidden = true;
+    }
+    if (els.apbPanel) {
+      els.apbPanel.hidden = true;
+    }
     if (els.archivePanel) {
       els.archivePanel.hidden = true;
     }
     closeDeleteModal();
+    closeMugshotEditor();
   }
 
-  function setWorking(isWorking) {
-    [els.reconcile, els.copyPrompt].forEach((button) => {
-      if (button) {
-        button.disabled = isWorking;
-      }
-    });
-  }
-
-  function statusClass(kind) {
-    if (kind === 'good') {
-      return 'admin-diff-ok';
-    }
-
-    if (kind === 'bad') {
-      return 'admin-diff-bad';
-    }
-
-    return 'admin-diff-note';
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function buildReconcilePrompt(tableRows, note = '') {
-    const snapshot = JSON.stringify(tableRows || [], null, 2);
-    const noteLine = note ? `\nNote from admin page: ${note}\n` : '';
-
-    return `Audit and reconcile the NFL schedule table for The Game Bureau.
-
-Supabase project: ${ADMIN_PROJECT_REF}
-Table: public.${ADMIN_SCHEDULE_TABLE}
-Season: ${SOURCE_SEASON}
-Source of truth: ${SOURCE_URL}
-Table editor: ${ADMIN_SCHEDULE_TABLE_URL}${noteLine}
-Task:
-1. Fetch the Plain Text Sports schedule page.
-2. Parse regular season weeks 1 through 18.
-3. Convert each game into two team rows:
-   - away team row has home_away = '@' and opponent = home team.
-   - home team row has home_away = 'vs' and opponent = away team.
-   - kickoff_at_utc is the ISO UTC kickoff time.
-   - if Plain Text Sports lists TBD or uses 2100-01-01T05:00:00Z, store kickoff_at_utc as null and is_tbd as true.
-   - source_url should be ${SOURCE_URL}#week{week}.
-4. Compare those source rows against this current table snapshot.
-5. Report missing rows, extra rows, and changed fields.
-6. Generate SQL to upsert source rows into public.${ADMIN_SCHEDULE_TABLE}. Include deletes only for rows that are definitely extra.
-
-Current public.${ADMIN_SCHEDULE_TABLE} snapshot:
-${snapshot}`;
-  }
 })();

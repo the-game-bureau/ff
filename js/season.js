@@ -13,13 +13,21 @@ var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 // the browser stricter, never looser.
 var PICK_LOCK_MINUTES = 5;
 
-// The one handle that gets the admin room, and where the door is. Matched
-// exactly, the same comparison js/admin.js:11 makes, so the link never appears
-// for someone the admin page would then turn away. Absolute rather than
-// relative because the badge sits on pages at two different depths and this
-// saves working out a prefix for each.
+// The one handle that gets the admin room, and where the door is. Compared
+// case-insensitively, which is what js/admin.js does before its own check, so
+// the link appears exactly when the admin page would let you in — the stored
+// handle is mixed case, and the badge's text-transform hides that.
 var ADMIN_USERNAME = 'theclarinetofjustice';
-var ADMIN_URL = 'https://thegamebureau.com/ff/admin/index.html';
+var ADMIN_PATH = 'admin/index.html';
+
+// The badge sits on pages nought, one and two levels deep, so the path to the
+// admin room is not the same from each. Every page already declares its own
+// depth on #siteNav for js/nav.js and js/auth-corner.js to read; this reads
+// the same attribute rather than inventing a second way to know.
+function adminUrl(){
+  const prefix = document.getElementById('siteNav')?.dataset.prefix || '';
+  return prefix + ADMIN_PATH;
+}
 
 window.SEASON = SEASON;
 window.CURRENT_WEEK = CURRENT_WEEK;
@@ -64,12 +72,12 @@ function renderHeaderUser(username){
     return;
   }
 
-  if(name === ADMIN_USERNAME){
+  if(name.toLowerCase() === ADMIN_USERNAME){
     // Built as a node rather than innerHTML so the name is never parsed as
     // markup, even though this branch only ever runs for a fixed string.
     const link = document.createElement('a');
     link.className = 'week-badge-admin';
-    link.href = ADMIN_URL;
+    link.href = adminUrl();
     link.textContent = name;
     link.title = 'Admin';
     el.replaceChildren(link);
@@ -98,7 +106,23 @@ function fitHeaderUser(){
   }
 }
 
+// The pick lock stated in prose. law/index.html spells the rule out in words
+// and the APB emails quote the same number; both have to agree with what the
+// browser and the server actually enforce, so the figure is filled in from
+// PICK_LOCK_MINUTES rather than typed into the page. The markup carries the
+// current value as its text, so the rule still reads correctly with the script
+// blocked.
+function fillPickLockMinutes(){
+  for(const el of document.querySelectorAll('[data-pick-lock]')){
+    el.textContent = PICK_LOCK_MINUTES;
+  }
+}
+
+window.fillPickLockMinutes = fillPickLockMinutes;
 window.renderHeaderUser = renderHeaderUser;
 window.fitHeaderUser = fitHeaderUser;
 
-document.addEventListener('DOMContentLoaded', renderWeekBadge);
+document.addEventListener('DOMContentLoaded', () => {
+  renderWeekBadge();
+  fillPickLockMinutes();
+});

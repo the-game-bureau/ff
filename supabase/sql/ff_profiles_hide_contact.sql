@@ -12,9 +12,15 @@
 -- row-level security and the column grants are. This closes the column half.
 --
 -- WHAT THE SITE ACTUALLY READS FROM THIS TABLE
---   - signed out: id, username, avatar_data_url  (the lineup and the tracker)
+--   - signed out: id, username, avatar_data_url, color_primary,
+--                 color_secondary                 (the lineup and the tracker)
 --   - signed in:  the above plus first_name       (league members see each
 --                 other's first names on the board)
+-- The two colour columns arrived with supabase/sql/ff_suspect_colors.sql and
+-- are as public as the mugshot they were sampled from — they are painted onto a
+-- page anyone can open. They are listed here because this file revokes before
+-- it grants: leave them out and re-running it silently takes every hand-picked
+-- suspect colour off the site.
 -- Nothing in the browser ever reads email or last_name from this table. Those
 -- two reach the admin screen only through _2026_admin_list_profiles, a
 -- SECURITY DEFINER function that re-checks the caller — it runs as the function
@@ -68,11 +74,11 @@ revoke select on public._2026_profiles from anon;
 revoke select on public._2026_profiles from authenticated;
 
 -- Signed out: the lineup and tracker, nothing personal.
-grant select (id, username, avatar_data_url)
+grant select (id, username, avatar_data_url, color_primary, color_secondary)
   on public._2026_profiles to anon;
 
 -- Signed in: the same, plus the first name the board shows to league members.
-grant select (id, username, first_name, avatar_data_url)
+grant select (id, username, first_name, avatar_data_url, color_primary, color_secondary)
   on public._2026_profiles to authenticated;
 
 notify pgrst, 'reload schema';

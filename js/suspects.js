@@ -172,6 +172,11 @@ function renderSuspects(suspects){
 
   fitTeamNames(grid);
   paintPlacardStripes(grid);
+
+  // The overrides arrive from the database after this first paint, so paint the
+  // grid again once they do. Painting is setting two custom properties, and the
+  // event only fires when there is at least one override to apply.
+  window.addEventListener('ff-suspect-colors-loaded', () => paintPlacardStripes(grid), { once: true });
 }
 
 // ===== STRIPE COLOURS FROM THE MUGSHOT =====
@@ -194,9 +199,9 @@ function paintPlacardStripes(grid){
       placard.style.setProperty('--stripe-b', colors[1]);
     };
 
-    // The same exception list the Suspect Tracker reads, so a suspect whose
-    // colours were chosen by hand looks identical on both pages rather than
-    // sampled here and overridden there. See js/suspect-colors.js.
+    // The same overrides the Suspect Tracker reads, so a suspect whose colours
+    // were chosen by hand looks identical on both pages rather than sampled
+    // here and overridden there. See js/suspect-colors.js.
     const override = window.suspectColorOverride?.(card.dataset.username);
     if(override){ apply(override); continue; }
 

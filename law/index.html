@@ -17,9 +17,9 @@
   <meta property="og:image" content="../src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260908b"></script>
+  <script src="../js/supabase-config.js?v=20260908f"></script>
 
-<link rel="stylesheet" href="../css/site.css?v=20260908b"/>
+<link rel="stylesheet" href="../css/site.css?v=20260908f"/>
 </head>
 
 <body>
@@ -44,6 +44,15 @@
         <li>If they <em>lose</em>, you slide by for the week.</li>
         <li>If they win or tie, that's your case closed. DUN DUN.</li>
         <li>Each NFL team can be chosen only once per season.</li>
+        <!-- What the APB emails say about changing a pick, stated here too,
+             because those messages send people to this page for the full rules.
+             The minute figure is filled in by js/season.js from
+             PICK_LOCK_MINUTES, so the number in the rules cannot drift from the
+             one the site and the server enforce. -->
+        <li>You can change your victim up to <span data-pick-lock>5</span> minutes before
+            their game kicks off &mdash; but only to a team that has not kicked off yet.</li>
+        <li>You can name victims for the whole season right now and change them week by
+            week if you'd like.</li>
         <!-- Ruled off: everything above is how a week works, everything below
              is how the season ends. -->
         <li class="law-break">Our game will continue into the playoffs if necessary. All playoff teams will be available in the first week of the playoffs.</li>
@@ -57,14 +66,14 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260908b"></script>
-  <script src="../js/season.js?v=20260908b"></script>
-  <script src="../js/nav.js?v=20260908b"></script>
-  <script src="../js/auth-corner.js?v=20260908b"></script>
-  <script src="../js/join-modal.js?v=20260908b"></script>
-  <script src="../js/join.js?v=20260908b"></script>
-  <script src="../js/password-reset.js?v=20260908b"></script>
-  <script src="../js/join-prefill.js?v=20260908b"></script>
-  <script src="../js/welcome.js?v=20260908b"></script>
+  <script src="../js/nfl-schedule.js?v=20260908f"></script>
+  <script src="../js/season.js?v=20260908f"></script>
+  <script src="../js/nav.js?v=20260908f"></script>
+  <script src="../js/auth-corner.js?v=20260908f"></script>
+  <script src="../js/join-modal.js?v=20260908f"></script>
+  <script src="../js/join.js?v=20260908f"></script>
+  <script src="../js/password-reset.js?v=20260908f"></script>
+  <script src="../js/join-prefill.js?v=20260908f"></script>
+  <script src="../js/welcome.js?v=20260908f"></script>
 </body>
 </html>

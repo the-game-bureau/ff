@@ -190,6 +190,13 @@ body{
   gap: 8px;
 }
 
+/* Signed in, the week badge opposite grows a third cell for the username and
+   stands 68px to this corner's 43. Hanging both from the same top then leaves
+   ESCAPE floating above the badge's centre line rather than opposite it, so
+   drop it by half the difference. Signed out the two are within a few pixels
+   of each other and this does not apply. */
+.header:has(#headerUser:not([hidden])) .header-corner{ top: 28px; }
+
 .header-user-row{
   display: flex;
   align-items: stretch;
@@ -1183,7 +1190,347 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    An editable table, so the cells have to read as fields without turning each
    row into a stack of boxes. Flat inputs with a single hairline underneath: the
    frame arrives on focus, when it means something. */
-#adminRecordsTable{ min-width: 900px; }
+/* One more editable column than it was drawn for. */
+#adminRecordsTable{ min-width: 1010px; }
+
+/* The Colour Lab's per-card save control and its state line. */
+.lab-save-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lab-save-state{
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.lab-save-state.is-good{ color: var(--primary-blue); }
+.lab-save-state.is-note{ color: var(--primary-red); }
+.lab-save-state.is-bad{ color: var(--primary-red); font-weight: 700; }
+.lab-save-state.is-saving{ color: var(--text-secondary); }
+
+/* ===== TOASTS ===== */
+/* Status messages, on the page rather than inside the panel that raised them.
+   Bottom-right so they clear the week badge and the Escape badge in the two top
+   corners, and above 30000 so they sit over the modals too - a save that failed
+   inside a dialog has to be readable without closing it. */
+.toasts{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast{
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 11px 14px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: var(--rule-fat);
+  box-shadow: var(--shadow);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  animation: toastIn 0.16s steps(3, end);
+}
+
+/* A bar down the leading edge rather than a coloured card: the message stays
+   black on paper and readable, and the colour is the glance. */
+.toast-good{ border-left: 8px solid var(--primary-blue); }
+.toast-bad{ border-left: 8px solid var(--primary-red); }
+.toast-note{ border-left: 8px solid var(--accent-yellow); }
+
+@keyframes toastIn{
+  from{ opacity: 0; transform: translateX(10px); }
+  to{ opacity: 1; transform: translateX(0); }
+}
+
+/* ===== MUGSHOT EDITOR ===== */
+/* Wider than the other modals: the photo and the colour controls belong side
+   by side, because the whole point is watching the preview change while
+   picking off the picture next to it. */
+/* Both classes, so this does not depend on sitting after .modal-card's own
+   max-width further down the file. */
+.modal-card.modal-card-wide{ max-width: 720px; }
+
+.shot-editor{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  text-align: left;
+  margin-top: 14px;
+}
+
+.shot-editor-shot{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.shot-editor-colors{
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shot-editor-colors .gate-help{ margin: 0; text-align: left; }
+
+.shot-editor-flags{
+  min-height: 1em;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--primary-red);
+}
+
+.shot-editor .modal-actions{ margin-top: auto; }
+
+/* ===== APB DRAFT ===== */
+/* The bulletin itself, sitting under the two groups it can be addressed to.
+   It is the thing that actually gets sent, so it is a text field and not a
+   preview: what is read here is what leaves. */
+.apb-draft{
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: var(--rule);
+  text-align: left;
+}
+
+.apb-draft-label{
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.apb-draft-subject,
+.apb-draft-body{
+  display: block;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 9px 10px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.apb-draft-body{ resize: vertical; }
+
+.apb-draft-actions{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.apb-draft-note{
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ===== NFL SCHEDULE ===== */
+/* Eighteen weeks as eighteen buttons. Small and dense on purpose: this is a
+   row of links out, not a control panel. */
+.week-links{
+  /* Nine and nine: weeks 1-9 on the first row, 10-18 on the second. A grid
+     rather than a wrapping flex row, because wrapping puts as many as happen to
+     fit on the first line and leaves the second one short and ragged. Equal
+     columns also mean both rows span the same width, so the block reads as
+     centred under the heading. */
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.week-link{
+  padding: 8px 6px;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+/* The open week, so the one you almost certainly want is the one you see
+   first. Matches the red the rest of the site uses for "this is the live one". */
+.week-link-current{
+  background: var(--primary-red);
+  color: var(--paper-raised);
+}
+
+/* ===== COLLAPSIBLE ADMIN PANEL ===== */
+/* A <summary> styled as the section heading it replaces, so a collapsed panel
+   reads the same as an open one. list-style:none plus the ::-webkit- rule kills
+   both native markers; the caret below is ours, so it can sit in the type the
+   rest of the page uses. */
+.admin-collapse > summary{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  list-style: none;
+}
+
+.admin-collapse > summary::-webkit-details-marker{ display: none; }
+
+.admin-collapse > summary::before{
+  /* Drawn from borders rather than set as a character: an arrow glyph is
+     rendered in --font-display, which is Friz Quadrata and has no arrows in
+     it, so it came out as a tofu box. Borders need no font at all, and a hard
+     triangle suits the look better than a glyph would. */
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 10px solid var(--primary-red);
+}
+
+/* Closed points right, open points down. */
+.admin-collapse[open] > summary::before{
+  border-top: 10px solid var(--primary-red);
+  border-bottom: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+}
+
+.admin-collapse > summary:hover,
+.admin-collapse > summary:focus-visible{ color: var(--primary-red); }
+
+/* The heading it replaced carried this gap to whatever followed it. */
+.admin-collapse[open] > summary{ margin-bottom: 10px; }
+
+/* ===== APB ===== */
+/* Two audiences side by side, each its own stacked card. Same hard rule and
+   zero-blur offset as everything else on the page. */
+.apb-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.apb-card{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+.apb-card-title{
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.apb-count{
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-red);
+  letter-spacing: 0.02em;
+}
+
+/* The roll call: handle, address, team, one row each. Capped and scrollable so
+   a full league does not push the buttons off the bottom of the card. */
+.apb-names{
+  flex: 1;
+  max-height: 168px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  list-style: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.apb-name-row{
+  display: grid;
+  /* The address gets the slack: a handle and a team name are short and known,
+     an email is neither. */
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.09);
+}
+
+.apb-name-row b{ color: var(--ink); }
+
+.apb-name-real{
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.apb-name-email{
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Empty on the no-pick card, which is the point of that card. */
+.apb-name-team{
+  font-weight: 700;
+  color: var(--primary-red);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.apb-name-empty{ padding: 6px 0; }
+
+@media (max-width: 900px){
+  /* Three columns in a card this narrow crushes the address; stack instead. */
+  .apb-name-row{ grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .apb-name-team{ text-align: left; }
+}
+
+.apb-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.apb-actions .btn{ flex: 1 1 130px; }
 
 .admin-cell-input{
   width: 100%;
@@ -3889,6 +4236,9 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .action-buttons,
   .admin-actions{ flex-direction: column; align-items: stretch; }
 
+  /* Nine 40px-wide buttons is not a row anyone can hit. */
+  .week-links{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
   .modal-backdrop{ padding: 14px; }
 
   .modal-card{
@@ -4032,27 +4382,6 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 }
 
 .lab-hint{ font-weight: 700; text-transform: none; letter-spacing: 0.02em; }
-
-.lab-out-label{
-  display: block;
-  margin-bottom: 5px;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-}
-
-.lab-out{
-  display: block;
-  width: 100%;
-  padding: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.6;
-  color: var(--ink);
-  background: var(--paper-raised);
-  border: var(--rule);
-  resize: vertical;
-}
 
 .lab-grid{
   list-style: none;

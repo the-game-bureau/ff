@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin &mdash; Law &amp; Order: Special Victory Unit</title>
+  <title>Squad Room &mdash; Law &amp; Order: Special Victory Unit</title>
 
   <link rel="icon" type="image/x-icon" href="../src/lawandorder.jpg"/>
   <link rel="apple-touch-icon" sizes="180x180" href="../src/lawandorder.jpg"/>
 
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="https://lawandorder-svu.app/admin/"/>
-  <meta property="og:title" content="Admin &mdash; Law &amp; Order: Special Victory Unit"/>
+  <meta property="og:title" content="Squad Room &mdash; Law &amp; Order: Special Victory Unit"/>
   <meta property="og:description" content="Schedule reconciliation for Special Victory Unit."/>
   <meta property="og:image" content="../src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260908b"></script>
+  <script src="../js/supabase-config.js?v=20260908f"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260908b"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260908f"/>
 </head>
 
 <body>
@@ -26,125 +26,242 @@
       <div class="law-text">LAW<span class="ampersand">&</span></div>
       <div class="order-text">ORDER</div>
     </div>
-    <div class="svu-subtitle">Admin</div>
+    <div class="svu-subtitle">Squad Room</div>
     <div id="weekBadge" class="week-badge" aria-live="polite"></div>
     <h1>Law &amp; Order: Special Victory Unit</h1>
-    <p class="tagline">"Trust, but verify the schedule."</p>
+    <p class="tagline">"Everything on this board is somebody's bad week."</p>
   </header>
 
   <div id="siteNav" data-current="admin" data-prefix="../"></div>
 
   <div class="container">
+    <!-- An all points bulletin: one message out to the whole league, or to just
+         the suspects who have not named a victim yet this week. Addresses go in
+         BCC so nobody's inbox learns anyone else's, and it hands off to the
+         admin's own mail client rather than sending from here — there is no
+         server to send from, and it means the message is read once more before
+         it goes out to thirty-odd people. -->
+    <section class="game-info admin-panel" id="adminApbPanel" aria-labelledby="adminApbTitle" hidden>
+      <details class="admin-collapse">
+        <summary id="adminApbTitle">APB</summary>
+        <p class="gate-help">
+          Puts out a bulletin to the league. Every address goes in <strong>BCC</strong>,
+          so no recipient sees another. Nothing sends from this page: the button opens
+          your mail client with the bulletin drawn up, and you send it. Reads the same
+          roster as FF Players &mdash; hit <strong>Reload Records</strong> above if
+          it looks stale.
+        </p>
+
+        <div class="apb-grid">
+          <article class="apb-card">
+            <h3 class="apb-card-title" id="apbAllTitle">Victim Named</h3>
+            <p class="apb-count" id="apbAllCount">&mdash;</p>
+            <ul class="apb-names" id="apbAllNames"></ul>
+            <div class="apb-actions">
+              <button id="btnApbAllEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
+              <button id="btnApbAllCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
+            </div>
+          </article>
+
+          <article class="apb-card">
+            <h3 class="apb-card-title" id="apbNoPickTitle">No Victim Named</h3>
+            <p class="apb-count" id="apbNoPickCount">&mdash;</p>
+            <ul class="apb-names" id="apbNoPickNames"></ul>
+            <div class="apb-actions">
+              <button id="btnApbNoPickEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
+              <button id="btnApbNoPickCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
+            </div>
+          </article>
+        </div>
+
+        <!-- What actually goes out. Drawn up when a card's Email button is
+             pressed, and editable first: a bulletin that reads well is worth the
+             extra step, and a pre-written one that cannot be changed is worse
+             than no draft at all. -->
+        <div class="apb-draft">
+          <label class="apb-draft-label" for="apbSubject">Subject</label>
+          <input id="apbSubject" class="apb-draft-subject" type="text" spellcheck="true"/>
+
+          <label class="apb-draft-label" for="apbBody">Message</label>
+          <textarea id="apbBody" class="apb-draft-body" rows="7" spellcheck="true"></textarea>
+
+          <div class="apb-draft-actions">
+            <button id="btnApbSend" class="btn btn-primary" type="button" disabled>Open In Mail</button>
+            <span class="apb-draft-note" id="apbDraftNote">Pick a group above to draw one up.</span>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- The credentials gate and the links out. This was the Schedule
+         Reconciliation panel; the audit tool it was built around is gone, and
+         the schedule and playoff games are adjusted by hand in the table now. -->
     <section class="game-info admin-panel" aria-labelledby="adminTitle">
-      <h2 id="adminTitle">Schedule Reconciliation</h2>
-      <div id="adminStatus" class="join-status" role="status" aria-live="polite">Checking credentials...</div>
+      <details class="admin-collapse">
+        <summary id="adminTitle">Database</summary>
 
-      <div id="adminTools" class="admin-tools" hidden>
-        <div class="admin-actions">
-          <button id="btnReconcileSchedule" class="btn btn-primary" type="button">Reconcile Schedule</button>
-          <button id="btnCopyReconcilePrompt" class="btn btn-secondary" type="button">Copy Prompt</button>
-          <a class="btn btn-secondary" href="https://plaintextsports.com/nfl/2026/schedule" target="_blank" rel="noopener noreferrer">Open Source</a>
-          <a id="adminScheduleTableLink" class="btn btn-secondary" href="https://supabase.com/dashboard/project/vkoczgzizzppdrpvpemh/editor/table/ff_nfl_schedule?schema=public" target="_blank" rel="noopener noreferrer">Open Table</a>
-          <a class="btn btn-secondary" href="colors/">Colour Lab</a>
+        <div id="adminTools" class="admin-tools" hidden>
+          <div class="admin-actions">
+            <!-- The project itself, which is every table plus the SQL editor, logs
+                 and auth users. href is rewritten from supabase-config.js so it
+                 follows the project ref. -->
+            <a id="adminDatabaseLink" class="btn btn-secondary" href="https://supabase.com/dashboard/project/vkoczgzizzppdrpvpemh/editor/17649?schema=public" target="_blank" rel="noopener noreferrer">Open In Supabase</a>
+          </div>
         </div>
+      </details>
+    </section>
 
-        <div class="admin-summary" id="adminSummary"></div>
-
-        <div class="table-wrap admin-table-wrap">
-          <table aria-label="Schedule reconciliation differences">
-            <thead>
-              <tr>
-                <th scope="col">Week</th>
-                <th scope="col">Team</th>
-                <th scope="col">Type</th>
-                <th scope="col">Field</th>
-                <th scope="col">Table</th>
-                <th scope="col">Source</th>
-              </tr>
-            </thead>
-            <tbody id="adminDiffBody">
-              <tr><td colspan="6" class="table-empty">No reconciliation run yet.</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <label class="admin-prompt-label" for="reconcilePrompt">Copy/Paste Prompt</label>
-        <textarea id="reconcilePrompt" class="admin-prompt" readonly spellcheck="false"></textarea>
-      </div>
+    <!-- Every week on Plain Text Sports, which is where the schedule is read
+         from when it needs checking by hand. Built by js/admin.js so the season
+         and the open week come from js/season.js rather than being typed in. -->
+    <section class="game-info admin-panel" id="adminSchedulePanel" aria-labelledby="adminScheduleTitle" hidden>
+      <details class="admin-collapse">
+        <summary id="adminScheduleTitle">NFL Schedule</summary>
+        <div class="week-links" id="adminWeekLinks"></div>
+      </details>
     </section>
 
     <!-- Every league member, with every field they have that is safe to edit.
          Hidden behind the same guard as the tools above; the real check is in
          ff_admin_update_profile, which re-tests the caller server-side. -->
     <section class="game-info admin-panel" id="adminRecordsPanel" aria-labelledby="adminRecordsTitle" hidden>
-      <h2 id="adminRecordsTitle">Suspect Records</h2>
-      <p class="gate-help">
-        Every field on file except the password, which nobody can change but its
-        owner &mdash; it is stored as a hash, and the reset-by-email link is the
-        only way through. <strong>Email is the login</strong>, so changing it
-        changes how that person signs in.
-      </p>
+      <details class="admin-collapse">
+        <summary id="adminRecordsTitle">FF Players (Suspects)</summary>
+        <p class="gate-help">
+          Every field on file except the password, which nobody can change but its
+          owner &mdash; it is stored as a hash, and the reset-by-email link is the
+          only way through. <strong>Email is the login</strong>, so changing it
+          changes how that person signs in.
+        </p>
 
-      <div id="adminRecordsStatus" class="join-status" role="status" aria-live="polite"></div>
+  
+        <div class="table-wrap">
+          <table id="adminRecordsTable" aria-label="League member records">
+            <thead>
+              <tr>
+                <th scope="col">Mugshot</th>
+                <th scope="col">Username</th>
+                <th scope="col">First</th>
+                <th scope="col">Last</th>
+                <th scope="col">Email</th>
+                <th scope="col">SMS</th>
+                <th scope="col">Picks</th>
+                <th scope="col">Joined</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminRecordsBody">
+              <tr><td colspan="9" class="table-empty">Not loaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
 
-      <div class="table-wrap">
-        <table id="adminRecordsTable" aria-label="League member records">
-          <thead>
-            <tr>
-              <th scope="col">Mugshot</th>
-              <th scope="col">Username</th>
-              <th scope="col">First</th>
-              <th scope="col">Last</th>
-              <th scope="col">Email</th>
-              <th scope="col">Picks</th>
-              <th scope="col">Joined</th>
-              <th scope="col">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="adminRecordsBody">
-            <tr><td colspan="8" class="table-empty">Not loaded yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="action-buttons">
-        <button id="btnRefreshRecords" class="btn btn-secondary" type="button">Reload Records</button>
-      </div>
+        <div class="action-buttons">
+          <button id="btnRefreshRecords" class="btn btn-secondary" type="button">Reload Records</button>
+        </div>
+      </details>
     </section>
 
     <!-- The closed 2025 season, read from the frozen archive rather than from
          the database: that Supabase project is gone, and these players have no
          accounts left to edit. Reference only. -->
     <section class="game-info admin-panel" id="adminArchivePanel" aria-labelledby="adminArchiveTitle" hidden>
-      <h2 id="adminArchiveTitle">2025 Cold Cases</h2>
-      <p class="gate-help">
-        The 2025 roster. Nothing here is editable: the season is frozen and the
-        project that served it no longer exists. Names and addresses are held in
-        <code>ff_archive_players</code>, admin-only &mdash; the public archive
-        files carry usernames and nothing else.
-      </p>
 
-      <div id="adminArchiveStatus" class="join-status" role="status" aria-live="polite"></div>
+    <!-- Closed and unchangeable, and consulted about once a season, so it
+           opens on demand rather than pushing the live panels off the screen.
+           A native details/summary rather than a JS accordion: it collapses
+           with the script blocked, and the browser handles the keyboard. -->
+      <details class="admin-collapse">
+        <summary id="adminArchiveTitle">2025 Game</summary>
 
-      <div class="table-wrap">
-        <table id="adminArchiveTable" aria-label="2025 season players">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Username</th>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Picks</th>
-              <th scope="col">Joined</th>
-              <th scope="col">Invite</th>
-            </tr>
-          </thead>
-          <tbody id="adminArchiveBody">
-            <tr><td colspan="7" class="table-empty">Not loaded yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
+        <p class="gate-help">
+          The 2025 roster. Nothing here is editable: the season is frozen and the
+          project that served it no longer exists. Names and addresses are held in
+          <code>ff_archive_players</code>, admin-only &mdash; the public archive
+          files carry usernames and nothing else.
+        </p>
+
+
+        <div class="table-wrap">
+          <table id="adminArchiveTable" aria-label="2025 season players">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Username</th>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Picks</th>
+                <th scope="col">Joined</th>
+                <th scope="col">Invite</th>
+              </tr>
+            </thead>
+            <tbody id="adminArchiveBody">
+              <tr><td colspan="7" class="table-empty">Not loaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
     </section>
+  </div>
+
+  <!-- The mugshot editor. Opened by clicking a thumbnail in FF Players,
+       and it does both jobs that used to be in two places: replacing the photo
+       (which was a bare file picker on the thumbnail) and choosing the two
+       colours their cards are painted in (which was the Colour Lab, a whole
+       separate panel showing all 32 at once). Both are about one suspect's
+       photo, and the colours are picked off that photo, so they belong in
+       front of it together. -->
+  <div id="mugshotModal" class="modal-backdrop" hidden>
+    <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="mugshotTitle">
+      <button class="modal-close" id="btnCloseMugshot" type="button" aria-label="Close">&times;</button>
+      <h2 id="mugshotTitle">Mugshot</h2>
+
+
+      <div class="shot-editor">
+        <div class="shot-editor-shot">
+          <div class="lab-shot-wrap">
+            <div class="lab-shot-frame" id="mugshotFrame">
+              <canvas class="lab-shot" id="mugshotCanvas" width="168" height="168"
+                      title="Click to take this pixel"></canvas>
+            </div>
+            <canvas class="lab-loupe" id="mugshotLoupe" width="84" height="84"></canvas>
+            <p class="lab-readout" id="mugshotReadout"><i></i><span>Hover the mugshot</span></p>
+          </div>
+          <button id="btnReplaceMugshot" class="btn btn-secondary btn-mini" type="button">Replace Photo</button>
+        </div>
+
+        <div class="shot-editor-colors">
+          <p class="gate-help">
+            <strong>Click Primary or Secondary to arm it, then click the mugshot</strong>
+            to take that pixel. Hover first &mdash; the loupe magnifies what is under the
+            cursor. The chip stays armed, so keep clicking until it looks right.
+          </p>
+
+          <div class="lab-chips">
+            <button class="lab-chip" data-shot-slot="primary" data-label="Primary" type="button"></button>
+            <button class="lab-chip" data-shot-slot="secondary" data-label="Secondary" type="button"></button>
+            <input class="lab-picker" id="mugshotPicker" type="color"
+                   aria-label="Pick any colour for the armed chip"
+                   title="Pick any colour for the armed chip"/>
+            <span class="lab-hexes">
+              <b data-shot-hex="primary"></b><br/>
+              <b data-shot-hex="secondary"></b>
+            </span>
+          </div>
+
+          <div class="lab-preview-row">
+            <span class="lab-preview lab-preview-card" id="mugshotPreview"><i></i><span></span></span>
+          </div>
+
+          <p class="shot-editor-flags" id="mugshotFlags"></p>
+
+          <div class="modal-actions">
+            <button id="btnSaveMugshotColors" class="btn btn-primary" type="button">Save Colours</button>
+            <button id="btnSampleMugshotColors" class="btn btn-secondary" type="button">Use Sampled</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Deleting is irreversible, so it is confirmed by typing the username
@@ -175,14 +292,15 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260908b"></script>
-  <script src="../js/season.js?v=20260908b"></script>
-  <script src="../js/teams.js?v=20260908b"></script>
-  <script src="../js/nav.js?v=20260908b"></script>
-  <script src="../js/auth-corner.js?v=20260908b"></script>
-  <script src="../js/admin.js?v=20260908b"></script>
-  <script src="../js/join-modal.js?v=20260908b"></script>
-  <script src="../js/join.js?v=20260908b"></script>
-  <script src="../js/password-reset.js?v=20260908b"></script>
+  <script src="../js/nfl-schedule.js?v=20260908f"></script>
+  <script src="../js/toast.js?v=20260908f"></script>
+  <script src="../js/season.js?v=20260908f"></script>
+  <script src="../js/teams.js?v=20260908f"></script>
+  <script src="../js/nav.js?v=20260908f"></script>
+  <script src="../js/auth-corner.js?v=20260908f"></script>
+  <script src="../js/admin.js?v=20260908f"></script>
+  <script src="../js/join-modal.js?v=20260908f"></script>
+  <script src="../js/join.js?v=20260908f"></script>
+  <script src="../js/password-reset.js?v=20260908f"></script>
 </body>
 </html>

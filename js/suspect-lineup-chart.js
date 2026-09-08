@@ -293,6 +293,11 @@
     setStatus('', '');
     bindLegalPadLinks(list);
     paintTrackerThemes(list);
+
+    // The overrides arrive from the database after this first paint, so paint
+    // the tracker again once they do. The event only fires when there is at
+    // least one override to apply.
+    window.addEventListener('ff-suspect-colors-loaded', () => paintTrackerThemes(list), { once: true });
     paintDotMatrixLabels(list);
   }
 
@@ -572,9 +577,9 @@
         card.style.setProperty('--tracker-ink', textColorFor(colors[0]));
       };
 
-      // A listed suspect skips sampling altogether — see js/suspect-colors.js.
-      // Checked before the image is even waited on, so an override paints on
-      // the first frame instead of after a decode.
+      // An overridden suspect skips sampling altogether — see
+      // js/suspect-colors.js. Checked before the image is even waited on, so an
+      // override paints on the first frame instead of after a decode.
       const override = window.suspectColorOverride?.(username);
       if (override) { apply(override); continue; }
 
