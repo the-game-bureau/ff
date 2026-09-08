@@ -822,11 +822,18 @@
   // who mostly know each other, but publishing thirty addresses to thirty
   // inboxes is still not the admin's to do.
 
-  // Past roughly this length a mailto: gets truncated by some clients, and a
-  // truncated BCC line silently drops recipients. At league size the list is
-  // nowhere near it; the check is here so that if it ever is, the page says so
-  // instead of quietly mailing half the league.
-  const APB_MAILTO_LIMIT = 1800;
+  // Gmail's own compose endpoint rather than a mailto:. A mailto: hands the
+  // bulletin to whatever Windows has registered as the default mail handler,
+  // which on the admin's machine is Outlook; the league is run out of Gmail.
+  // This URL does not care what the OS default is - it opens Gmail on the web,
+  // in whichever account the browser is already signed into.
+  const GMAIL_COMPOSE = 'https://mail.google.com/mail/?view=cm&fs=1';
+
+  // Browsers and Gmail both stop reading a URL somewhere, and a truncated BCC
+  // line silently drops recipients. At league size the list is nowhere near
+  // this; the check is here so that if it ever is, the page says so instead of
+  // quietly mailing half the league.
+  const APB_URL_LIMIT = 7000;
 
   function apbAddress(row) {
     // The profile copy is the one the league is reached at; login_email is the
@@ -895,7 +902,7 @@
         body: recruiting.concat([
           "Your victim for Week " + week + " is named and on the record. You can change " +
             "your choice up to " + lockMinutes + " minutes before the kickoff of your " +
-            "victim's game. You can only change it to a team that has not kicked off. " +
+            "current victim's game. You can only change it to a team that has not kicked off. " +
             "Visit https://thegamebureau.com/ff/law/index.html for all of the rules.",
           "",
           "You can make your picks for the whole season right now and change them week " +
@@ -942,7 +949,7 @@
 
     els.apbDraftNote.textContent =
       rows.length + ' recipient' + (rows.length === 1 ? '' : 's') +
-      ', all in BCC. Edit it, then open it in your mail client.';
+      ', all in BCC. Edit it, then open it in Gmail.';
 
     setApbStatus('Bulletin drawn up. Nothing is sent until you send it.', 'good');
     els.apbSubject.focus();
@@ -958,28 +965,30 @@
     }
 
     const bcc = rows.map(apbAddress).join(',');
-    const params = [
-      'bcc=' + encodeURIComponent(bcc),
-      'subject=' + encodeURIComponent(els.apbSubject.value),
-      'body=' + encodeURIComponent(els.apbBody.value)
-    ];
-    // The admin is the To: line - a mail client wants one, and every actual
-    // recipient is in BCC. It also means the sender keeps a copy.
-    const href = 'mailto:' + adminEmail + '?' + params.join('&');
 
-    if (href.length > APB_MAILTO_LIMIT) {
+    // The admin is the To: line - a compose window wants one, and every actual
+    // recipient is in BCC. It also means the sender keeps a copy.
+    const href = GMAIL_COMPOSE +
+      '&to=' + encodeURIComponent(adminEmail) +
+      '&bcc=' + encodeURIComponent(bcc) +
+      '&su=' + encodeURIComponent(els.apbSubject.value) +
+      '&body=' + encodeURIComponent(els.apbBody.value);
+
+    if (href.length > APB_URL_LIMIT) {
       setApbStatus(
         rows.length + ' addresses and this much text make a ' + href.length +
-        '-character link, long enough that some mail clients cut it short. ' +
-        'Check the BCC line and the message in the draft before sending.',
+        '-character link, long enough that it may get cut short. Check the BCC ' +
+        'line and the message in Gmail before sending.',
         'bad'
       );
     } else {
-      setApbStatus('Draft opened for ' + rows.length + ' recipient' +
+      setApbStatus('Gmail opened in a new tab for ' + rows.length + ' recipient' +
         (rows.length === 1 ? '' : 's') + ', all in BCC.', 'good');
     }
 
-    window.location.href = href;
+    // A new tab, not this one: an http link in window.location would navigate
+    // the admin page away and lose the draft that was just edited.
+    window.open(href, '_blank', 'noopener');
   }
 
   function renderApb() {
