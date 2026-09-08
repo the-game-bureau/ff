@@ -2029,30 +2029,70 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-size: 0.8125rem;
 }
 
-.week-picker-select{
-  appearance: none;
-  border: none;
-  border-left: var(--rule);
+/* The number itself. Yellow, the site's interaction colour, because the two
+   arrows either side are what you act on. */
+.week-picker-value{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* A fixed width, not min-width. --font-display has proportional digits, so
+     "1", "8" and "18" are each a different width and the picker resized on
+     nearly every step, shoving the schedule link beside it along with it. Wide
+     enough for the widest week the season has. */
+  width: 48px;
+  box-sizing: border-box;
+  padding: 9px 4px;
   background: var(--accent-yellow);
   color: var(--ink);
-  font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 9px 30px 9px 14px;
-  cursor: pointer;
-  /* Hand-drawn caret, since the native one cannot be themed. */
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
-                    linear-gradient(135deg, var(--ink) 50%, transparent 50%);
-  background-position: calc(100% - 16px) calc(50% + 2px), calc(100% - 11px) calc(50% + 2px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
 }
 
-.week-picker-select:focus-visible{
-  outline: none;
-  box-shadow: inset 0 0 0 3px var(--ink);
+/* The arrows. Drawn from borders rather than set as a character: --font-display
+   is Friz Quadrata and has no arrow glyphs in it, so a triangle typed as text
+   comes out as a tofu box. */
+.week-step{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  padding: 0;
+  background: var(--paper-raised);
+  border: none;
+  cursor: pointer;
+  color: inherit;
 }
+
+.week-step::before{
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+#weekPrev{ border-right: var(--rule); }
+#weekPrev::before{ border-right: 9px solid var(--ink); }
+
+#weekNext{ border-left: var(--rule); }
+#weekNext::before{ border-left: 9px solid var(--ink); }
+
+.week-step:hover:not(:disabled),
+.week-step:focus-visible{
+  outline: none;
+  background: var(--accent-yellow);
+}
+
+/* At Week 1 and Week 18 there is nowhere to go, so the arrow says so rather
+   than looking live and doing nothing. */
+.week-step:disabled{
+  cursor: default;
+  background: var(--paper-raised);
+}
+
+#weekPrev:disabled::before{ border-right-color: rgba(0, 0, 0, 0.22); }
+#weekNext:disabled::before{ border-left-color: rgba(0, 0, 0, 0.22); }
 
 .schedule-link{
   display: inline-flex;
@@ -4227,7 +4267,7 @@ body.mugshot-lightbox-open{ overflow: hidden; }
 
   .week-picker{ width: auto; margin-left: auto; }
 
-  .week-picker-select{ flex: 0 0 auto; }
+  .week-picker-value{ flex: 0 0 auto; }
 
   .ticker-week{ flex: 1 1 auto; min-width: 0; }
 
@@ -4241,7 +4281,8 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   .header-id-escape,
   .header-id-action,
   .week-picker-label,
-  .week-picker-select,
+  .week-picker-value,
+  .week-step,
   .week-nav-btn,
   .ticker-week{ min-height: 44px; }
 

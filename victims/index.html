@@ -44,10 +44,16 @@
     <section class="team-selection" aria-labelledby="victimGridTitle">
       <div class="section-head">
         <h2 id="victimGridTitle">The Victims</h2>
-        <label class="week-picker">
+        <!-- A stepper, not a dropdown: the weeks are consecutive and the one you
+             want is nearly always next to the one you are on, which is two
+             clicks in a select and one here. Arrows are drawn from borders in
+             the stylesheet because the display font carries no arrow glyphs. -->
+        <div class="week-picker" role="group" aria-label="Choose a week">
+          <button id="weekPrev" class="week-step" type="button" aria-label="Previous week"></button>
           <span class="week-picker-label">Week</span>
-          <select id="weekSelect" class="week-picker-select" aria-label="Choose a week"></select>
-        </label>
+          <span class="week-picker-value" id="weekValue" aria-live="polite">1</span>
+          <button id="weekNext" class="week-step" type="button" aria-label="Next week"></button>
+        </div>
         <a id="weekScheduleLink" class="schedule-link" target="_blank" rel="noopener noreferrer">View Full NFL Schedule</a>
       </div>
       <p id="victimIntro">Pick a victim that you believe will lose in week

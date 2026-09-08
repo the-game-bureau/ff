@@ -55,20 +55,31 @@ function setViewWeek(week){
 }
 
 function renderWeekPicker(){
-  const select = document.getElementById('weekSelect');
-  if(!select) return;
+  const value = document.getElementById('weekValue');
+  const prev = document.getElementById('weekPrev');
+  const next = document.getElementById('weekNext');
+  if(!value) return;
 
-  if(!select.options.length){
-    for(let week = MIN_WEEK; week <= MAX_WEEK; week++){
-      const option = document.createElement('option');
-      option.value = String(week);
-      option.textContent = String(week);
-      select.appendChild(option);
-    }
-    select.addEventListener('change', () => setViewWeek(select.value));
+  // Bound once. renderWeekPicker runs again on every week change, and a second
+  // listener would step two weeks at a time.
+  if(prev && !prev.dataset.bound){
+    prev.dataset.bound = '1';
+    prev.addEventListener('click', () => setViewWeek(viewWeek() - 1));
   }
 
-  select.value = String(viewWeek());
+  if(next && !next.dataset.bound){
+    next.dataset.bound = '1';
+    next.addEventListener('click', () => setViewWeek(viewWeek() + 1));
+  }
+
+  const week = viewWeek();
+  value.textContent = String(week);
+
+  // clampWeek() would silently keep you on the same week at either end, so the
+  // arrow says so instead of looking live and doing nothing.
+  if(prev) prev.disabled = week <= MIN_WEEK;
+  if(next) next.disabled = week >= MAX_WEEK;
+
   renderScheduleLink();
 }
 
@@ -104,14 +115,15 @@ function renderVictimIntro(){
 }
 
 // The "View Full NFL Schedule" link follows the week in the dropdown.
+// Plain Text Sports' NFL front page, which is the whole league rather than one
+// week. It used to point at the week being viewed, but the stepper beside it
+// already covers moving between weeks; this is the way out to everything else.
 function renderScheduleLink(){
   const link = document.getElementById('weekScheduleLink');
   if(!link) return;
 
-  const week = viewWeek();
-  link.href = window.NFL_SCHEDULE_HELPERS?.getScheduleUrlForWeek?.(week) ||
-    `${window.NFL_SCHEDULE_SOURCE_URL || 'https://plaintextsports.com/nfl/2026/schedule'}#week${week}`;
-  link.title = `Week ${week} NFL schedule`;
+  link.href = 'https://plaintextsports.com/nfl';
+  link.title = 'NFL schedule and scores on Plain Text Sports';
 }
 
 // One generic helmet silhouette, tinted per team. Deliberately not the real
