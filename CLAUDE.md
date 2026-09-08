@@ -229,6 +229,12 @@ hotlink; nothing is copied into the repo.
   point); the version query forces a clean fetch on the next visit. Add the same `?v=`
   to any new `<script>` or `<link>` you introduce. The pinned Supabase CDN tag is the
   one asset that stays unversioned — it is already pinned to an exact release.
+  **A second deploy on the same day needs a letter suffix** (`?v=20260908b`), because
+  the date alone has not changed and browsers would keep the copies they already have.
+  This is not cosmetic: shared JS calls across files now, so a half-stale bundle does
+  not merely look old, it fails silently. `js/app.js` calling `window.renderHeaderUser?.()`
+  against a cached `js/season.js` that predates that function makes the signed-in
+  username disappear with nothing in the console — which is exactly what happened.
 - **The Supabase project the site talks to is set in exactly one place**,
   [js/supabase-config.js](js/supabase-config.js). Every `js/*.js` file also carries a
   hardcoded fallback URL/key, used only if that config fails to load — those fallbacks
