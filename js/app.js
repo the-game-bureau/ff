@@ -414,8 +414,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSaveUsernameEl = document.getElementById('btnSaveUsername');
   const submitPickEl = document.getElementById('submitPick');
 
-  if (btnSignInEl) {
-    btnSignInEl.addEventListener('click', async () => {
+  // The popup is a real <form> so password managers will fill it, which means
+  // submission comes from the form, not the button: Enter in either field and
+  // the Login button both land here. The click binding is the fallback for a
+  // page still carrying the old form-less markup.
+  const signInFormEl = document.getElementById('signInForm');
+  const attachSignIn = (handler) => {
+    if (signInFormEl) {
+      signInFormEl.addEventListener('submit', (e) => { e.preventDefault(); handler(); });
+    } else if (btnSignInEl) {
+      btnSignInEl.addEventListener('click', handler);
+    }
+  };
+
+  if (btnSignInEl || signInFormEl) {
+    attachSignIn(async () => {
       const identifier = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPass').value;
 
@@ -645,11 +658,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    if((e.target.id === 'authEmail' || e.target.id === 'authPass') && e.key === 'Enter') {
-      if (btnSignInEl) {
-        btnSignInEl.click();
-      }
-    }
+    // authEmail / authPass are inside #signInForm, which submits on Enter on
+    // its own — no key handling needed here.
   });
 
   window.addEventListener('ff-auth-changed', async () => {

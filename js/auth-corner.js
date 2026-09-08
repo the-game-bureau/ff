@@ -117,14 +117,19 @@
         <button class="modal-close" id="btnCloseSignIn" type="button" aria-label="Close">&times;</button>
         <h2 id="signInTitle">Identify Yourself</h2>
 
-        <input id="authEmail" type="text" placeholder="Username or Email" aria-label="Username or email" autocomplete="username" />
-        <input id="authPass" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
+        <!-- A real form with named fields and a submit button: that is what
+             password managers look for before they offer to fill or save.
+             Keep it a form; loose inputs get skipped by most of them. -->
+        <form class="modal-form" id="signInForm" method="post" action="#">
+          <input id="authEmail" name="username" type="text" placeholder="Username or Email" aria-label="Username or email" autocomplete="username" />
+          <input id="authPass" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
 
-        <div class="modal-actions">
-          <button id="btnSignIn" class="btn btn-primary" type="button">Login</button>
-          <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
-          <a id="btnJoinFromSignIn" class="btn btn-secondary" href="${pagePrefix()}join/index.html">Join</a>
-        </div>
+          <div class="modal-actions">
+            <button id="btnSignIn" class="btn btn-primary" type="submit">Login</button>
+            <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
+            <a id="btnJoinFromSignIn" class="btn btn-secondary" href="${pagePrefix()}join/index.html">Join</a>
+          </div>
+        </form>
       </div>
     `;
 
@@ -141,6 +146,7 @@
     els.email = document.getElementById('authEmail');
     els.password = document.getElementById('authPass');
     els.signIn = document.getElementById('btnSignIn');
+    els.form = document.getElementById('signInForm');
     els.signOut = document.getElementById('btnSignOut');
     els.idStack = document.getElementById('headerIdStack');
     els.close = document.getElementById('btnCloseSignIn');
@@ -153,7 +159,13 @@
   function bindAuthCorner() {
     els.headerSignIn?.addEventListener('click', () => openSignInModal(true));
     els.close?.addEventListener('click', closeSignInModal);
-    els.signIn?.addEventListener('click', signIn);
+    // The form owns submission now: the Login button submits it and Enter in
+    // either field submits it, so one listener covers both.
+    els.form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      signIn();
+    });
+    if (!els.form) els.signIn?.addEventListener('click', signIn);
     els.signOut?.addEventListener('click', signOut);
     els.reset?.addEventListener('click', resetPassword);
 
@@ -171,10 +183,6 @@
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && els.modal && !els.modal.hidden) {
         closeSignInModal();
-      }
-
-      if ((event.target === els.email || event.target === els.password) && event.key === 'Enter') {
-        signIn();
       }
     });
   }

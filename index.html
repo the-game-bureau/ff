@@ -29,9 +29,9 @@
   <!-- Pinned: @2 floats, and a release that declares a global `var supabase`
        collides with our client and kills the whole script at parse time. -->
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="js/supabase-config.js?v=20260817"></script>
+  <script src="js/supabase-config.js?v=20260908"></script>
 
-<link rel="stylesheet" href="css/site.css?v=20260817"/>
+<link rel="stylesheet" href="css/site.css?v=20260908"/>
 </head>
 
 <!-- data-page drives the tighter desktop spacing in site.css: this page is one
@@ -78,16 +78,21 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="signInTitle">
       <button class="modal-close" id="btnCloseSignIn" type="button" aria-label="Close">&times;</button>
       <h2 id="signInTitle">Identify Yourself</h2>
-      <input id="authEmail" type="text" placeholder="Username or Email" aria-label="Username or email"
-             autocomplete="username" />
-      <input id="authPass" type="password" placeholder="Password" aria-label="Password"
-             autocomplete="current-password" />
+      <!-- A real form with named fields and a submit button: that is what
+           password managers look for before they offer to fill or save. The
+           two loose inputs this replaced were skipped by most of them. -->
+      <form class="modal-form" id="signInForm" method="post" action="#">
+        <input id="authEmail" name="username" type="text" placeholder="Username or Email" aria-label="Username or email"
+               autocomplete="username" />
+        <input id="authPass" name="password" type="password" placeholder="Password" aria-label="Password"
+               autocomplete="current-password" />
 
-      <div class="modal-actions">
-        <button id="btnSignIn" class="btn btn-primary" type="button">Login</button>
-        <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
-        <a id="btnJoinFromSignIn" class="btn btn-secondary" href="join/index.html">Join</a>
-      </div>
+        <div class="modal-actions">
+          <button id="btnSignIn" class="btn btn-primary" type="submit">Login</button>
+          <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
+          <a id="btnJoinFromSignIn" class="btn btn-secondary" href="join/index.html">Join</a>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -176,17 +181,17 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="js/nfl-schedule.js?v=20260817"></script>
-  <script src="js/season.js?v=20260817"></script>
-  <script src="js/teams.js?v=20260817"></script>
-  <script src="js/nav.js?v=20260817"></script>
-  <script src="js/app.js?v=20260817"></script>
+  <script src="js/nfl-schedule.js?v=20260908"></script>
+  <script src="js/season.js?v=20260908"></script>
+  <script src="js/teams.js?v=20260908"></script>
+  <script src="js/nav.js?v=20260908"></script>
+  <script src="js/app.js?v=20260908"></script>
 
-  <script src="js/share.js?v=20260817"></script>
-  <script src="js/join-modal.js?v=20260817"></script>
-  <script src="js/join.js?v=20260817"></script>
-  <script src="js/password-reset.js?v=20260817"></script>
-  <script src="js/join-prefill.js?v=20260817"></script>
-  <script src="js/welcome.js?v=20260817"></script>
+  <script src="js/share.js?v=20260908"></script>
+  <script src="js/join-modal.js?v=20260908"></script>
+  <script src="js/join.js?v=20260908"></script>
+  <script src="js/password-reset.js?v=20260908"></script>
+  <script src="js/join-prefill.js?v=20260908"></script>
+  <script src="js/welcome.js?v=20260908"></script>
 </body>
 </html>

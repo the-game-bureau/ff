@@ -1319,6 +1319,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .modal-card input{ margin-bottom: 12px; }
 
+/* The sign-in fields sit in a <form> so password managers recognise them.
+   It is purely a wrapper — no box of its own. */
+.modal-form{ margin: 0; }
+
 .modal-actions{
   display: flex;
   gap: 12px;
