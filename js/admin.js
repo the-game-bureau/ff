@@ -47,6 +47,7 @@
     els.apbSubject = document.getElementById('apbSubject');
     els.apbBody = document.getElementById('apbBody');
     els.apbSend = document.getElementById('btnApbSend');
+    els.apbCopyMessage = document.getElementById('btnApbCopyMessage');
     els.apbDraftNote = document.getElementById('apbDraftNote');
 
     els.recordsPanel = document.getElementById('adminRecordsPanel');
@@ -78,6 +79,7 @@
     els.apbAllEmail?.addEventListener('click', () => drawUpApb('named'));
     els.apbNoPickEmail?.addEventListener('click', () => drawUpApb('nopick'));
     els.apbSend?.addEventListener('click', openApbMail);
+    els.apbCopyMessage?.addEventListener('click', (event) => copyApbMessageClicked(event.currentTarget));
     els.apbAllCopy?.addEventListener('click', (event) => copyApbAddresses('named', event.currentTarget));
     els.apbNoPickCopy?.addEventListener('click', (event) => copyApbAddresses('nopick', event.currentTarget));
 
@@ -857,22 +859,28 @@
       : live.filter((row) => !row.week_pick);
   }
 
-  // The bulletin each group gets, as a starting point. It lands in the two
-  // fields below the cards rather than going straight to the mail client, so it
-  // can be read and changed first.
+  // A URL that reads as itself. Written this way so the HTML copy is clickable
+  // and the plain-text fallback still shows the whole address rather than a
+  // bare word with the link lost.
+  const apbLink = (url) => '<a href="' + url + '">' + url + '</a>';
+
+  // The bulletin each group gets, as a starting point. It lands in the fields
+  // below the cards rather than going straight to Gmail, so it can be read and
+  // changed first.
   //
-  // Plain ASCII only, em dashes included: this text goes through
-  // encodeURIComponent into a mailto: and out to thirty different mail clients,
-  // and the ones that mangle a character mangle it in someone else's inbox
-  // where nobody here will see it.
+  // Paragraphs of HTML, not a block of text: the message is pasted into Gmail,
+  // and pasting rich text is what keeps the links clickable and the paragraphs
+  // apart. Plain ASCII inside them all the same - this goes out to thirty
+  // different mail clients, and the ones that mangle a character mangle it in
+  // someone else's inbox where nobody here will see it.
   function apbDraft(kind) {
     const week = Number(window.CURRENT_WEEK) || 0;
 
     // The tally the bulletin quotes. Everyone still in the game counts, whether
-    // or not they have an email on file - "3 of 12 picks in" is a fact about
-    // the league, not about who this particular bulletin reaches. Eliminated
-    // suspects are out of both halves: they cannot pick, so counting them would
-    // make the league look permanently behind.
+    // or not they have an email on file - "14 out of 30 picks are in" is a fact
+    // about the league, not about who this particular bulletin reaches.
+    // Eliminated suspects are out of both halves: they cannot pick, so counting
+    // them would make the league look permanently behind.
     const live = recordRows.filter((row) => !apbEliminated(row));
     const picksIn = live.filter((row) => row.week_pick).length;
 
@@ -888,49 +896,47 @@
     // most useful thing a member can do is bring somebody else in. From Week 2
     // the door is shut and the paragraph would be a lie, so it does not appear.
     const recruiting = week === 1
-      ? [
-          "It's not too late to get your friends to play! They have until " + lockMinutes +
-            " minutes until kickoff of the LAST game of week " + week +
-            ". Finger fellow suspects here: https://thegamebureau.com/ff",
-          ""
-        ]
+      ? ["It's not too late to get your friends to play! They have until " + lockMinutes +
+         " minutes until kickoff of the LAST game of week " + week +
+         ". Of course they will only have two teams to choose from if they wait that " +
+         "late, so sooner is better. Finger fellow suspects here: " +
+         apbLink('https://thegamebureau.com/ff')]
       : [];
+
+    const rules = "You can make your picks for the whole season right now and change " +
+      "them week by week if you'd like.";
+
+    const tally = "As of this email, " + picksIn + " out of " + live.length +
+      " picks are in. ";
 
     if (kind === 'named') {
       return {
         subject: subject,
-        body: recruiting.concat([
+        paragraphs: recruiting.concat([
           "Your victim for Week " + week + " is named and on the record. You can change " +
             "your choice up to " + lockMinutes + " minutes before the kickoff of your " +
-            "current victim's game. You can only change it to a team that has not kicked off. " +
-            "Visit https://thegamebureau.com/ff/law/index.html for all of the rules.",
-          "",
-          "You can make your picks for the whole season right now and change them week " +
-            "by week if you'd like.",
-          "",
-          "As of this email, there are " + picksIn + " picks out of " + live.length +
-            " in. See live league info here: https://thegamebureau.com/ff/reports/index.html",
-          ""
-        ]).join('\n')
+            "current victim's game. You can only change it to a team that has not kicked " +
+            "off. Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
+            " for all of the rules.",
+          rules,
+          tally + "See live league info here: " +
+            apbLink('https://thegamebureau.com/ff/reports/index.html')
+        ])
       };
     }
 
     return {
       subject: subject,
-      body: recruiting.concat([
+      paragraphs: recruiting.concat([
         "You have not named a victim for Week " + week + ". Name a team you expect to " +
           "lose, before their game kicks off. Miss it and the case closes on you. You " +
           "can change your choice up to " + lockMinutes + " minutes before that kickoff, " +
           "and only to a team that has not kicked off. Visit " +
-          "https://thegamebureau.com/ff/law/index.html for all of the rules.",
-        "",
-        "You can make your picks for the whole season right now and change them week " +
-          "by week if you'd like.",
-        "",
-        "As of this email, there are " + picksIn + " picks out of " + live.length +
-          " in. Name yours here: https://thegamebureau.com/ff/victims/index.html?week=" + week,
-        ""
-      ]).join('\n')
+          apbLink('https://thegamebureau.com/ff/law/index.html') + " for all of the rules.",
+        rules,
+        tally + "Name yours here: " +
+          apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week)
+      ])
     };
   }
 
@@ -944,8 +950,11 @@
     const draft = apbDraft(kind);
     apbKind = kind;
     els.apbSubject.value = draft.subject;
-    els.apbBody.value = draft.body;
+    // contenteditable, so the admin can still change the wording, and still
+    // rich text when it is copied out.
+    els.apbBody.innerHTML = draft.paragraphs.map((p) => '<p>' + p + '</p>').join('');
     els.apbSend.disabled = false;
+    els.apbCopyMessage.disabled = false;
 
     els.apbDraftNote.textContent =
       rows.length + ' recipient' + (rows.length === 1 ? '' : 's') +
@@ -955,7 +964,87 @@
     els.apbSubject.focus();
   }
 
-  function openApbMail() {
+  // The message as rich text and as plain text, so a paste keeps the links and
+  // the paragraphs, and anything that cannot take HTML still gets something
+  // readable.
+  function apbClipboardFlavours() {
+    const html = '<div>' + els.apbBody.innerHTML + '</div>';
+
+    // Built from the paragraphs rather than from innerText. innerText is
+    // layout-driven and returns nothing at all while the APB panel is
+    // collapsed, which would put an empty plain-text flavour on the clipboard
+    // for anything that cannot take the HTML one.
+    const blocks = [...els.apbBody.querySelectorAll('p')]
+      .map((p) => p.textContent.trim())
+      .filter(Boolean);
+
+    const text = blocks.length
+      ? blocks.join('\n\n')
+      : els.apbBody.textContent.trim();
+    return { html: html, text: text };
+  }
+
+  async function copyApbMessage() {
+    const flavours = apbClipboardFlavours();
+    if (!flavours.text) return false;
+
+    // The rich path. Needs a secure context, which rules out plain http on
+    // anything but localhost.
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([
+          new window.ClipboardItem({
+            'text/html': new Blob([flavours.html], { type: 'text/html' }),
+            'text/plain': new Blob([flavours.text], { type: 'text/plain' })
+          })
+        ]);
+        return true;
+      } catch (error) {
+        // Fall through and try the old way rather than giving up.
+      }
+    }
+
+    // execCommand on a selection of live nodes carries the formatting with it,
+    // which writeText would not.
+    const scratch = document.createElement('div');
+    scratch.innerHTML = flavours.html;
+    scratch.setAttribute('contenteditable', 'true');
+    scratch.style.position = 'fixed';
+    scratch.style.opacity = '0';
+    document.body.appendChild(scratch);
+
+    const range = document.createRange();
+    range.selectNodeContents(scratch);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let copied = true;
+    try {
+      document.execCommand('copy');
+    } catch (error) {
+      copied = false;
+    }
+
+    selection.removeAllRanges();
+    scratch.remove();
+    return copied;
+  }
+
+  async function copyApbMessageClicked(button) {
+    const copied = await copyApbMessage();
+    if (!copied) {
+      setApbStatus('Copy failed. Select the message and copy it by hand.', 'bad');
+      return;
+    }
+
+    const original = button.textContent;
+    button.textContent = 'Copied';
+    window.setTimeout(function () { button.textContent = original; }, 1200);
+    setApbStatus('Message copied with its formatting. Paste it into Gmail.', 'good');
+  }
+
+  async function openApbMail() {
     if (!apbKind) return;
 
     const rows = apbRecipients(apbKind);
@@ -966,24 +1055,32 @@
 
     const bcc = rows.map(apbAddress).join(',');
 
+    // Deliberately no &body. Gmail's compose URL only takes plain text, so
+    // filling it would put an unformatted copy in the window that the paste
+    // then duplicates. The message goes on the clipboard instead and lands in
+    // the compose window with its links and paragraphs intact.
+    const copied = await copyApbMessage();
+
     // The admin is the To: line - a compose window wants one, and every actual
     // recipient is in BCC. It also means the sender keeps a copy.
     const href = GMAIL_COMPOSE +
       '&to=' + encodeURIComponent(adminEmail) +
       '&bcc=' + encodeURIComponent(bcc) +
-      '&su=' + encodeURIComponent(els.apbSubject.value) +
-      '&body=' + encodeURIComponent(els.apbBody.value);
+      '&su=' + encodeURIComponent(els.apbSubject.value);
 
     if (href.length > APB_URL_LIMIT) {
       setApbStatus(
-        rows.length + ' addresses and this much text make a ' + href.length +
-        '-character link, long enough that it may get cut short. Check the BCC ' +
-        'line and the message in Gmail before sending.',
+        rows.length + ' addresses make a ' + href.length + '-character link, long ' +
+        'enough that it may get cut short. Check the BCC line in Gmail before sending.',
         'bad'
       );
+    } else if (copied) {
+      setApbStatus('Gmail opened for ' + rows.length + ' recipient' +
+        (rows.length === 1 ? '' : 's') + ', all in BCC. The message is on your ' +
+        'clipboard - paste it into the compose window.', 'good');
     } else {
-      setApbStatus('Gmail opened in a new tab for ' + rows.length + ' recipient' +
-        (rows.length === 1 ? '' : 's') + ', all in BCC.', 'good');
+      setApbStatus('Gmail opened, but the message could not be copied. Use Copy ' +
+        'Message, or copy it out of the draft by hand.', 'bad');
     }
 
     // A new tab, not this one: an http link in window.location would navigate
@@ -1017,8 +1114,9 @@
 
     // A group that has emptied out since the draft was written should not still
     // have a live send button pointed at it.
-    if (apbKind && !apbRecipients(apbKind).length && els.apbSend) {
-      els.apbSend.disabled = true;
+    if (apbKind && !apbRecipients(apbKind).length) {
+      if (els.apbSend) els.apbSend.disabled = true;
+      if (els.apbCopyMessage) els.apbCopyMessage.disabled = true;
     }
 
     // What the two counts do not show: who could not be reached at all, and who

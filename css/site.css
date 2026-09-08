@@ -1341,7 +1341,25 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   box-sizing: border-box;
 }
 
-.apb-draft-body{ resize: vertical; }
+/* A contenteditable div, so it needs the height a textarea's rows gave it and
+   has to scroll on its own once the bulletin outgrows the box. */
+.apb-draft-body{
+  min-height: 190px;
+  max-height: 420px;
+  overflow-y: auto;
+  cursor: text;
+}
+
+.apb-draft-body:focus{
+  outline: 3px solid var(--accent-yellow);
+  outline-offset: -3px;
+}
+
+/* Paragraph spacing has to be real, not a line of blank text: it is what gets
+   pasted into Gmail. */
+.apb-draft-body p{ margin: 0 0 0.9em; }
+.apb-draft-body p:last-child{ margin-bottom: 0; }
+.apb-draft-body a{ color: var(--primary-blue); }
 
 .apb-draft-actions{
   display: flex;

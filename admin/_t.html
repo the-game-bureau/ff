@@ -14,7 +14,34 @@
   <meta property="og:description" content="Schedule reconciliation for Special Victory Unit."/>
   <meta property="og:image" content="../src/lawandorder.jpg"/>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
+  <script>
+var RECS=[{id:'1',username:'munch',first_name:'',last_name:'',email:'a@x.com',week_pick:'Jets',game_status:'SURVIVED',pick_count:1,created_at:'2026-08-01',sms:'',avatar_data_url:'',color_primary:null,color_secondary:null}];
+window.addEventListener('error',function(e){console.log('PAGEERROR '+e.message);});
+var fake={ auth:{ getUser:async()=>({data:{user:{id:'1',email:'boss@x.com'}},error:null}),
+  onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}) },
+  from:()=>({select:()=>({order:async()=>({data:[],error:null}),
+    eq:()=>({maybeSingle:async()=>({data:{username:'TheClarinetOfJustice'},error:null})})})}),
+  rpc:async(n)=>({data:/list_profiles/.test(n)?RECS:[],error:null}) };
+window.supabase={createClient:()=>fake};
+var written=null;
+navigator.clipboard.write = function(items){ written=items; return Promise.resolve(); };
+window.addEventListener('load',function(){setTimeout(function(){
+  console.log('RESULT ClipboardItem available=' + (typeof window.ClipboardItem));
+  document.getElementById('btnApbAllEmail').click();
+  setTimeout(function(){
+    document.getElementById('btnApbCopyMessage').click();
+    setTimeout(async function(){
+      if (!written) { console.log('RESULT clipboard.write not used (fallback path)'); return; }
+      var item = written[0];
+      console.log('RESULT clipboard types=' + item.types.join(','));
+      var h = await (await item.getType('text/html')).text();
+      var t = await (await item.getType('text/plain')).text();
+      console.log('RESULT html=' + h.slice(0,110));
+      t.split(String.fromCharCode(10)).forEach(function(l,i){ console.log('RESULT plain[' + i + ']=' + l.slice(0,80)); });
+    },500);
+  },400);
+},2400);});
+</script>
   <script src="../js/supabase-config.js?v=20260908f"></script>
 
   <link rel="stylesheet" href="../css/site.css?v=20260908f"/>
