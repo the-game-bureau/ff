@@ -859,6 +859,12 @@
       : live.filter((row) => !row.week_pick);
   }
 
+  // Small numbers read better spelled out in running prose. Past twelve this
+  // falls back to the digit rather than inventing words for it.
+  const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six',
+    'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const spellNumber = (n) => NUMBER_WORDS[n] || String(n);
+
   // A URL that reads as itself. Written this way so the HTML copy is clickable
   // and the plain-text fallback still shows the whole address rather than a
   // bare word with the link lost.
@@ -896,8 +902,8 @@
     // most useful thing a member can do is bring somebody else in. From Week 2
     // the door is shut and the paragraph would be a lie, so it does not appear.
     const recruiting = week === 1
-      ? ["It's not too late to get your friends to play! They have until " + lockMinutes +
-         " minutes until kickoff of the LAST game of week " + week +
+      ? ["It's not too late to get your friends to play! They have until " +
+         spellNumber(lockMinutes) + " minutes before kickoff of the LAST game of week " + week +
          ". Of course they will only have two teams to choose from if they wait that " +
          "late, so sooner is better. Finger fellow suspects here: " +
          apbLink('https://thegamebureau.com/ff')]
@@ -914,9 +920,9 @@
         subject: subject,
         paragraphs: recruiting.concat([
           "Your victim for Week " + week + " is named and on the record. You can change " +
-            "your choice up to " + lockMinutes + " minutes before the kickoff of your " +
-            "current victim's game. You can only change it to a team that has not kicked " +
-            "off. Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
+            "your choice up to " + lockMinutes + " minutes before your current victim's " +
+            "game kicks off. You can only change it to a team that has not kicked off. " +
+            "Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
             " for all of the rules.",
           rules,
           tally + "See live league info here: " +
@@ -930,9 +936,10 @@
       paragraphs: recruiting.concat([
         "You have not named a victim for Week " + week + ". Name a team you expect to " +
           "lose, before their game kicks off. Miss it and the case closes on you. You " +
-          "can change your choice up to " + lockMinutes + " minutes before that kickoff, " +
-          "and only to a team that has not kicked off. Visit " +
-          apbLink('https://thegamebureau.com/ff/law/index.html') + " for all of the rules.",
+          "can change your choice up to " + lockMinutes + " minutes before your current " +
+          "victim's game kicks off. You can only change it to a team that has not kicked " +
+          "off. Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
+          " for all of the rules.",
         rules,
         tally + "Name yours here: " +
           apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week)
