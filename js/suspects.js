@@ -156,7 +156,7 @@ function renderSuspects(suspects){
     return `
       <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
-          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" aria-label="${escapeHtml(avatarLabel)}">
+          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}" aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
           </button>
           <!-- The name plate sits on the photo, the way a booking board does. -->

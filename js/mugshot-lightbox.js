@@ -14,7 +14,10 @@
         <button class="mugshot-lightbox-close" type="button" data-mugshot-close aria-label="Close image preview">X</button>
         <img class="mugshot-lightbox-image" alt="Image preview"/>
         <span class="mugshot-lightbox-symbol" hidden></span>
-        <figcaption class="mugshot-lightbox-caption"></figcaption>
+        <figcaption class="mugshot-lightbox-caption">
+          <span class="mugshot-lightbox-name"></span>
+          <span class="mugshot-lightbox-subcaption" hidden></span>
+        </figcaption>
       </figure>
     `;
     document.body.appendChild(lightbox);
@@ -88,7 +91,16 @@
       image.alt = alt;
     }
 
-    caption.textContent = captionText || alt;
+    caption.querySelector('.mugshot-lightbox-name').textContent = captionText || alt;
+
+    // A second line under the name, for whatever the caller knows and the
+    // caption alone does not carry. The suspects page puts the first name here,
+    // which only exists for a signed-in visitor: first_name is withheld from
+    // the public read, so signed out it arrives empty and the line stays off.
+    const sub = caption.querySelector('.mugshot-lightbox-subcaption');
+    const subText = String(options.subcaption || '').trim();
+    sub.textContent = subText;
+    sub.hidden = !subText;
     box.hidden = false;
     document.body.classList.add('mugshot-lightbox-open');
     closeButton.focus();
@@ -111,6 +123,11 @@
       symbol.hidden = true;
       symbol.removeAttribute('role');
       symbol.removeAttribute('aria-label');
+    }
+    const sub = lightbox.querySelector('.mugshot-lightbox-subcaption');
+    if(sub){
+      sub.textContent = '';
+      sub.hidden = true;
     }
     if(card){
       card.classList.remove('mugshot-lightbox-card-icon');
@@ -143,6 +160,7 @@
       trigger.dataset.mugshotLightboxSize || '',
       {
         symbol: trigger.dataset.mugshotSymbol || '',
+        subcaption: trigger.dataset.mugshotSubcaption || '',
         ...legendColorsFromTrigger(trigger)
       }
     );

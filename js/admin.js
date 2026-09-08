@@ -52,6 +52,7 @@
 
     els.recordsPanel = document.getElementById('adminRecordsPanel');
     els.recordsBody = document.getElementById('adminRecordsBody');
+    els.recordsTitle = document.getElementById('adminRecordsTitle');
     els.refreshRecords = document.getElementById('btnRefreshRecords');
     els.archivePanel = document.getElementById('adminArchivePanel');
     els.archiveBody = document.getElementById('adminArchiveBody');
@@ -311,8 +312,19 @@
     setRecordsStatus(`${(data || []).length} record${(data || []).length === 1 ? '' : 's'} on file.`, 'good');
   }
 
+  // The heading carries the count, so a collapsed panel still says how many
+  // suspects are on file without being opened.
+  function renderRecordsTitle() {
+    if (!els.recordsTitle) return;
+    const n = recordRows.length;
+    els.recordsTitle.textContent = n
+      ? `FF Players (${n} Suspect${n === 1 ? '' : 's'})`
+      : 'FF Players (Suspects)';
+  }
+
   function renderRecords(rows) {
     recordRows = rows || [];
+    renderRecordsTitle();
 
     if (!els.recordsBody) return;
 

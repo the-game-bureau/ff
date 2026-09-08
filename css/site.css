@@ -681,7 +681,7 @@ body{
 
 .law-list li{
   position: relative;
-  padding-left: 30px;
+  padding-left: 32px;
   line-height: 1.5;
 }
 
@@ -697,8 +697,10 @@ body{
   position: absolute;
   left: 0;
   top: 0;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 18px;
+  /* Tuned against the 18px glyph, not the 13px body text, so the scales sit on
+     the first line rather than riding above it. */
+  line-height: 1.35;
 }
 
 /* Where the weekly rules stop and the endgame rules start. The tick moves down
@@ -3449,9 +3451,13 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-color: var(--lineup-pick-border);
 }
 
+/* Nothing painted, exactly like an unpicked cell on the board: that cell is
+   background:transparent over the sheet, so the legend has to be too. It was
+   filled with --paper and outlined in --ink, which read as a white chip on the
+   green bars - a swatch of something the board never draws. The dotted rule is
+   the base .lineup-emoji-key-mark border, which already matches the cell's. */
 .lineup-emoji-key-empty{
-  background: var(--paper);
-  border-color: var(--ink);
+  background: transparent;
 }
 
 .lineup-emoji-key-survived{
@@ -4130,6 +4136,19 @@ body.mugshot-lightbox-open{ overflow: hidden; }
   font-weight: 700;
   text-align: center;
   text-transform: uppercase;
+}
+
+/* The handle on top, the real first name under it, the same order the name
+   plate on the card uses. Only drawn when there is a name to draw: signed out,
+   first_name is withheld from the public read and never arrives. */
+.mugshot-lightbox-name{ display: block; }
+
+.mugshot-lightbox-subcaption{
+  display: block;
+  margin-top: 3px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
 }
 
 .mugshot-lightbox-close{
