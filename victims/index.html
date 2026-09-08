@@ -35,7 +35,7 @@
          quotation marks for the real cold-open narration. Deliberately vague
          about who and when - the joke is that the victim is going about their
          week with no idea, and you are already looking at them. -->
-    <p class="tagline">Somewhere out there, your next victim is lurking.</p>
+    <p class="tagline">Somewhere out there,<br/>your next victim is lurking.</p>
   </header>
 
   <div id="siteNav" data-current="victims" data-prefix="../"></div>
@@ -44,6 +44,11 @@
     <section class="team-selection" aria-labelledby="victimGridTitle">
       <div class="section-head">
         <h2 id="victimGridTitle">The Victims</h2>
+        <!-- Only on screen when this week has a victim that can still be taken
+             back, so it never offers to clear nothing, and never offers to
+             clear a pick whose game has already started. -->
+        <button id="weekClear" class="week-clear" type="button" hidden>Clear Pick</button>
+
         <!-- A stepper, not a dropdown: the weeks are consecutive and the one you
              want is nearly always next to the one you are on, which is two
              clicks in a select and one here. Arrows are drawn from borders in

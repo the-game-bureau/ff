@@ -423,6 +423,11 @@ body{
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   line-height: 1.5;
+  /* Two rows on every page, so the header is the same height whichever one you
+     are on and the nav below it does not shift as you move between them. Each
+     tagline carries its own <br/> for where the break falls; this reserves the
+     space so a shorter one still stands two rows tall. */
+  min-height: 3em;
   color: #D8D5CC;
   max-width: 900px;
   margin: 0 auto;
@@ -676,18 +681,24 @@ body{
 
 .law-list li{
   position: relative;
-  padding-left: 26px;
+  padding-left: 30px;
   line-height: 1.5;
 }
 
+/* Scales of justice for a bullet. Unicode has no gavel character - the usual
+   stand-ins are a claw hammer or an axe, and neither is the thing - so the
+   scales carry the legal note instead. The variation selector after it forces
+   the colour emoji rather than the black-and-white glyph some fonts default to.
+
+   Rendered by the system emoji font, so it needs a font-size rather than a
+   width, and no colour of its own. */
 .law-list li::before{
-  content: "";
+  content: "⚖️";
   position: absolute;
   left: 0;
-  top: 0.45em;
-  width: 14px;
-  height: 4px;
-  background: var(--ink);
+  top: 0;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 /* Where the weekly rules stop and the endgame rules start. The tick moves down
@@ -699,7 +710,7 @@ body{
   padding-top: 18px;
 }
 
-.law-list li.law-break::before{ top: calc(0.45em + 18px); }
+.law-list li.law-break::before{ top: 18px; }
 
 .game-info h2,
 .team-selection h2,
@@ -1911,12 +1922,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   /* The home page is a single screen - a QR code and one button - so it should
      not ask to be scrolled on a desktop. These trims are all vertical padding,
      and they are scoped to the home page: every other page has real content to
-     scroll through and keeps the roomier spacing. Nothing changes below 768px. */
+     scroll through and keeps the roomier spacing. Nothing changes below 768px.
+
+     The header used to be trimmed here too, which left the Precinct's masthead
+     28px shorter than every other page's and made the logo jump as you moved
+     between them. The header is the one thing common to all seven pages, so it
+     keeps the standard spacing and the savings come from below it. */
   [data-page="home"] .share-strip{ padding: 28px 24px 32px; }
   [data-page="home"] .container{ padding: 20px 16px 28px; }
-  [data-page="home"] .header{ padding: 20px 16px 16px; }
-  [data-page="home"] .header-logo-text{ margin-bottom: 8px; }
-  [data-page="home"] .svu-subtitle{ margin-bottom: 10px; }
   [data-page="home"] .footer{ padding: 28px 16px 32px; }
 }
 
@@ -1998,8 +2011,43 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding-bottom: 10px;
 }
 
-/* The heading already carries a rule; the row owns it here instead. */
+/* Pushes everything after it to the right. Was margin-left:auto on the week
+   picker, which broke once Clear Pick appeared beside it: the auto margin sat
+   between the two controls and shoved them apart. */
+
+/* Only drawn when this week has a victim that can still be taken back. Red,
+   because it undoes something; the yellow beside it is for navigating. */
+.week-clear{
+  padding: 9px 14px;
+  background: var(--primary-red);
+  color: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Presses into the page like every other button here. */
+.week-clear:hover:not(:disabled),
+.week-clear:focus-visible{
+  outline: none;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.week-clear:disabled{ opacity: 0.6; cursor: default; }
+
+/* The heading already carries a rule; the row owns it here instead. It also
+   pushes everything after it to the right. That was margin-left:auto on the
+   week picker, which broke once Clear Pick appeared beside it: the auto margin
+   sat between the two controls and shoved them apart. */
 .section-head h2{
+  margin-right: auto;
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
@@ -2009,7 +2057,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    whatever the width. space-between alone put it in the middle of the three
    items on the Victims head, and it moved as the heading changed length. */
 .week-picker{
-  margin-left: auto;
   display: inline-flex;
   align-items: stretch;
   border: var(--rule);

@@ -75,12 +75,64 @@ function renderWeekPicker(){
   const week = viewWeek();
   value.textContent = String(week);
 
+  renderClearPick();
+
   // clampWeek() would silently keep you on the same week at either end, so the
   // arrow says so instead of looking live and doing nothing.
   if(prev) prev.disabled = week <= MIN_WEEK;
   if(next) next.disabled = week >= MAX_WEEK;
 
   renderScheduleLink();
+}
+
+// Clear Pick only exists when there is something to clear and clearing it is
+// still allowed: a victim named for the week being viewed, whose game has not
+// kicked off. On a past or locked week the pick stands, so the button stays off
+// the page rather than appearing and refusing.
+function renderClearPick(){
+  const button = document.getElementById('weekClear');
+  if(!button) return;
+
+  const pick = victimState.user ? currentWeekPick() : null;
+  const clearable = Boolean(pick) && !currentPickLocked();
+
+  button.hidden = !clearable;
+  if(!clearable) return;
+
+  button.title = `Clear ${pick.team} from Week ${viewWeek()}`;
+
+  if(!button.dataset.bound){
+    button.dataset.bound = '1';
+    button.addEventListener('click', clearWeekPick);
+  }
+}
+
+// Empties the week being viewed. Same tombstone a swap writes, aimed here
+// instead of at a later week, so the week reads as empty and the team is free
+// again. Nothing else is put back in its place.
+async function clearWeekPick(){
+  const pick = currentWeekPick();
+  if(!pick || currentPickLocked()) return;
+
+  const button = document.getElementById('weekClear');
+  const week = viewWeek();
+
+  if(button) button.disabled = true;
+  setVictimStatus(`Clearing the Week ${week} victim...`, '');
+
+  const { error } = await releaseWeekPick(pick);
+  if(button) button.disabled = false;
+
+  if(error){
+    setVictimStatus(`Could not clear the pick: ${error.message}`, 'bad');
+    return;
+  }
+
+  // Redraw first: refreshVictimState() writes its own status line and would
+  // overwrite whatever is set before it.
+  await refreshVictimState();
+  renderVictims();
+  setVictimStatus(`Week ${week} is open again. ${pick.team} is free to name.`, 'good');
 }
 
 // Signed out, the intro line leads with a Login link; signed in it just states
@@ -641,11 +693,14 @@ async function insertVictimPick(row){
   return result;
 }
 
-// Release a later week: a new row for that week carrying the skip marker, which
+// Release a week: a new row for that week carrying the skip marker, which
 // becomes the newest row and so replaces the pick. The row keeps the team it is
 // releasing, because the schedule trigger only accepts a team that actually
 // plays that week.
-async function releaseLaterPick(pick){
+//
+// Used both by a swap, which releases a later week to take its team, and by
+// Clear Pick, which releases the week being viewed and puts nothing back.
+async function releaseWeekPick(pick){
   const week = Number(pick.week);
   const info = scheduleInfoForTeamWeek(pick.team, week);
 
@@ -827,7 +882,7 @@ async function runVictimPick(teamName){
     // Release first, then claim. The other order fails: the schedule trigger
     // refuses a team that is still the latest pick in another week.
     if(releasePick){
-      const released = await releaseLaterPick(releasePick);
+      const released = await releaseWeekPick(releasePick);
       if(released.error){
         setVictimStatus(
           `Could not clear ${teamName} from Week ${releasePick.week}: ${released.error.message}`,
