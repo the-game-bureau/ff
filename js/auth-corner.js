@@ -151,7 +151,6 @@
     els.idStack = document.getElementById('headerIdStack');
     els.close = document.getElementById('btnCloseSignIn');
     els.reset = document.getElementById('btnResetPassword');
-    els.headerUser = document.getElementById('headerUser');
     els.headerSignIn = document.getElementById('headerSignIn');
     els.authStack = document.getElementById('headerAuthStack');
   }
@@ -249,12 +248,9 @@
   function setHeaderUser(username) {
     const signedIn = Boolean(username);
 
-    if (els.headerUser) {
-      els.headerUser.textContent = signedIn ? username : '';
-      els.headerUser.hidden = !signedIn;
-      // Sized after the text lands, never before.
-      window.fitHeaderUser?.();
-    }
+    // js/season.js owns the badge cell: it decides whether the handle is plain
+    // text or the admin's link, and sizes it.
+    window.renderHeaderUser?.(username);
 
     if (els.idStack) els.idStack.hidden = !signedIn;
     if (els.authStack) els.authStack.hidden = signedIn;

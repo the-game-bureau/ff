@@ -13,6 +13,14 @@ var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 // the browser stricter, never looser.
 var PICK_LOCK_MINUTES = 5;
 
+// The one handle that gets the admin room, and where the door is. Matched
+// exactly, the same comparison js/admin.js:11 makes, so the link never appears
+// for someone the admin page would then turn away. Absolute rather than
+// relative because the badge sits on pages at two different depths and this
+// saves working out a prefix for each.
+var ADMIN_USERNAME = 'theclarinetofjustice';
+var ADMIN_URL = 'https://thegamebureau.com/ff/admin/index.html';
+
 window.SEASON = SEASON;
 window.CURRENT_WEEK = CURRENT_WEEK;
 window.PICK_LOCK_MINUTES = PICK_LOCK_MINUTES;
@@ -24,7 +32,8 @@ function renderWeekBadge(){
   // Three cells in one frame: week and season side by side, the signed-in
   // handle across the full width beneath them. The third cell carries its own
   // top rule, so while signed out the badge is simply the two-square block it
-  // has always been. Display only, not a link.
+  // has always been. Display only, except for the one handle that gets a link
+  // to the admin room — see renderHeaderUser below.
   el.innerHTML =
     '<span class="week-badge-row">' +
       `<span class="week-badge-week">Week ${CURRENT_WEEK}</span>` +
@@ -33,9 +42,48 @@ function renderWeekBadge(){
     '<span class="week-badge-user" id="headerUser" aria-live="polite" hidden></span>';
 }
 
+// Puts the signed-in handle in the badge, and for the admin makes it the way
+// into the admin room. Nobody else's page carries the link at all.
+//
+// Both auth modules call this rather than writing the cell themselves —
+// js/auth-corner.js on most pages, js/app.js on the Precinct — so the two can
+// never drift on what the badge shows.
+//
+// This is a shortcut, not a gate: the admin page checks the username itself and
+// its RPCs are guarded server-side by ff_is_admin(), so the URL being guessable
+// costs nothing.
+function renderHeaderUser(username){
+  const el = document.getElementById('headerUser');
+  if(!el) return;
+
+  const name = String(username || '').trim();
+  el.hidden = !name;
+
+  if(!name){
+    el.textContent = '';
+    return;
+  }
+
+  if(name === ADMIN_USERNAME){
+    // Built as a node rather than innerHTML so the name is never parsed as
+    // markup, even though this branch only ever runs for a fixed string.
+    const link = document.createElement('a');
+    link.className = 'week-badge-admin';
+    link.href = ADMIN_URL;
+    link.textContent = name;
+    link.title = 'Admin';
+    el.replaceChildren(link);
+  } else {
+    el.textContent = name;
+  }
+
+  // Sized after the text lands, never before.
+  fitHeaderUser();
+}
+
 // The handle takes the width of the two boxes above it and gives up type size
 // to fit, rather than widening the block and breaking the square stack. Called
-// by whichever auth module owns the page after it sets the name.
+// by renderHeaderUser once the name is in place.
 function fitHeaderUser(){
   const el = document.getElementById('headerUser');
   if(!el || el.hidden || !el.textContent) return;
@@ -50,6 +98,7 @@ function fitHeaderUser(){
   }
 }
 
+window.renderHeaderUser = renderHeaderUser;
 window.fitHeaderUser = fitHeaderUser;
 
 document.addEventListener('DOMContentLoaded', renderWeekBadge);

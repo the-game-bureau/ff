@@ -363,6 +363,33 @@ body{
    is why overflow is clipped here rather than allowed to stretch the frame. */
 /* Blue, so the three cells read as week / season / you rather than blurring
    into the season cell they sit under. */
+/* The admin's handle is a link to the admin room; everyone else's cell is a
+   bare span. It fills the cell so the whole blue strip is the target, and
+   inherits everything so a signed-in admin sees the badge they always saw
+   until they hover it. */
+.week-badge-admin{
+  /* flex:1 to fill the cell (a flex item sized to auto would only be as wide
+     as the name), and the negative margin cancels the cell's own padding so
+     the hover fill covers the whole strip instead of an inset rectangle.
+     display:block, not flex, so an overlong name overflows to the right where
+     fitHeaderUser's scrollWidth check can still see it. */
+  flex: 1;
+  display: block;
+  text-align: center;
+  margin: -8px -12px;
+  padding: 8px 12px;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+}
+
+.week-badge-admin:hover,
+.week-badge-admin:focus-visible{
+  background: var(--accent-yellow);
+  color: var(--ink);
+}
+
 .week-badge-user{
   justify-content: center;
   /* width:0 keeps this cell out of the frame's intrinsic width, so a long

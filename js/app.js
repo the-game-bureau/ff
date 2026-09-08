@@ -234,17 +234,13 @@ async function resolveLoginEmail(identifier){
 function setHeaderUser(username){
   // Signed in shows the name in the week badge plus the Escape badge on the
   // right; signed out shows Login / Join.
-  const el = document.getElementById('headerUser');
   const idStack = document.getElementById('headerIdStack');
   const signInBtn = document.getElementById('headerSignIn');
   const signedIn = Boolean(username);
 
-  if(el){
-    el.textContent = signedIn ? username : '';
-    el.hidden = !signedIn;
-    // Sized after the text lands, never before.
-    window.fitHeaderUser?.();
-  }
+  // js/season.js owns the badge cell: it decides whether the handle is plain
+  // text or the admin's link, and sizes it.
+  window.renderHeaderUser?.(username);
 
   if(idStack) idStack.hidden = !signedIn;
 
