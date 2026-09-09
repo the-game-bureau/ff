@@ -1,7 +1,7 @@
 // ===== JOIN PREFILL =====
-// Carries what was typed into the Identify Yourself box over to the join page,
-// so someone who realises mid-login that they need an account does not type it
-// a second time.
+// Carries the address typed into the Identify Yourself box over to the join
+// page, so someone who realises mid-login that they need an account does not
+// type it a second time.
 //
 // Loaded on every page, because the two halves live on different ones: the
 // sign-in modal is static markup on the home page and built by auth-corner.js
@@ -44,12 +44,14 @@
 
     if (!identifier) return;
 
-    // Only a well-formed address goes to the email field. A bare "@" was enough
-    // under the old test, so a half-typed "munch@" landed in a field it could
-    // never satisfy. Anything that fails the check is treated as a username,
-    // which is the field someone typing a name meant to fill.
-    const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
-    const field = document.getElementById(looksLikeEmail ? 'joinEmail' : 'joinUsername');
+    // Only a well-formed address is carried over. A bare "@" was enough under
+    // an older test, so a half-typed "munch@" landed in a field it could never
+    // satisfy. Anything else is dropped: sign-in is by email address now, so
+    // whatever else was typed there is not a name to prefill the username with,
+    // it is a half-finished address.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) return;
+
+    const field = document.getElementById('joinEmail');
 
     // Not the join page, or the field already has something in it.
     if (!field || field.value) return;

@@ -21,10 +21,23 @@
 -- page anyone can open. They are listed here because this file revokes before
 -- it grants: leave them out and re-running it silently takes every hand-picked
 -- suspect colour off the site.
--- Nothing in the browser ever reads email or last_name from this table. Those
--- two reach the admin screen only through _2026_admin_list_profiles, a
--- SECURITY DEFINER function that re-checks the caller — it runs as the function
+--
+-- email and last_name reach the admin screen through _2026_admin_list_profiles,
+-- a SECURITY DEFINER function that re-checks the caller. It runs as the function
 -- owner, so these column grants do not touch it.
+--
+-- ONE PATH DID READ email, AND THIS BROKE IT
+-- The header used to claim nothing in the browser read email from this table.
+-- Sign-in did. resolveLoginEmail() in js/app.js and js/auth-corner.js accepted a
+-- username, looked up that member's address here, and handed it to Supabase.
+-- As anon, that select now fails with 42501, the fallback passed the raw
+-- username on as if it were an address, and every username sign-in failed as
+-- "invalid credentials" with nothing on screen to explain it. Reset Password was
+-- already reading the same field as an address, so a typed name broke that too.
+-- Fixed by making the email address the credential: both modules were rewritten
+-- to sign in with what is typed, and the field is type="email". Do not restore
+-- the lookup through an RPC - a function turning any public username into a
+-- private address is this same leak through a narrower straw.
 --
 -- So: revoke the blanket column SELECT and hand each browser role back only the
 -- columns it uses. INSERT and UPDATE are left exactly as they were — this is

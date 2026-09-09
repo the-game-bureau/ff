@@ -6,9 +6,10 @@ const PICKS_TABLE = FF_CONFIG.tables?.picks || 'ff_picks';
 // Where Supabase sends the password-recovery link. This exact URL must be
 // listed under Authentication > URL Configuration > Redirect URLs.
 const RESET_REDIRECT_URL = FF_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
-const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email.\n\n'
+const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email address.\n\n'
   + 'Previous year accounts were not activated for this season. '
-  + 'Use JOIN to book yourself in, then sign in with the password you set there.';
+  + 'Use JOIN to book yourself in, then sign in with that address and the '
+  + 'password you set there.';
 
 // FIXED: Added session persistence to prevent auth cycling
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -209,26 +210,20 @@ function closeSignInModal(){
   signInDismissed = true;
 }
 
-// Supabase only authenticates by email, so a username has to be traded for one
-// first. Anything containing "@" is taken as an email as-is.
-// NOTE: js/auth-corner.js carries a twin of this for the pages it owns; keep
-// the two in step until one auth module owns every page.
-async function resolveLoginEmail(identifier){
-  if(!identifier || identifier.includes('@')) return identifier;
-
-  // ilike with no wildcards is an exact, case-insensitive match.
-  const { data, error } = await db
-    .from(PROFILES_TABLE)
-    .select('email')
-    .ilike('username', identifier)
-    .maybeSingle();
-
-  // Fall through on a miss so sign-in fails with a normal "invalid
-  // credentials" instead of revealing whether the name exists.
-  if(error || !data?.email) return identifier;
-  return data.email;
-}
-
+// ===== SIGNING IN IS BY EMAIL ADDRESS =====
+// It used to take a username too, trading it for the account's email through
+// the profiles table before calling Supabase. That door is shut: the email
+// column is no longer readable by anon - supabase/sql/ff_profiles_hide_contact.sql
+// closed a leak that handed the whole roster's addresses to anyone holding the
+// publishable key - so the lookup came back with a permission error, the
+// fallback passed the raw username to Supabase as an email, and every username
+// sign-in failed as "invalid credentials" with nothing on screen to explain it.
+// Reopening it would mean an RPC turning any public username into a private
+// email address, which is the same leak through a narrower straw. So the
+// address is the credential everywhere, and the username stays what it always
+// looked like on the page: the name on the placard.
+// Reset Password already read this field as an email, so a typed username was
+// wrong in both directions.
 // The username under the week badge, top-right. Hidden entirely when signed
 // out or before a username has been chosen.
 function setHeaderUser(username){
@@ -425,16 +420,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnSignInEl || signInFormEl) {
     attachSignIn(async () => {
-      const identifier = document.getElementById('authEmail').value.trim();
+      const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPass').value;
 
-      if(!identifier || !password) {
-        alert('Please enter your username or email, and your password.');
+      if(!email || !password) {
+        alert('Please enter your email address and your password.');
         return;
       }
 
       try {
-        const email = await resolveLoginEmail(identifier);
         const { data, error } = await db.auth.signInWithPassword({
           email,
           password

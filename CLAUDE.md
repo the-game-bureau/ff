@@ -235,6 +235,20 @@ hotlink; nothing is copied into the repo.
   not merely look old, it fails silently. `js/app.js` calling `window.renderHeaderUser?.()`
   against a cached `js/season.js` that predates that function makes the signed-in
   username disappear with nothing in the console — which is exactly what happened.
+- **Signing in is by email address, never by username.** The username is a public
+  display name (the placard, the tracker, every verdict) and nothing more. It used
+  to be accepted at login and traded for the account's email through `_2026_profiles`,
+  which stopped working the moment
+  [ff_profiles_hide_contact.sql](supabase/sql/ff_profiles_hide_contact.sql) revoked
+  `email` from `anon` — the select failed, the fallback passed the raw username on as
+  an address, and every username login failed as "invalid credentials" with nothing
+  in the UI to explain it. Don't reintroduce the lookup behind an RPC: a function
+  that turns a public username into a private email address is the leak that file
+  closed, through a narrower straw.
+- **A column grant can break a path nobody thought to test.** The same script's
+  post-run checklist covered the lineup, first names and the admin table, and missed
+  login entirely. When narrowing grants, grep for every `select('<column>')` in `js/`
+  first — signed-out paths especially, since they run as `anon`.
 - **The Supabase project the site talks to is set in exactly one place**,
   [js/supabase-config.js](js/supabase-config.js). Every `js/*.js` file also carries a
   hardcoded fallback URL/key, used only if that config fails to load — those fallbacks

@@ -6,9 +6,10 @@
   const AUTH_PROFILES_TABLE = AUTH_CONFIG.tables?.profiles || 'ff_profiles';
   // Must match a Redirect URL configured in Supabase Auth.
   const RESET_REDIRECT_URL = AUTH_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
-  const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email.\n\n'
+  const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email address.\n\n'
     + 'Previous year accounts were not activated for this season. '
-    + 'Use JOIN to book yourself in, then sign in with the password you set there.';
+    + 'Use JOIN to book yourself in, then sign in with that address and the '
+    + 'password you set there.';
 
   const authDb = window.supabase ? window.supabase.createClient(AUTH_SUPABASE_URL, AUTH_SUPABASE_ANON_KEY, {
     auth: {
@@ -121,7 +122,12 @@
              password managers look for before they offer to fill or save.
              Keep it a form; loose inputs get skipped by most of them. -->
         <form class="modal-form" id="signInForm" method="post" action="#">
-          <input id="authEmail" name="username" type="text" placeholder="Username or Email" aria-label="Username or email" autocomplete="username" />
+          <!-- name and autocomplete still say "username": that is the token
+               a password manager looks for to mean "the account identifier", and
+               here the identifier is the email address. type="email" is the part
+               that changed, so a phone offers the @ key and a malformed address
+               is caught before the form submits. -->
+          <input id="authEmail" name="username" type="email" placeholder="Email Address" aria-label="Email address" autocomplete="username" />
           <input id="authPass" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
 
           <div class="modal-actions">
@@ -257,24 +263,20 @@
     if (els.headerSignIn) els.headerSignIn.disabled = false;
   }
 
-  // Supabase only authenticates by email, so a username has to be traded for
-  // one first. Anything containing "@" is taken as an email as-is.
-  async function resolveLoginEmail(identifier) {
-    if (!identifier || identifier.includes('@')) return identifier;
-    if (!authDb) return identifier;
-
-    // ilike with no wildcards is an exact, case-insensitive match.
-    const { data, error } = await authDb
-      .from(AUTH_PROFILES_TABLE)
-      .select('email')
-      .ilike('username', identifier)
-      .maybeSingle();
-
-    // Fall through on a miss and let the sign-in fail with a normal
-    // "invalid credentials" rather than leaking whether the name exists.
-    if (error || !data?.email) return identifier;
-    return data.email;
-  }
+  // ===== SIGNING IN IS BY EMAIL ADDRESS =====
+  // It used to take a username too, trading it for the account's email through
+  // the profiles table before calling Supabase. That door is shut: the email
+  // column is no longer readable by anon - supabase/sql/ff_profiles_hide_contact.sql
+  // closed a leak that handed the whole roster's addresses to anyone holding the
+  // publishable key - so the lookup came back with a permission error, the
+  // fallback passed the raw username to Supabase as an email, and every username
+  // sign-in failed as "invalid credentials" with nothing on screen to explain it.
+  // Reopening it would mean an RPC turning any public username into a private
+  // email address, which is the same leak through a narrower straw. So the
+  // address is the credential everywhere, and the username stays what it always
+  // looked like on the page: the name on the placard.
+  // Reset Password already read this field as an email, so a typed username was
+  // wrong in both directions.
 
   async function signIn() {
     if (!authDb) {
@@ -282,15 +284,14 @@
       return;
     }
 
-    const identifier = els.email?.value.trim() || '';
+    const email = els.email?.value.trim() || '';
     const password = els.password?.value || '';
 
-    if (!identifier || !password) {
-      alert('Please enter your username or email, and your password.');
+    if (!email || !password) {
+      alert('Please enter your email address and your password.');
       return;
     }
 
-    const email = await resolveLoginEmail(identifier);
     const { error } = await authDb.auth.signInWithPassword({ email, password });
     if (error) {
       alert(`Login error: ${error.message}`);
