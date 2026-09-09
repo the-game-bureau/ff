@@ -28,7 +28,7 @@
   let apbKind = '';
 
   document.addEventListener('DOMContentLoaded', () => {
-    els.tools = document.getElementById('adminTools');
+    els.databasePanel = document.getElementById('adminDatabasePanel');
 
     els.databaseLink = document.getElementById('adminDatabaseLink');
     els.schedulePanel = document.getElementById('adminSchedulePanel');
@@ -215,7 +215,7 @@
     // is in BCC - so the bulletin goes to the admin, who gets their own copy.
     adminEmail = String(user.email || '').trim();
 
-    els.tools.hidden = false;
+    if (els.databasePanel) els.databasePanel.hidden = false;
     if (els.recordsPanel) els.recordsPanel.hidden = false;
     if (els.schedulePanel) els.schedulePanel.hidden = false;
     if (els.apbPanel) els.apbPanel.hidden = false;
@@ -1510,8 +1510,8 @@
   }
 
   function hideTools() {
-    if (els.tools) {
-      els.tools.hidden = true;
+    if (els.databasePanel) {
+      els.databasePanel.hidden = true;
     }
     if (els.recordsPanel) {
       els.recordsPanel.hidden = true;
