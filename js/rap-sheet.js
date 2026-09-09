@@ -44,13 +44,27 @@
   let busy = false;
   let picker = null;
 
+  // The session client js/auth-corner.js publishes. Shared rather than rebuilt:
+  // a second GoTrue instance on the same storage key races the first for the
+  // one-time token a recovery or confirmation link carries.
+  //
+  // This used to be a ladder over window.db / window.joinDb and so on, which
+  // never matched anything - those are top-level `const`s, which are global
+  // bindings but NOT window properties - so it fell through to createClient
+  // every time and did the exact thing the comment said it was avoiding.
   const rapDb = (function () {
-    for (const name of ['db', 'suspectsDb', 'victimsDb', 'joinDb']) {
-      if (window[name]?.auth) return window[name];
-    }
+    if (window.ffAuthClient?.auth) return window.ffAuthClient;
     if (!window.supabase) return null;
     return window.supabase.createClient(RAP_URL, RAP_KEY, {
-      auth: { persistSession: true, storageKey: RAP_STORAGE_KEY, storage: window.localStorage },
+      auth: {
+        persistSession: true,
+        // The URL is auth-corner's to read. This branch only runs when that file
+        // is absent, and a page with no auth module has no recovery link to
+        // land on either.
+        detectSessionInUrl: false,
+        storageKey: RAP_STORAGE_KEY,
+        storage: window.localStorage,
+      },
     });
   })();
 

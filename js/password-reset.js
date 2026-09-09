@@ -17,59 +17,125 @@
 
   const resetDb = resolveClient();
 
+  // The session client js/auth-corner.js publishes. Shared rather than rebuilt:
+  // a second GoTrue instance on the same storage key races the first for the
+  // one-time token in a recovery link.
+  //
+  // This used to be a ladder over window.db / window.joinDb and so on, which
+  // never matched anything - those are top-level `const`s, which are global
+  // bindings but not window properties - so it fell through to createClient
+  // every time and did the exact thing the comment said it was avoiding.
+  //
+  // It matters most here: this module listens for PASSWORD_RECOVERY and then
+  // calls updateUser, and both only work on the instance that actually consumed
+  // the token out of the URL.
   function resolveClient() {
-    // app.js publishes its client as a top-level `db`; share it when present.
-    // Reuse whatever client the page already built - a second GoTrue instance
-    // on the same storage key triggers warnings and races.
-    for (const name of ['db', 'victimsDb', 'suspectsDb', 'joinDb']) {
-      const existing = window[name];
-      if (existing?.auth) return existing;
-    }
+    if (window.ffAuthClient?.auth) return window.ffAuthClient;
     if (!window.supabase) return null;
 
+    // Only reached on a page that somehow has no auth module. Detection stays
+    // on here, because with auth-corner absent nothing else is doing it.
     return window.supabase.createClient(RESET_SUPABASE_URL, RESET_SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
+        detectSessionInUrl: true,
         storageKey: RESET_STORAGE_KEY,
         storage: window.localStorage,
       },
     });
   }
 
-  // A recovery link arrives as #access_token=...&type=recovery (or ?code= for
-  // PKCE). Either way we want the lightbox up before the token is cleaned off.
+  // A recovery link arrives as #access_token=...&type=recovery, and this is the
+  // belt to the PASSWORD_RECOVERY braces: it gets the lightbox up even if the
+  // event fired before the listener attached.
+  //
+  // It deliberately does NOT match a bare ?code=, which is what the PKCE flow
+  // uses. That same parameter carries an email confirmation, and popping a "set
+  // a new password" box at somebody who just confirmed their address would be
+  // wrong. PKCE recovery is covered by the event instead, which is reliable now
+  // that this module and the client consuming the token are the same one.
+  // Read from what js/auth-corner.js recorded on arrival, not from the live
+  // URL: by the time anything here runs, GoTrue may already have parsed the
+  // fragment and replaceState'd it away. Falls back to the live URL on a page
+  // with no auth module, where nothing is scrubbing anything.
+  function landingUrl() {
+    const landing = window.ffAuthLanding;
+    return {
+      hash: landing ? landing.hash : (window.location.hash || ''),
+      search: landing ? landing.search : (window.location.search || ''),
+    };
+  }
+
   function urlLooksLikeRecovery() {
-    const hash = window.location.hash || '';
-    const search = window.location.search || '';
+    const { hash, search } = landingUrl();
     return hash.includes('type=recovery') ||
       (hash.includes('access_token') && hash.includes('recovery')) ||
       search.includes('type=recovery');
   }
 
+  // Supabase answers a spent or expired link by redirecting to the same place
+  // with an error in the fragment instead of a session:
+  //   #error=access_denied&error_code=otp_expired&error_description=...
+  // Nothing looked at that, so the commonest failure of all - a link clicked
+  // twice, or one a corporate mail scanner pre-fetched and consumed before its
+  // owner ever saw it - arrived as a page that simply did nothing.
+  function recoveryError() {
+    const { hash, search } = landingUrl();
+    const params = new URLSearchParams((hash.replace(/^#/, '') + '&' + search.replace(/^\?/, '')));
+    if (!params.get('error') && !params.get('error_code')) return '';
+
+    const described = (params.get('error_description') || '').replace(/\+/g, ' ').trim();
+    if (/expired|invalid/i.test(described) || params.get('error_code') === 'otp_expired') {
+      return 'That reset link has expired or has already been used. Ask for a new one.';
+    }
+    return described || 'That reset link could not be used. Ask for a new one.';
+  }
+
   // Strip the token out of the address bar so it is not left in history,
-  // bookmarks, or a Referer header on the next navigation.
+  // bookmarks, or a Referer header on the next navigation. GoTrue usually gets
+  // there first; this covers the case where it did not.
   function scrubRecoveryFromUrl() {
-    if (!urlLooksLikeRecovery()) return;
+    if (!window.location.hash && !window.location.search) return;
     const clean = window.location.pathname + window.location.search.replace(/[?&]type=recovery/, '');
     window.history.replaceState({}, document.title, clean || window.location.pathname);
   }
+
+  // The event can arrive before the lightbox has been built, so it is
+  // remembered rather than acted on immediately.
+  let recoveryAnnounced = false;
+
+  function onRecovery() {
+    recoveryAnnounced = true;
+    scrubRecoveryFromUrl();
+    if (document.getElementById('resetPasswordModal')) openResetModal();
+  }
+
+  // Attached now, at script evaluation, and not inside DOMContentLoaded.
+  // PASSWORD_RECOVERY is emitted from the client's own async start-up, which can
+  // finish long before the document is ready - and a listener added afterwards
+  // never hears it. This is the other half of why a good link did nothing.
+  resetDb?.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') onRecovery();
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!resetDb) return;
 
     buildResetModal();
 
-    // supabase-js parses the fragment on load and emits this.
-    resetDb.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        scrubRecoveryFromUrl();
-        openResetModal();
-      }
-    });
+    const failed = recoveryError();
+    if (failed) {
+      // Say so where it will be seen. The lightbox is the wrong place - there
+      // is no session to set a password with - so this goes to the page.
+      window.ffToast?.(failed, 'bad', 'reset');
+      scrubRecoveryFromUrl();
+      return;
+    }
 
-    // Belt and braces: if the event fired before this listener attached, the
-    // URL still tells us why we are here.
-    if (urlLooksLikeRecovery()) {
+    // Three ways to know, because each one alone has a hole: the event may have
+    // fired before this file was evaluated, and the URL may have been scrubbed
+    // before anything read it.
+    if (recoveryAnnounced || urlLooksLikeRecovery()) {
       scrubRecoveryFromUrl();
       openResetModal();
     }

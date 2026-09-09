@@ -8,6 +8,10 @@ const PICKS_TABLE = FF_CONFIG.tables?.picks || 'ff_picks';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
+    // The URL belongs to js/auth-corner.js: one client reads the one-time
+    // token a recovery link carries, and several racing for it is why setting
+    // a new password did nothing.
+    detectSessionInUrl: false,
     storageKey: FF_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
     storage: window.localStorage
   }

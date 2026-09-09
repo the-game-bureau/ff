@@ -24,6 +24,10 @@
     ? window.supabase.createClient(TICKER_SUPABASE_URL, TICKER_SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
+          // The URL belongs to js/auth-corner.js: one client reads the
+          // one-time token a recovery link carries, and several racing for it
+          // is why setting a new password did nothing.
+          detectSessionInUrl: false,
           storageKey: TICKER_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
           storage: window.localStorage
         }

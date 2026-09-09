@@ -7,13 +7,44 @@
   // Must match a Redirect URL configured in Supabase Auth.
   const RESET_REDIRECT_URL = AUTH_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
 
+  // THE session client. Every page loads this file, and this is the one
+  // instance left with detectSessionInUrl on: a recovery or confirmation link
+  // arrives as a one-time token in the URL, and whichever GoTrue instance parses
+  // it first consumes it and scrubs it. With several of them on a page they race,
+  // and the winner was rarely the one js/password-reset.js was listening to - so
+  // the recovery session existed on an instance nothing asked, and setting a new
+  // password did nothing. Every other client on the site now passes
+  // detectSessionInUrl: false and leaves the URL to this one.
   const authDb = window.supabase ? window.supabase.createClient(AUTH_SUPABASE_URL, AUTH_SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,
+      detectSessionInUrl: true,
       storageKey: AUTH_STORAGE_KEY,
       storage: window.localStorage,
     },
   }) : null;
+
+  // Published so the modules that need a session can share this instance rather
+  // than build their own. It has to be an explicit assignment: a top-level
+  // `const` in a classic script is a global binding but NOT a property of
+  // window, so the `window.db || window.joinDb` ladders those modules used were
+  // reading undefined every time and quietly creating a fresh client instead.
+  window.ffAuthClient = authDb;
+
+  // What the browser arrived with, captured on the line after the client is
+  // built and therefore before GoTrue can touch it. detectSessionInUrl parses
+  // the fragment and then replaceState's it off the address bar, and it does
+  // that asynchronously - which can complete before js/password-reset.js has
+  // even been evaluated, let alone before its DOMContentLoaded handler runs.
+  // That is how a recovery link could open the site and do nothing at all: by
+  // the time anything looked at the URL, the evidence had been tidied away.
+  //
+  // This file is the first script on every page to make a client, so nothing
+  // can have scrubbed it yet.
+  window.ffAuthLanding = Object.freeze({
+    hash: window.location.hash || '',
+    search: window.location.search || '',
+  });
 
   const els = {};
   let signInDismissed = false;

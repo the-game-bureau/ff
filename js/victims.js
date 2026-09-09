@@ -7,6 +7,10 @@ const VICTIMS_PICKS_TABLE = VICTIMS_CONFIG.tables?.picks || 'ff_picks';
 const victimsDb = window.supabase ? window.supabase.createClient(VICTIMS_SUPABASE_URL, VICTIMS_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
+    // The URL belongs to js/auth-corner.js: one client reads the one-time
+    // token a recovery link carries, and several racing for it is why setting
+    // a new password did nothing.
+    detectSessionInUrl: false,
     storageKey: VICTIMS_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
     storage: window.localStorage
   }

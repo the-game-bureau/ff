@@ -49,6 +49,10 @@ let renderedAvatarFileKey = '';
 const joinDb = window.supabase ? window.supabase.createClient(JOIN_SUPABASE_URL, JOIN_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
+    // The URL belongs to js/auth-corner.js: one client reads the one-time
+    // token a recovery link carries, and several racing for it is why setting
+    // a new password did nothing.
+    detectSessionInUrl: false,
     storageKey: JOIN_AUTH_STORAGE_KEY,
     storage: window.localStorage
   }

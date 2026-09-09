@@ -8,6 +8,10 @@ const DEFAULT_MUGSHOT_URL = new URL('../src/generated/mugshot-placeholder.svg', 
 const suspectsDb = window.supabase ? window.supabase.createClient(SUSPECTS_SUPABASE_URL, SUSPECTS_SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
+    // The URL belongs to js/auth-corner.js: one client reads the one-time
+    // token a recovery link carries, and several racing for it is why setting
+    // a new password did nothing.
+    detectSessionInUrl: false,
     storageKey: SUSPECTS_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
     storage: window.localStorage
   }

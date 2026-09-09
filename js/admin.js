@@ -13,7 +13,10 @@
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
+      // The URL belongs to js/auth-corner.js: one client reads the one-time
+      // token a recovery link carries, and several racing for it is why
+      // setting a new password did nothing.
+      detectSessionInUrl: false,
       storageKey: ADMIN_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh',
       storage: window.localStorage,
     },
