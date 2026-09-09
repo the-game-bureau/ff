@@ -4,14 +4,15 @@
 // in, welcome, the mugshot viewer - and the join form was the last thing that
 // still took over the page.
 //
-// The markup here is the same form as join/index.html, ids and all, and
-// js/join.js binds to whichever copy is present. That is also why this file
-// stands down entirely when a #joinForm already exists: on the join page the
-// form is in the markup, so injecting a second one would duplicate every id and
-// leave js/join.js wiring the wrong fields.
+// The form itself comes from js/join-form.js, which is the one copy of that
+// markup on the site; js/join.js binds to whichever copy is on the page. That
+// is also why this file stands down entirely when a #joinForm already exists:
+// on the join page the form is mounted inline, and injecting a second one would
+// duplicate every id and leave js/join.js wiring the wrong fields.
 //
-// Loaded before js/join.js on purpose. Both act on DOMContentLoaded, and the
-// form has to be in the DOM before join.js goes looking for it.
+// Loaded after js/join-form.js and before js/join.js on purpose. All three act
+// on DOMContentLoaded, and the form has to exist before this checks for it and
+// before join.js goes looking for its fields.
 (function () {
   const MODAL_ID = 'joinModal';
 
@@ -48,62 +49,7 @@
 
         <h2 id="joinModalTitle">Person of Interest</h2>
 
-        <!-- novalidate matches join/index.html: validateJoin() in js/join.js
-             names the broken rule, the browser's bubble does not. -->
-        <form class="join-form" id="joinForm" novalidate>
-          <div class="join-field">
-            <label for="joinUsername">Username / Team Name <span class="privacy-tag privacy-tag-public">Public</span></label>
-            <input id="joinUsername" name="username" type="text" autocomplete="nickname" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required/>
-            <p class="gate-help">3-20 characters. Letters, numbers, and underscores only - no spaces, no punctuation. This is the name on your mugshot placard and in every verdict.</p>
-          </div>
-
-          <div class="join-field avatar-field">
-            <label for="joinAvatar">Mugshot <span class="privacy-tag privacy-tag-public">Public</span> <span class="privacy-tag">Not Mandatory</span></label>
-            <div class="avatar-upload-row">
-              <div class="avatar-preview-frame">
-                <button id="avatarPreviewButton" class="avatar-preview-button" type="button" data-mugshot-lightbox data-mugshot-alt="Mugshot preview" aria-label="Mugshot preview">
-                  <canvas id="avatarPreviewCanvas" class="avatar-preview" width="96" height="96" aria-label="Mugshot preview"></canvas>
-                </button>
-              </div>
-              <div class="avatar-upload-control">
-                <input id="joinAvatar" name="mugshot" type="file" accept="image/*"/>
-                <div id="avatarStatus" class="avatar-status" aria-live="polite"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="join-field">
-            <label for="joinFirstName">First Name <span class="privacy-tag privacy-tag-players">Seen by Players Only</span></label>
-            <input id="joinFirstName" name="first_name" type="text" autocomplete="given-name" required/>
-          </div>
-
-          <div class="join-field">
-            <label for="joinLastName">Last Name <span class="privacy-tag">Private</span></label>
-            <input id="joinLastName" name="last_name" type="text" autocomplete="family-name" required/>
-          </div>
-
-          <div class="join-field">
-            <label for="joinEmail">Email <span class="privacy-tag">Private</span></label>
-            <input id="joinEmail" name="email" type="email" autocomplete="email" required/>
-          </div>
-
-          <div class="join-field">
-            <label for="joinPassword">Password <span class="privacy-tag">Private Obviously</span></label>
-            <input id="joinPassword" name="password" type="password" autocomplete="new-password" minlength="6" required/>
-            <p class="gate-help">At least 6 characters.</p>
-          </div>
-
-          <div class="join-field">
-            <label for="joinPasswordConfirm">Confirm Password <span class="privacy-tag">Private Obviously</span></label>
-            <input id="joinPasswordConfirm" name="password_confirm" type="password" autocomplete="new-password" minlength="6" required/>
-          </div>
-
-          <div class="action-buttons join-actions">
-            <button id="btnCreateAccount" class="btn btn-primary" type="submit">Join</button>
-          </div>
-
-          <div id="joinStatus" class="join-status" role="status" aria-live="polite"></div>
-        </form>
+        ${window.ffJoinFormHtml ? window.ffJoinFormHtml() : ""}
       </div>`;
 
     document.body.appendChild(modal);
@@ -134,9 +80,22 @@
     document.getElementById('signInModal')?.setAttribute('hidden', '');
     document.getElementById('welcomeModal')?.setAttribute('hidden', '');
 
+    // Whatever was typed into the sign-in box on the way here. Called at open
+    // time rather than at build time because on this route the form was built
+    // before there was anything to carry: see js/join-prefill.js.
+    window.ffApplyJoinPrefill?.();
+
     modal.hidden = false;
     document.getElementById('joinUsername')?.focus();
   }
+
+  // The form carries "Already joined? Click here to login." now, and the
+  // handler that answers it lives on the document. Left alone, Identify
+  // Yourself would open with this still on top of it.
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#joinModal a[href="#signin"]')) return;
+    closeJoinModal();
+  });
 
   function closeJoinModal() {
     const modal = document.getElementById(MODAL_ID);

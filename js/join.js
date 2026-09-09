@@ -16,6 +16,7 @@ const JOIN_PROFILES_TABLE = JOIN_CONFIG.tables?.profiles || 'ff_profiles';
 const JOIN_AUTH_STORAGE_KEY = JOIN_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh';
 const PENDING_JOIN_STORAGE_KEY = `ff-pending-join-${JOIN_CONFIG.projectRef || JOIN_SUPABASE_URL}`;
 const PENDING_JOIN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const PASSWORD_MIN_LENGTH = JOIN_CONFIG.passwordMinLength || 8;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MUGSHOT_STORAGE_SIZE = 256;
 // Mugshots are photographs, which PNG stores badly - the same 256px image is
@@ -118,7 +119,14 @@ function setAvatarStatus(message, kind){
   if(kind) statusEl.classList.add(`avatar-status-${kind}`);
 }
 
+// Set as soon as a redirect is scheduled, so the submit handler's finally
+// block knows not to hand the button back during the pause before the page
+// changes. It used to re-enable unconditionally, which left Join live and
+// clickable for the 800ms after a booking succeeded.
+let leavingForSuspects = false;
+
 function redirectToSuspects(delay = 800){
+  leavingForSuspects = true;
   window.setTimeout(() => {
     window.location.href = joinRootUrl('suspects/index.html');
   }, delay);
@@ -211,10 +219,15 @@ function validateJoin({ email, username, firstName, lastName, password, password
   const emailProblem = validateEmail(email);
   if(emailProblem) return emailProblem;
 
-  if(!password) return joinProblem('Enter a password of at least 6 characters.', 'joinPassword');
-  if(password.length < 6){
+  if(!password){
     return joinProblem(
-      `Password must be at least 6 characters. Yours is ${password.length}.`,
+      `Enter a password of at least ${PASSWORD_MIN_LENGTH} characters.`,
+      'joinPassword'
+    );
+  }
+  if(password.length < PASSWORD_MIN_LENGTH){
+    return joinProblem(
+      `Password must be at least ${PASSWORD_MIN_LENGTH} characters. Yours is ${password.length}.`,
       'joinPassword'
     );
   }
@@ -844,7 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // bug here for as long as it was the message.
       setJoinStatus(bookingErrorMessage(error), 'bad');
     } finally {
-      submitButton.disabled = false;
+      if(!leavingForSuspects) submitButton.disabled = false;
     }
   });
 });

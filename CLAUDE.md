@@ -134,10 +134,19 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   (`.nav-toggle`) and wires it up: CSS hides the toggle above 767px and hides
   the list below it until `.nav-open` is on the `<nav>`. The list is never
   removed from the DOM, so the menu still reads with the script blocked.
-- [js/auth-corner.js](js/auth-corner.js) — the header auth controls and the sign-in
-  popup, for every page except `index.html`, which carries its own copy in markup
-  and drives it from `app.js`. (Two auth modules is a known wart.)
-- [js/app.js](js/app.js) — the game: auth, picks, stats, timeline, tickers.
+- [js/auth-corner.js](js/auth-corner.js) — **the only auth module.** The header
+  controls, the sign-in popup, signing in, signing out, password reset, on every
+  page including `index.html`. There used to be a second copy inside `app.js`
+  for the home page; the two drifted and the same bug had to be fixed twice, so
+  the home page now loads this like everywhere else.
+- [js/username-gate.js](js/username-gate.js) — a signed-in account with no
+  profile row. Repairs it silently from the signup metadata where it can, asks
+  for a name where it cannot. Site-wide, because the condition is.
+- [js/join-form.js](js/join-form.js) — **the one copy of the booking form's
+  markup.** [js/join-modal.js](js/join-modal.js) builds the popup from it and
+  `join/index.html` mounts it inline. Two hand-maintained copies drifted within
+  a day; do not add a third.
+- [js/app.js](js/app.js) — the game: picks, stats, tickers. Not auth.
 - [js/victims.js](js/victims.js) — the registry grid and the pick flow.
 - [js/suspects.js](js/suspects.js) — the mugshot cards, including the placard
   stripes sampled from each photo.
@@ -222,6 +231,12 @@ hotlink; nothing is copied into the repo.
   the week is **derived, not set**: `getCurrentNflWeek()` returns the first week whose
   last kickoff is still in the future, so it advances on its own once Monday night
   starts. Nothing else should hardcode a year or a week.
+- **Signing in is by email address, and the password minimum lives in
+  [js/supabase-config.js](js/supabase-config.js).** `passwordMinLength` is read by
+  the booking form and the recovery lightbox both. They used to hardcode 6 and 8
+  respectively, so a member who joined with six characters was told on reset that
+  the rule had changed. Whatever it is set to must be at least Supabase's own
+  configured minimum, or the form accepts what the server then refuses.
 - **Every local `js/` and `css/` reference carries `?v=YYYYMMDD`.** Bump the date on
   every page whenever you deploy a change to shared JS or CSS — one find-and-replace of
   the old `?v=` value across all the HTML pages. It exists because a stale cached bundle

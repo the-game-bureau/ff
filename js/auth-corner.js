@@ -18,6 +18,33 @@
   const els = {};
   let signInDismissed = false;
 
+  // Status goes to the page's own notifications rather than an OS dialog: a
+  // native alert blocks the page, cannot be styled, and on a phone lands as a
+  // system prompt over a site that looks nothing like it. Falls back to alert()
+  // on a page that has not loaded js/toast.js, so a message is never lost.
+  function notify(message, kind, key) {
+    if (window.ffToast) window.ffToast(message, kind, key || 'auth');
+    else window.alert(message);
+  }
+
+  // Supabase answers a wrong password and an unknown address with the same
+  // string, on purpose: telling them apart would let anyone test whether an
+  // address has an account here. That is the right behaviour and the wrong
+  // sentence, so it gets said in words, with the next thing to try.
+  function signInErrorMessage(error) {
+    const message = String(error?.message || '').trim();
+
+    if (error?.code === 'invalid_credentials' || /invalid login credentials/i.test(message)) {
+      return 'That address and password do not match an account. Check the address, ' +
+        'or use Reset Password.';
+    }
+    if (/email not confirmed/i.test(message)) {
+      return 'That account has not confirmed its email address yet. Check your inbox ' +
+        'for the confirmation link.';
+    }
+    return message ? 'Sign-in failed: ' + message : 'Sign-in failed.';
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     ensureHeaderCorner();
     ensureSignInModal();
@@ -129,8 +156,15 @@
           <div class="modal-actions">
             <button id="btnSignIn" class="btn btn-primary" type="submit">Login</button>
             <button id="btnResetPassword" class="btn btn-secondary" type="button">Reset Password</button>
-            <a id="btnJoinFromSignIn" class="btn btn-secondary" href="${pagePrefix()}join/index.html">Join</a>
           </div>
+
+          <!-- A link, not a third button: this popup is for people who
+               already have an account, and joining is the other door rather than
+               one more thing to do here. js/join-modal.js intercepts anything
+               pointing at the join page and opens the Person of Interest popup in
+               place of this one, so the href is both the route and the fallback
+               for the join page itself, where that popup stands down. -->
+          <a id="btnJoinFromSignIn" class="alt-action-link" href="${pagePrefix()}join/index.html">Not yet joined? Click here to join.</a>
         </form>
       </div>
     `;
@@ -221,11 +255,16 @@
     }
 
     const profile = await fetchProfile(user.id);
+    // Never the email address. It used to be the last fallback, so an account
+    // with no profile row - a signup whose profile insert failed, say - had its
+    // owner's address printed in the badge on every page, which is the exact
+    // thing supabase/sql/ff_profiles_hide_contact.sql was written to stop.
+    // UNBOOKED keeps the header in its signed-in state, so ESCAPE is still
+    // there, and js/username-gate.js offers to fix it.
     const username = String(
       profile?.username ||
       user.user_metadata?.username ||
-      user.email ||
-      ''
+      'UNBOOKED'
     ).trim();
 
     setHeaderUser(username);
@@ -276,7 +315,7 @@
 
   async function signIn() {
     if (!authDb) {
-      alert('Check-in desk is offline. Refresh and try again.');
+      notify('Check-in desk is offline. Refresh and try again.', 'bad');
       return;
     }
 
@@ -284,13 +323,13 @@
     const password = els.password?.value || '';
 
     if (!email || !password) {
-      alert('Please enter your email address and your password.');
+      notify('Please enter your email address and your password.', 'note');
       return;
     }
 
     const { error } = await authDb.auth.signInWithPassword({ email, password });
     if (error) {
-      alert(`Login error: ${error.message}`);
+      notify(signInErrorMessage(error), 'bad');
       return;
     }
 
@@ -304,7 +343,7 @@
 
     const { error } = await authDb.auth.signOut();
     if (error) {
-      alert(`Escape failed: ${error.message}`);
+      notify(`Escape failed: ${error.message}`, 'bad');
       return;
     }
 
@@ -315,25 +354,26 @@
 
   async function resetPassword() {
     if (!authDb) {
-      alert('Password reset is offline. Refresh and try again.');
+      notify('Password reset is offline. Refresh and try again.', 'bad', 'reset');
       return;
     }
 
     const email = els.email?.value.trim() || '';
     if (!email) {
-      alert('Please enter your email address first.');
+      notify('Please enter your email address first.', 'note', 'reset');
       return;
     }
 
-    // Supabase reports success for an unknown address, so a 2025 player would
-    // be told to check an inbox nothing was ever sent to. Ask first.
+    // Supabase reports success for an unknown address, so somebody who has
+    // never joined would be told to check an inbox nothing was ever sent to.
+    // Ask first.
     const { data: registered, error: lookupError } = await authDb.rpc(
       AUTH_CONFIG.rpcs?.emailRegistered || '_2026_email_registered',
       { p_email: email },
     );
 
     if (!lookupError && registered === false) {
-      alert('No account is on file for that address. Use JOIN to book yourself in.');
+      notify('No account is on file for that address. Use JOIN to book yourself in.', 'bad', 'reset');
       return;
     }
 
@@ -342,16 +382,21 @@
     });
 
     if (error) {
-      alert(`Password reset error: ${error.message}`);
+      notify(`Password reset error: ${error.message}`, 'bad', 'reset');
       return;
     }
 
-    alert('Password reset email sent. Check your inbox and follow the instructions.');
+    notify('Password reset email sent. Check your inbox, and your spam folder if it is not there.', 'good', 'reset');
   }
 
   function pagePrefix() {
     return document.getElementById('siteNav')?.dataset.prefix || '';
   }
+
+  // js/username-gate.js calls this after it writes a profile row. Direct,
+  // not through ff-auth-changed: the gate listens to that event itself, and
+  // would answer its own announcement.
+  window.ffRefreshAuthCorner = () => refreshAuthCorner();
 
   function broadcastAuthChange(user, profile) {
     window.dispatchEvent(new CustomEvent('ff-auth-changed', {

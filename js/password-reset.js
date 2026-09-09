@@ -13,7 +13,7 @@
   const RESET_SUPABASE_ANON_KEY = RESET_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
   const RESET_STORAGE_KEY = RESET_CONFIG.storageKey || 'law-order-svu-auth-vkoczgzizzppdrpvpemh';
 
-  const MIN_PASSWORD_LENGTH = 8;
+  const MIN_PASSWORD_LENGTH = RESET_CONFIG.passwordMinLength || 8;
 
   const resetDb = resolveClient();
 
@@ -153,7 +153,7 @@
       return;
     }
 
-    setStatus('Password updated. Signing you in…', false);
+    setStatus('Password updated. Signing you in...', false);
     setTimeout(() => window.location.reload(), 1200);
   }
 })();

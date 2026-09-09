@@ -11,6 +11,14 @@
     // replaying old cached sessions that PostgREST rejects.
     storageKey: `law-order-svu-auth-${projectRef}`,
     resetRedirectUrl: 'https://thegamebureau.com/ff/',
+    // Every password field on the site reads this. The booking form used to ask
+    // for 6 and the recovery lightbox for 8, so a member who joined with six
+    // characters, forgot them, and followed the recovery link was told the rule
+    // had changed, with nothing to say why. 8 is the stricter of the two, which
+    // is also the safe direction: Supabase enforces its own minimum server
+    // side, and a client that asks for more than the server does can never be
+    // refused for asking too little.
+    passwordMinLength: 8,
     tables: Object.freeze({
       profiles: '_2026_profiles',
       picks: '_2026_picks',

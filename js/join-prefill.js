@@ -8,6 +8,14 @@
 // everywhere else, so the Join click is caught by delegation rather than by
 // binding the link, which may not exist yet.
 //
+// TWO ROUTES TO THE FORM
+// Handing off used to mean a page load, and reading the stored value on
+// DOMContentLoaded covered it. It does not any more: js/join-modal.js opens the
+// booking form as a popup on the same page, and on that route DOMContentLoaded
+// fired long ago, so the address was stored and then never collected. So the
+// same apply step is exposed for openJoinModal() to call, and the two routes
+// behave alike.
+//
 // sessionStorage rather than a query string: it keeps an email address out of
 // the URL bar, the history, and any referrer header.
 (function () {
@@ -32,11 +40,14 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  // Safe to call whenever the form appears. One shot by design: it takes the
+  // value out of storage as it reads it, so reopening the popup does not put an
+  // address back over something since typed.
+  function applyPrefill() {
     let identifier = '';
     try {
       identifier = sessionStorage.getItem(KEY) || '';
-      // One shot: a later visit to the join page should not resurrect it.
+      // A later visit to the join page should not resurrect it either.
       sessionStorage.removeItem(KEY);
     } catch (err) {
       return;
@@ -53,11 +64,20 @@
 
     const field = document.getElementById('joinEmail');
 
-    // Not the join page, or the field already has something in it.
+    // No booking form on this page at all, or the field already holds
+    // something. Typed beats remembered, always.
     if (!field || field.value) return;
 
     field.value = identifier;
     // So anything watching the field for validation sees the new value.
     field.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  }
+
+  // The page-load route: the join page itself, and the hidden popup form that
+  // js/join-modal.js builds on every other page.
+  document.addEventListener('DOMContentLoaded', applyPrefill);
+
+  // The popup route. Optional on the other side, so a page without this file
+  // loaded still opens the form.
+  window.ffApplyJoinPrefill = applyPrefill;
 })();

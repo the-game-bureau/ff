@@ -89,7 +89,7 @@
              opened by a delegated handler in js/app.js on the home page and
              js/auth-corner.js everywhere else, so this works on any page the
              welcome card can appear on. -->
-        <a id="welcomeSignIn" class="welcome-signin" href="#signin">Already joined? Click here to login.</a>
+        <a id="welcomeSignIn" class="alt-action-link" href="#signin">Already joined? Click here to login.</a>
       </div>
     `;
 

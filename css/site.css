@@ -2030,15 +2030,21 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .welcome-actions .btn{ flex: 1 1 auto; }
 
-/* The way back in for someone who already has an account. Deliberately not a
-   button: three equal buttons would put joining, browsing and signing in on the
-   same footing, and this card exists to ask a stranger to join. Underlined
-   because nothing else about it says it can be clicked.
-   Centred under the two buttons rather than held to the card's left edge, which
-   everything above it shares: it belongs to the pair of buttons, not to the
-   column of text. width: fit-content so the hover highlight covers the words
-   and not the whole width of the card. */
-.welcome-signin{
+/* The other door, in all three places where one door is open and the other is
+   the thing a few people actually came for: under the welcome card's buttons
+   and under Join on the Person of Interest form it offers sign-in, and under
+   Login on Identify Yourself it offers joining. Each of those screens is built
+   around one assumption about who is reading, and forwarded links keep landing
+   the other sort of person on them.
+   Deliberately not a button. Another button would put the other door on the
+   same footing as the thing the screen is asking for, and Identify Yourself
+   already carries two. Underlined because nothing else about it says it can be
+   clicked.
+   Centred under what it follows rather than held to the left edge the text
+   above shares, since it belongs to the buttons and not to the column of copy.
+   width: fit-content so the hover highlight covers the words and not the whole
+   width of the card. */
+.alt-action-link{
   display: block;
   width: fit-content;
   margin: 14px auto 0;
@@ -2053,8 +2059,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   text-underline-offset: 3px;
 }
 
-.welcome-signin:hover,
-.welcome-signin:focus-visible{
+.alt-action-link:hover,
+.alt-action-link:focus-visible{
   outline: none;
   color: var(--ink);
   background: var(--accent-yellow);
