@@ -384,6 +384,48 @@
           </td>
         </tr>`;
     }).join('');
+
+    paintRecordStripes();
+  }
+
+  // What is on file wins; failing that the photo is sampled, which is exactly
+  // the pair openMugshotEditor() would put in front of you - so the stripe in
+  // the table is a preview of the stripe in the editor, and a row whose colours
+  // nobody has chosen still shows what the sampler makes of it.
+  //
+  // A suspect with no photo is left alone: the CSS default is the house pair,
+  // which is what the public pages fall back to as well.
+  function paintRecordStripes() {
+    if (!els.recordsBody) return;
+
+    for (const button of els.recordsBody.querySelectorAll('[data-record-mugshot]')) {
+      const row = recordRows.find((record) => record.id === button.dataset.recordMugshot);
+      if (!row) continue;
+
+      const saved = savedPairOf(row);
+      if (saved) {
+        stripe(button, saved);
+        continue;
+      }
+
+      const img = button.querySelector('img');
+      if (!img) continue;
+
+      // The thumbnail is a data URL, so nothing taints the canvas and nothing
+      // is fetched twice - but it may not have decoded yet on a first render.
+      const sample = () => {
+        const pair = sampledPairOf(img);
+        if (pair) stripe(button, pair);
+      };
+
+      if (img.complete && img.naturalWidth) sample();
+      else img.addEventListener('load', sample, { once: true });
+    }
+  }
+
+  function stripe(el, pair) {
+    el.style.setProperty('--stripe-a', pair[0]);
+    el.style.setProperty('--stripe-b', pair[1]);
   }
 
   function safeMugshot(value) {
@@ -601,6 +643,21 @@
       .sort((a, b) => b.share - a.share);
   }
 
+  // The two the sampler settles on: the biggest colour in the frame, and the
+  // biggest one far enough from it to read as a second colour rather than a
+  // shade of the first. Shared so the table thumbnails and the editor cannot
+  // disagree about what an unpicked photo looks like.
+  function distinctPair(ranked) {
+    const first = ranked[0];
+    const second = ranked.find((c) => colourDistance(c, first) > MIN_DISTANCE) || ranked[1] || first;
+    return [first, second];
+  }
+
+  function sampledPairOf(img) {
+    const ranked = bucketsOf(img);
+    return ranked.length ? distinctPair(ranked).map(toHex) : null;
+  }
+
   // Why this photo may be about to produce a bad pair. Worth saying out loud:
   // the whole reason to pick by hand is that the sampler cannot tell a suspect
   // from the wall behind them.
@@ -666,8 +723,7 @@
 
     const ranked = bucketsOf(img);
     if (ranked.length) {
-      const first = ranked[0];
-      const second = ranked.find((c) => colourDistance(c, first) > MIN_DISTANCE) || ranked[1] || first;
+      const [first, second] = distinctPair(ranked);
       shot.sampled = [toHex(first), toHex(second)];
       els.mugshotFlags.textContent = mugshotFlags(ranked, first, second);
     }

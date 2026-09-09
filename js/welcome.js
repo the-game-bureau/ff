@@ -3,9 +3,10 @@
 // /#welcome, so this is the landing mat for anyone arriving from a text, an
 // email, or someone's phone screen - people who have no idea what this is.
 //
-// Two ways out, and neither is a dead end: BROWSE just closes it and leaves
-// them on the site, JOIN hands off to the Identify Yourself popup, which is
-// where both signing in and joining already live.
+// Three ways out, and none of them a dead end: JOIN hands off to the booking
+// form, INVESTIGATE just closes it and leaves them on the site, and a link
+// under the two opens Identify Yourself for anyone the link was forwarded to
+// who already has an account.
 (function () {
   const WELCOME_HASH = '#welcome';
 
@@ -76,6 +77,19 @@
           <button id="btnWelcomeJoin" class="btn btn-secondary" type="button">Join</button>
           <button id="btnWelcomeBrowse" class="btn btn-secondary" type="button">Investigate</button>
         </div>
+
+        <!-- The third way out, and the quiet one. Both buttons above assume a
+             stranger, because that is who a shared link or a QR code brings -
+             but the same link gets forwarded to someone who signed up last
+             week, and until now their only move was to close the card and hunt
+             for the header. A plain link rather than a third button: it is for
+             the few, and a row of three equal buttons would make joining look
+             like one option in a list instead of the thing being asked.
+             href="#signin" is the site's existing door to Identify Yourself,
+             opened by a delegated handler in js/app.js on the home page and
+             js/auth-corner.js everywhere else, so this works on any page the
+             welcome card can appear on. -->
+        <a id="welcomeSignIn" class="welcome-signin" href="#signin">Already joined click here to login</a>
       </div>
     `;
 
@@ -101,6 +115,10 @@
       }
       window.location.href = `${pagePrefix()}join/index.html`;
     });
+
+    // Only closes this card. The link keeps its href, so the delegated
+    // #signin handler that owns the page opens Identify Yourself right after.
+    document.getElementById('welcomeSignIn')?.addEventListener('click', closeWelcome);
 
     modal.addEventListener('click', (event) => {
       if (event.target === modal) closeWelcome();

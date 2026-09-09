@@ -1608,14 +1608,36 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* The mugshot is a control too: click it to replace the photo. */
+/* The placard stripe, the same mark the suspects page paints down the left of
+   a mugshot and the editor shows full size - so a glance down this column is a
+   glance at the colours each suspect's cards are actually drawn in.
+   3px and 2px against 48px, where the full-size placard is 9 and 5 against
+   168. Not quite proportional on purpose: two pixels is the least that still
+   reads as a second colour, and a straight scale would put the secondary under
+   one and a half.
+   The default pair is the house colours, so a row with no photo and nothing on
+   file is striped rather than bare. */
 .admin-mugshot{
+  --stripe-a: var(--ink);
+  --stripe-b: var(--accent-yellow);
+  position: relative;
   display: block;
   width: 48px;
   height: 48px;
   padding: 0;
+  overflow: hidden;
   background: var(--bg-tertiary);
   border: 2px solid var(--ink);
   cursor: pointer;
+}
+
+.admin-mugshot::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 5px;
+  background: linear-gradient(90deg, var(--stripe-a) 0 3px, var(--stripe-b) 3px 5px);
 }
 
 .admin-mugshot img{
@@ -2007,6 +2029,31 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .welcome-actions .btn{ flex: 1 1 auto; }
+
+/* The way back in for someone who already has an account. Deliberately not a
+   button: three equal buttons would put joining, browsing and signing in on the
+   same footing, and this card exists to ask a stranger to join. Underlined
+   because nothing else about it says it can be clicked, and kept on the card's
+   shared left edge with everything above it. */
+.welcome-signin{
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.welcome-signin:hover,
+.welcome-signin:focus-visible{
+  outline: none;
+  color: var(--ink);
+  background: var(--accent-yellow);
+}
 
 @media (max-width: 480px){
   .welcome-actions{ flex-direction: column; }
