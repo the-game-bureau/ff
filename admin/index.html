@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260909d"></script>
+  <script src="../js/supabase-config.js?v=20260909k"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260909d"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260909k"/>
 </head>
 
 <body>
@@ -101,6 +101,23 @@
     <!-- The credentials gate and the links out. This was the Schedule
          Reconciliation panel; the audit tool it was built around is gone, and
          the schedule and playoff games are adjusted by hand in the table now. -->
+    <!-- A scratchpad for whoever runs the league. The rows live in
+         public._2026_admin_todos, readable and writable by the admin alone -
+         see supabase/sql/ff_admin_todos.sql. -->
+    <section class="game-info admin-panel" id="adminTodoPanel" aria-labelledby="adminTodoTitle" hidden>
+      <details class="admin-collapse">
+        <summary id="adminTodoTitle">To Do <span class="admin-todo-count" id="adminTodoCount"></span></summary>
+
+        <form class="admin-todo-add" id="adminTodoForm">
+          <input id="adminTodoInput" type="text" maxlength="200" autocomplete="off"
+                 placeholder="What needs doing?" aria-label="New to do item"/>
+          <button class="btn btn-primary" type="submit">Add</button>
+        </form>
+
+        <ul class="admin-todo-list" id="adminTodoList"></ul>
+      </details>
+    </section>
+
     <!-- hidden on the section, like every other panel here. It used to sit on
          the inner div instead, which hid the button and left the panel itself -
          its rule, its heading, its collapse arrow - on screen for anyone who
@@ -305,17 +322,18 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260909d"></script>
-  <script src="../js/toast.js?v=20260909d"></script>
-  <script src="../js/season.js?v=20260909d"></script>
-  <script src="../js/teams.js?v=20260909d"></script>
-  <script src="../js/nav.js?v=20260909d"></script>
-  <script src="../js/auth-corner.js?v=20260909d"></script>
-  <script src="../js/admin.js?v=20260909d"></script>
-  <script src="../js/join-form.js?v=20260909d"></script>
-  <script src="../js/join-modal.js?v=20260909d"></script>
-  <script src="../js/join.js?v=20260909d"></script>
-  <script src="../js/username-gate.js?v=20260909d"></script>
-  <script src="../js/password-reset.js?v=20260909d"></script>
+  <script src="../js/nfl-schedule.js?v=20260909k"></script>
+  <script src="../js/toast.js?v=20260909k"></script>
+  <script src="../js/season.js?v=20260909k"></script>
+  <script src="../js/teams.js?v=20260909k"></script>
+  <script src="../js/nav.js?v=20260909k"></script>
+  <script src="../js/auth-corner.js?v=20260909k"></script>
+  <script src="../js/admin-todo.js?v=20260909k"></script>
+  <script src="../js/admin.js?v=20260909k"></script>
+  <script src="../js/join-form.js?v=20260909k"></script>
+  <script src="../js/join-modal.js?v=20260909k"></script>
+  <script src="../js/join.js?v=20260909k"></script>
+  <script src="../js/username-gate.js?v=20260909k"></script>
+  <script src="../js/password-reset.js?v=20260909k"></script>
 </body>
 </html>

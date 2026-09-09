@@ -24,6 +24,7 @@
       picks: '_2026_picks',
       schedule: '_2026_nfl_schedule',
       archivePlayers: '_2026_archive_players',
+      adminTodos: '_2026_admin_todos',
     }),
     views: Object.freeze({
       activePicks: '_2026_active_picks',

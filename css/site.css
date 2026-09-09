@@ -4843,6 +4843,141 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .modal-actions .btn{ flex: 1 1 100%; }
 }
 
+/* ===== SQUAD ROOM TO DO LIST (js/admin-todo.js) =====
+   Three controls per line and no chrome around them: a tick box, the text, and
+   a way to bin it. Everything is a button because everything does something -
+   the text included, which is how a line is edited. */
+.admin-todo-count{
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.admin-todo-add{
+  display: flex;
+  gap: 10px;
+  margin: 18px 0 14px;
+}
+
+.admin-todo-add input[type="text"]{ flex: 1 1 auto; }
+.admin-todo-add .btn{ flex: 0 0 auto; }
+
+.admin-todo-list{
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-todo-item{
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  align-items: stretch;
+  background: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The tick box sits in its own ruled cell so the row reads as three parts:
+   is it done, what is it, and get rid of it. */
+.admin-todo-tick{
+  display: grid;
+  place-items: center;
+  background: var(--paper-raised);
+  border-right: var(--rule);
+}
+
+.admin-todo-tick input[type="checkbox"]{
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  /* The one place the house rule about hard black borders gives way: a checkbox
+     the browser draws is the shape everyone already knows, and accent-color
+     paints it in the site's own red without replacing it with something that
+     has to be taught. */
+  accent-color: var(--primary-red);
+  cursor: pointer;
+}
+
+/* Holds the third column open on a row that has no X yet, so the text is the
+   same width whether or not the line has been ticked off. No border: a rule
+   with nothing behind it reads as a control that has been disabled rather than
+   one that does not apply. */
+.admin-todo-spacer{ background: var(--paper-raised); }
+
+.admin-todo-remove{
+  padding: 0;
+  background: var(--paper-raised);
+  border: 0;
+  border-left: var(--rule);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.admin-todo-remove:hover,
+.admin-todo-remove:focus-visible{
+  outline: none;
+  background: var(--accent-yellow);
+}
+
+/* A finished row steps back: the paper greys off and the text is struck
+   through, so what is left to do is what stands out. */
+.admin-todo-item-done{ background: var(--bg-secondary); }
+.admin-todo-item-done .admin-todo-tick{ background: var(--bg-secondary); }
+.admin-todo-item-done .admin-todo-remove{ background: var(--bg-secondary); }
+
+/* The line itself. Left-aligned and full width, because it is text that
+   happens to be clickable rather than a button with a label in it. */
+.admin-todo-text{
+  padding: 11px 12px;
+  background: none;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink);
+  text-align: left;
+  cursor: text;
+}
+
+.admin-todo-text:hover,
+.admin-todo-text:focus-visible{
+  outline: none;
+  background: var(--bg-secondary);
+}
+
+/* Struck through and faded, not hidden: a finished job is still a record of
+   what was done this week until Clear Done takes it away. */
+.admin-todo-item-done .admin-todo-text{
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+.admin-todo-edit{
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.admin-todo-empty{
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
 /* ===== RAP SHEET (js/rap-sheet.js) =====
    A suspect's whole record in one popup, opened from their own mugshot. It
    borrows the booking form's field styling wholesale - same labels, same

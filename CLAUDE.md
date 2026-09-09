@@ -168,6 +168,10 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   revokes the browser's UPDATE on the table entirely, so those two functions are
   the only way a profile row is written from a page.
 - [js/admin.js](js/admin.js) — the admin page.
+- [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
+  `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).
+  Plain table reads and writes behind four RLS policies, not an RPC: nothing in
+  it needs hiding column by column, so the policies say the whole rule.
 - [supabase/sql/](supabase/sql/) — one-off migrations and repair scripts, each
   documenting the problem it solves. Run by hand in the Supabase SQL editor.
   **Every script in here opens with the same wrong-database guard**, a `do`

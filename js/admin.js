@@ -32,6 +32,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     els.databasePanel = document.getElementById('adminDatabasePanel');
+    els.todoPanel = document.getElementById('adminTodoPanel');
 
     els.databaseLink = document.getElementById('adminDatabaseLink');
     els.schedulePanel = document.getElementById('adminSchedulePanel');
@@ -221,6 +222,10 @@
     adminEmail = String(user.email || '').trim();
 
     if (els.databasePanel) els.databasePanel.hidden = false;
+    if (els.todoPanel) els.todoPanel.hidden = false;
+    // The list reads itself, but only the admin is allowed any rows, so this is
+    // the moment it is worth asking for them.
+    window.ffAdminTodoLoad?.();
     if (els.recordsPanel) els.recordsPanel.hidden = false;
     if (els.schedulePanel) els.schedulePanel.hidden = false;
     if (els.apbPanel) els.apbPanel.hidden = false;
@@ -1583,6 +1588,9 @@
   function hideTools() {
     if (els.databasePanel) {
       els.databasePanel.hidden = true;
+    }
+    if (els.todoPanel) {
+      els.todoPanel.hidden = true;
     }
     if (els.recordsPanel) {
       els.recordsPanel.hidden = true;

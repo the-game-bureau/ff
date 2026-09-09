@@ -139,6 +139,7 @@
     roster = people.roster;
     firstNames = people.firstNames;
     handles = people.handles || new Map();
+    focusFromHash();
     activePicks = activePicksFromHistory(picks);
     renderWeekOptions();
     renderClipboard();
@@ -239,13 +240,14 @@
 
     renderPickTally(weekPicks.length);
 
-    if (!weekPicks.length) {
-      body.innerHTML = unfiledCardHtml() +
-        `<li class="pick-clipboard-empty">No picks filed for Week ${selectedWeek}.</li>`;
-      return;
-    }
+    // One path for every week, filled or not. A week with no picks used to
+    // return early, right past the fitting pass and the focus step below - so
+    // the Suspect Tracker could link down to a name in the "no pick yet" box,
+    // the box would render, and the click would land on nothing. Which looked
+    // exactly like a broken link.
+    const missing = unfiledSuspects();
 
-    body.innerHTML = unfiledCardHtml() + groupPicksByTeam(weekPicks).map((group) => `
+    body.innerHTML = unfiledCardHtml(missing) + groupPicksByTeam(weekPicks).map((group) => `
       <li class="pad-card">
         <span class="pad-card-head">
           <span class="pad-card-tally">${tallyHtml(group.picks.length)}</span>
@@ -259,7 +261,12 @@
 
         <span class="pad-card-verdict pick-clipboard-verdict">${verdictMark(group.pick)}</span>
       </li>
-    `).join('');
+    `).join('') + (weekPicks.length || missing.length
+      ? ''
+      // Only when there is genuinely nothing: no picks and nobody left to make
+      // one. Printed alongside a full "no pick yet" box it was saying the same
+      // thing twice.
+      : `<li class="pick-clipboard-empty">Nothing on file for Week ${selectedWeek}.</li>`);
 
     fitPadTeams(body);
     fitPadNames(body);
@@ -413,9 +420,7 @@
 
   // The first box, always. It is the one thing the sheet cannot show by
   // grouping picks: the picks that are not there.
-  function unfiledCardHtml() {
-    const missing = unfiledSuspects();
-
+  function unfiledCardHtml(missing) {
     return `
       <li class="pad-card pad-card-unfiled">
         <span class="pad-card-head">
@@ -427,6 +432,11 @@
         <span class="pick-clipboard-suspect-names">${
           missing.length
             ? missing.map((username) => nameChipHtml(username, {
+                // Addressable, because the tracker's blank cells link here now
+                // rather than to the victims page. A suspect is filed or
+                // unfiled for a week, never both, so one id scheme covers both
+                // boxes without collision.
+                id: pickAnchorId(username, selectedWeek),
                 title: 'Click to find them on the tracker.',
                 linked: true
               })).join('')
@@ -674,6 +684,33 @@
       .toLowerCase()
       .replace(/[^a-z0-9_-]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'unknown';
+  }
+
+  // A cell on the Suspect Tracker links here by anchor, and until now nothing
+  // read that on arrival: the href worked only because a click handler
+  // intercepted it, so opening one in a new tab - or pasting the link to
+  // somebody - landed on the current week with nothing marked. Honouring the
+  // address makes every pick on the board a link worth sending.
+  //
+  // Once only. loadPicks() runs again on every auth change, and re-applying the
+  // hash then would drag the reader back to a week they had since left.
+  let hashHonoured = false;
+
+  function focusFromHash() {
+    if (hashHonoured) return;
+    hashHonoured = true;
+
+    const match = /^#pick-clipboard-w(\d+)-(.+)$/.exec(window.location.hash || '');
+    if (!match) return;
+
+    // The slug is lossy - lower-cased, punctuation folded - so it is matched by
+    // re-slugging each known handle rather than reversed.
+    const wanted = match[2];
+    const username = roster.find((name) => anchorSlug(name) === wanted);
+    if (!username) return;
+
+    selectedWeek = clampWeek(Number(match[1]));
+    pendingFocus = { username, week: selectedWeek };
   }
 
   function focusPickRow(username, week) {

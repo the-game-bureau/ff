@@ -13,6 +13,8 @@
   const POOL_WEEKS = Array.from({ length: TOTAL_WEEKS }, (_, index) => index + 1);
   const THEME_SAMPLE_SIZE = 24;
   const SKIP_RESULT = 'SKIP';
+  // The signed-in suspect's id, or '' for a passer-by.
+  let viewerId = '';
   const NFL_SHIELD_ICON_SRC = new URL('../src/generated/nfl-shield.png', window.location.href).href;
   const DOT_TEXT_ROWS = 7;
   const DOT_TEXT_PITCH = 4;
@@ -136,6 +138,9 @@
     // asked for, so there is nothing to leak.
     const { data: { user } } = await lineupDb.auth.getUser();
     const showFirstNames = Boolean(user);
+    // Which row is the viewer's own. Only used to decide whether a blank cell
+    // is an invitation or just a gap in somebody else's season.
+    viewerId = user?.id || '';
 
     const [profilesResult, picksResult] = await Promise.all([
       fetchProfiles(showFirstNames),
@@ -397,7 +402,7 @@
             ${row.firstName ? `<span class="lineup-booking-first">${escapeHtml(row.firstName)}</span>` : ''}
           </div>
         </div>
-        ${POOL_WEEKS.map((week) => weekBlockHtml(row, week)).join('')}
+        ${POOL_WEEKS.map((week) => weekBlockHtml(row, week, row.id && row.id === viewerId)).join('')}
       </li>
     `;
   }
@@ -481,10 +486,24 @@
     return Math.min(TOTAL_WEEKS, Math.max(1, Math.round(week)));
   }
 
-  function weekBlockHtml(row, week) {
+  function weekBlockHtml(row, week, isSelf) {
     const pick = row.picksByWeek.get(week);
-    if (!pick) return emptyWeekBlockHtml(week, row.username);
+    // Your own empty cell in a week still open is the one place "go and pick"
+    // is a real action. Anyone else's, or a week already gone, is not about the
+    // viewer at all.
+    if (!pick) {
+      return emptyWeekBlockHtml(
+        week,
+        row.username,
+        isSelf && week >= openWeek(),
+        isEliminatedRow(row)
+      );
+    }
     return pickWeekBlockHtml(row, pick, week);
+  }
+
+  function openWeek() {
+    return Number(window.CURRENT_WEEK) || 1;
   }
 
   function pickWeekBlockHtml(row, pick, week) {
@@ -505,22 +524,56 @@
     `;
   }
 
-  function emptyWeekBlockHtml(week, username) {
-    const label = username
-      ? `${username} has no Week ${week} pick. Go to Week ${week} victims.`
-      : `Go to Week ${week} victims`;
+  // An empty cell used to send everyone to the victims page for that week,
+  // whoever's row it was in. That changed the subject: clicking munch's blank
+  // Week 5 opened YOUR Week 5 grid, where nothing is about munch - and on an
+  // eliminated suspect, or a week already played, it was an offer that could
+  // not be taken. It now does what a filled cell does and points at the legal
+  // pad below, where that suspect's name is sitting in the "no pick yet" box.
+  //
+  // The exception is the one case where the old behaviour was right: your own
+  // blank cell in a week that is still open.
+  function emptyWeekBlockHtml(week, username, canPick, isOut) {
+    // An eliminated suspect is left out of the pad's "no pick yet" box on
+    // purpose - a pick that is never coming is not a late one - which means
+    // there is nothing down there to link to. So this is not a link. It used to
+    // be, and clicking it did nothing at all, which reads as broken rather than
+    // as finished.
+    if (isOut) {
+      return `
+      <span class="lineup-week-block lineup-week-block-empty lineup-week-block-out"
+            data-lineup-username="${escapeHtml(username)}"
+            data-lineup-week="${week}"
+            aria-label="${escapeHtml(`${username} was out before Week ${week}.`)}"
+            title="${escapeHtml('Case closed')}"></span>
+    `;
+    }
 
-    // Named, so the legal pad can point at an empty week too - the "no pick yet"
-    // box lists exactly these cells. Deliberately not a pick link: this one
-    // still goes to the victims page when clicked, because there is nothing
-    // here to look at yet.
-    return `
-      <a class="lineup-week-block lineup-week-block-empty"
+    if (canPick) {
+      return `
+      <a class="lineup-week-block lineup-week-block-empty lineup-week-block-mine"
          href="${escapeHtml(victimsWeekHref(week))}"
          ${username ? `data-lineup-username="${escapeHtml(username)}"` : ''}
          data-lineup-week="${week}"
+         aria-label="${escapeHtml(`You have no Week ${week} pick. Name your Week ${week} victim.`)}"
+         title="${escapeHtml(`Name your Week ${week} victim`)}"></a>
+    `;
+    }
+
+    const fallbackId = `pick-clipboard-w${week}-${anchorSlug(username)}`;
+    const targetId = window.PickClipboard?.anchorIdFor?.(username, week) || fallbackId;
+    const label = username
+      ? `${username} has no Week ${week} pick. Find them on the legal pad.`
+      : `Week ${week}`;
+
+    return `
+      <a class="lineup-week-block lineup-week-block-empty"
+         href="#${escapeHtml(targetId)}"
+         ${username ? 'data-lineup-pick-link' : ''}
+         ${username ? `data-lineup-username="${escapeHtml(username)}"` : ''}
+         data-lineup-week="${week}"
          aria-label="${escapeHtml(label)}"
-         title="${escapeHtml(`Week ${week} victims`)}"></a>
+         title="${escapeHtml(`Week ${week}: no pick`)}"></a>
     `;
   }
 
