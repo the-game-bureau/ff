@@ -85,6 +85,27 @@
       })
     : null;
 
+  // A way out of the preview and over to the suspect themselves. The card on
+  // this board is a 38px thumbnail and a name in dots - it says where they
+  // stand this season, not who they are - so the preview offers the lineup,
+  // where the mugshot is full size and the placard is painted in their own
+  // colours. The suspect rides over in the query string and that page opens
+  // their card on arrival, because landing on a grid of 30 faces and hunting
+  // for the same one again would be no better than a plain nav link.
+  //
+  // Bound to the document rather than the list: the button is in the lightbox,
+  // which appends itself to the body.
+  document.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-suspects-page]');
+    if (!trigger) return;
+
+    event.preventDefault();
+    const username = trigger.getAttribute('data-suspects-page');
+    const url = new URL('../suspects/index.html', window.location.href);
+    if (username) url.searchParams.set('suspect', username);
+    window.location.href = url.href;
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('suspectLineupChart')) return;
 
@@ -349,15 +370,24 @@
       <li class="lineup-chart-row" data-picks-in="${row.picksIn}" data-weeks-won="${row.wins}"
           data-username="${escapeHtml(row.username)}"
           aria-label="${escapeHtml(row.username)}">
-        <div class="lineup-booking-card">
-          <button class="lineup-tracker-mugshot-button" type="button"
-                  data-mugshot-lightbox
-                  data-mugshot-src="${escapeHtml(row.avatarSrc)}"
-                  data-mugshot-alt="${escapeHtml(`${row.username} mugshot`)}"
-                  data-mugshot-caption="${escapeHtml(row.username)}"
-                  aria-label="${escapeHtml(`Open ${row.username} mugshot`)}">
+        <!-- The whole card opens the mugshot, not just the thumbnail on it. The
+             photo was a 44px target sitting beside a name that looked every bit
+             as clickable and was not. The image is a plain span now: a button
+             inside a button is not something a browser or a screen reader can
+             make sense of. -->
+        <div class="lineup-booking-card" role="button" tabindex="0"
+             data-mugshot-lightbox
+             data-mugshot-src="${escapeHtml(row.avatarSrc)}"
+             data-mugshot-alt="${escapeHtml(`${row.username} mugshot`)}"
+             data-mugshot-caption="${escapeHtml(row.username)}"
+             data-mugshot-subcaption="${escapeHtml(row.firstName)}"
+             data-mugshot-action="Go To Suspects Page"
+             data-mugshot-action-flag="suspects-page"
+             data-mugshot-action-value="${escapeHtml(row.username)}"
+             aria-label="${escapeHtml(`Open ${row.username} mugshot`)}">
+          <span class="lineup-tracker-mugshot-button">
             <img class="lineup-tracker-mugshot" src="${escapeHtml(row.avatarSrc)}" alt="${escapeHtml(`${row.username} mugshot`)}" width="38" height="38"/>
-          </button>
+          </span>
           <div class="lineup-booking-id">
             <strong class="lineup-booking-name" aria-label="${escapeHtml(row.username)}">${dotMatrixTextHtml(row.username, 'lineup-booking-name')}</strong>
             ${row.firstName ? `<span class="lineup-booking-first">${escapeHtml(row.firstName)}</span>` : ''}
@@ -476,9 +506,15 @@
       ? `${username} has no Week ${week} pick. Go to Week ${week} victims.`
       : `Go to Week ${week} victims`;
 
+    // Named, so the legal pad can point at an empty week too - the "no pick yet"
+    // box lists exactly these cells. Deliberately not a pick link: this one
+    // still goes to the victims page when clicked, because there is nothing
+    // here to look at yet.
     return `
       <a class="lineup-week-block lineup-week-block-empty"
          href="${escapeHtml(victimsWeekHref(week))}"
+         ${username ? `data-lineup-username="${escapeHtml(username)}"` : ''}
+         data-lineup-week="${week}"
          aria-label="${escapeHtml(label)}"
          title="${escapeHtml(`Week ${week} victims`)}"></a>
     `;
@@ -539,6 +575,53 @@
     if (result.includes('survived')) return 'NFL team lost.';
     if (result.includes('dun dun')) return 'NFL team won.';
     return 'Pending result.';
+  }
+
+  // The return trip. The board links out to the legal pad; this is how the pad
+  // gets back, so a name on the sheet and a cell on the board each lead to the
+  // other rather than the traffic running one way.
+  window.SuspectTracker = Object.freeze({
+    focusPick(username, week) {
+      // Any cell in that row for that week, filled or empty. A suspect who has
+      // not picked still has a square on the board, and the pad's "no pick yet"
+      // box points straight at it.
+      const cell = document.querySelector(
+        `.lineup-week-block[data-lineup-username="${cssEscape(username)}"][data-lineup-week="${Number(week)}"]`
+      );
+      if (!cell) return false;
+
+      // Both ends of the row: who it is, and the pick being asked about. One
+      // mark on a cell eighteen columns from its name left you hunting for
+      // whose row you had landed in.
+      const card = cell.closest('.lineup-chart-row')?.querySelector('.lineup-booking-card');
+
+      clearTrackerHighlight();
+      cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Reading a layout property restarts the swipe when the same cell is
+      // asked for twice; without it the browser collapses remove-then-add into
+      // no change at all.
+      void cell.offsetWidth;
+      cell.classList.add('lineup-week-block-target');
+      if (card) card.classList.add('lineup-booking-card-target');
+      return true;
+    }
+  });
+
+  // One mark at a time, and it stays until another is asked for or the page
+  // reloads - the same rule the legal pad's highlighter follows.
+  function clearTrackerHighlight() {
+    for (const el of document.querySelectorAll('.lineup-week-block-target')) {
+      el.classList.remove('lineup-week-block-target');
+    }
+    for (const el of document.querySelectorAll('.lineup-booking-card-target')) {
+      el.classList.remove('lineup-booking-card-target');
+    }
+  }
+
+  function cssEscape(value) {
+    const text = String(value == null ? '' : value);
+    return window.CSS?.escape ? window.CSS.escape(text) : text.replace(/[^A-Za-z0-9_-]/g, '');
   }
 
   function bindLegalPadLinks(list) {

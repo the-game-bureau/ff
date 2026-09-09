@@ -145,18 +145,18 @@ function renderSuspects(suspects){
     const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || DEFAULT_MUGSHOT_URL;
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
-    // Only your own card carries the control. It is not rendered-and-hidden on
-    // the others: there is nothing to hide, because there is nothing anyone
-    // else is allowed to do here.
-    const selfEdit = suspect.is_self
-      ? `<button class="suspect-mugshot-edit" type="button" data-mugshot-edit
-                 aria-label="Replace your mugshot">Retake Mugshot</button>`
+    // Retaking your own mugshot lives in the preview now, not under the card:
+    // it is an action on the picture, so it belongs where the picture is being
+    // looked at. Only your own card offers it - it is not rendered-and-hidden
+    // on the others, because there is nothing anyone else is allowed to do.
+    const retake = suspect.is_self
+      ? ' data-mugshot-action="Retake Mugshot" data-mugshot-action-flag="mugshot-edit"'
       : '';
 
     return `
       <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
-          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}" aria-label="${escapeHtml(avatarLabel)}">
+          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}"${retake} aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
           </button>
           <!-- The name plate sits on the photo, the way a booking board does. -->
@@ -165,7 +165,6 @@ function renderSuspects(suspects){
             ${firstName ? `<span class="suspect-first">${escapeHtml(firstName)}</span>` : ''}
           </div>
         </div>
-        ${selfEdit}
       </li>
     `;
   }).join('');
@@ -390,6 +389,45 @@ async function loadCurrentSuspects(){
   setLineupCall(suspects.length);
   setSuspectsStatus('', '');
   renderSuspects(suspects);
+  openRequestedSuspect();
+}
+
+// ===== ARRIVING FROM THE CASE FILE =====
+// The Suspect Tracker's mugshot preview offers a way over to this page, and it
+// hands the suspect across in the query string. Dropping the visitor on a grid
+// of thirty faces and leaving them to find the same one again would undo the
+// point of the button, so the card they asked for opens itself.
+//
+// The card's own trigger is clicked rather than the lightbox being called
+// directly: that button already carries the photo, the caption, the first name
+// and - on your own card and no other - the Retake action, so a synthetic click
+// is bound to produce exactly the preview a real one would.
+let requestedSuspectOpened = false;
+
+function openRequestedSuspect(){
+  if(requestedSuspectOpened) return;
+
+  const wanted = new URLSearchParams(window.location.search).get('suspect');
+  if(!wanted) return;
+
+  // Usernames are stored with their own capitalisation and matched
+  // case-insensitively everywhere else on the site.
+  const key = wanted.trim().toLowerCase();
+  const card = [...document.querySelectorAll('.suspect-card')]
+    .find((el) => (el.dataset.username || '').trim().toLowerCase() === key);
+  // Not marked done when there is no match: the first render can be the
+  // signed-out roster, and the name may only turn up on the next one.
+  if(!card) return;
+
+  requestedSuspectOpened = true;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.querySelector('.suspect-avatar-button')?.click();
+
+  // Taken back out of the address bar, so a reload - or a link copied from
+  // here - is just the suspects page.
+  const url = new URL(window.location.href);
+  url.searchParams.delete('suspect');
+  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
 }
 
 document.addEventListener('DOMContentLoaded', loadCurrentSuspects);

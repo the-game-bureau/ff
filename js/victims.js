@@ -241,13 +241,16 @@ function escapeHtml(value){
 
 // The sign-in prompt needs a clickable link, so this accepts markup. Callers
 // pass either plain text or one of the trusted constants below.
+// Pick feedback goes to the shared toast rather than a line under the heading.
+// The status used to sit above a grid of 32 cards, so on a phone - and on a
+// desktop once you had scrolled to the team you wanted - the answer to a click
+// appeared somewhere off screen.
+//
+// '' is the in-progress kind here ("Saving Week 3 victim..."), so it maps to
+// note and clears itself; an unknown kind would have stayed up for good.
+// Everything shares one key, so each message replaces the last.
 function setVictimStatus(message, kind){
-  const el = document.getElementById('victimPickStatus');
-  if(!el) return;
-
-  el.innerHTML = message;
-  el.classList.remove('join-status-good', 'join-status-bad');
-  if(kind) el.classList.add(`join-status-${kind}`);
+  window.ffToast?.(message, kind || 'note', 'victims');
 }
 
 function pickTimestamp(pick){
@@ -798,7 +801,7 @@ async function submitVictimPick(teamName){
 
 async function runVictimPick(teamName){
   if(!victimState.user){
-    setVictimStatus('<a class="status-link" href="#signin">Login</a> to pick.', 'bad');
+    setVictimStatus('Login to name a victim.', 'bad');
     return;
   }
 

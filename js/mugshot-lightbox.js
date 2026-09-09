@@ -18,6 +18,7 @@
           <span class="mugshot-lightbox-name"></span>
           <span class="mugshot-lightbox-subcaption" hidden></span>
         </figcaption>
+        <button class="mugshot-lightbox-action" type="button" hidden></button>
       </figure>
     `;
     document.body.appendChild(lightbox);
@@ -101,6 +102,26 @@
     const subText = String(options.subcaption || '').trim();
     sub.textContent = subText;
     sub.hidden = !subText;
+
+    // An optional button under the picture, for whatever the caller can do with
+    // the thing being previewed. The trigger names the button, names the
+    // attribute to stamp on it, and may put a value in that attribute; this
+    // module never learns what the action does, it only puts the control where
+    // the picture is. The value is how an action that is about a particular
+    // suspect - rather than about whoever is signed in - knows which one, since
+    // the button lives in a shared lightbox and not on the card.
+    const action = box.querySelector('.mugshot-lightbox-action');
+    const label = String(options.actionLabel || '').trim();
+    const flag = String(options.actionFlag || '').trim();
+    const value = String(options.actionValue == null ? '' : options.actionValue);
+
+    for (const name of [...action.getAttributeNames()]) {
+      if (name.startsWith('data-')) action.removeAttribute(name);
+    }
+
+    action.textContent = label;
+    action.hidden = !(label && flag);
+    if (label && flag) action.setAttribute(`data-${flag}`, value);
     box.hidden = false;
     document.body.classList.add('mugshot-lightbox-open');
     closeButton.focus();
@@ -129,6 +150,11 @@
       sub.textContent = '';
       sub.hidden = true;
     }
+    const action = lightbox.querySelector('.mugshot-lightbox-action');
+    if(action){
+      action.textContent = '';
+      action.hidden = true;
+    }
     if(card){
       card.classList.remove('mugshot-lightbox-card-icon');
       card.style.removeProperty('--mugshot-preview-bg');
@@ -141,7 +167,28 @@
     previousFocus = null;
   }
 
+  // A trigger that is not a real button still has to answer the keyboard. The
+  // suspect tracker's booking card is a div carrying role="button", because the
+  // photo inside it is already an element of its own.
+  document.addEventListener('keydown', (event) => {
+    if(event.key !== 'Enter' && event.key !== ' ') return;
+
+    const trigger = event.target.closest('[data-mugshot-lightbox]');
+    if(!trigger || trigger.tagName === 'BUTTON') return;
+
+    event.preventDefault();
+    trigger.click();
+  });
+
   document.addEventListener('click', (event) => {
+    // The picture is about to be replaced, so the preview of the old one should
+    // not be sitting behind the file dialog. Deliberately does not stop the
+    // event: the module that owns the action is listening further up.
+    if(event.target.closest('.mugshot-lightbox-action')){
+      closeMugshotLightbox();
+      return;
+    }
+
     const closeTrigger = event.target.closest('[data-mugshot-close]');
     if(closeTrigger){
       event.preventDefault();
@@ -161,6 +208,9 @@
       {
         symbol: trigger.dataset.mugshotSymbol || '',
         subcaption: trigger.dataset.mugshotSubcaption || '',
+        actionLabel: trigger.dataset.mugshotAction || '',
+        actionFlag: trigger.dataset.mugshotActionFlag || '',
+        actionValue: trigger.dataset.mugshotActionValue || '',
         ...legendColorsFromTrigger(trigger)
       }
     );

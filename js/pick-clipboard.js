@@ -34,11 +34,48 @@
     if (!document.getElementById('pickClipboard')) return;
 
     bindControls();
+    bindTrackerLinks();
     renderWeekOptions();
     renderClipboard();
     loadPicks();
     window.addEventListener('ff-auth-changed', loadPicks);
   });
+
+  // The way back to the board. A name here is the same pick as a cell up there,
+  // so clicking one should find the other - the board has linked down to this
+  // sheet since it was a table, and the traffic only ran one way.
+  function bindTrackerLinks() {
+    const body = document.getElementById('pickClipboardBody');
+    if (!body || body.dataset.trackerLinksBound === 'true') return;
+    body.dataset.trackerLinksBound = 'true';
+
+    const jump = (target) => {
+      const username = target?.getAttribute('data-tracker-username');
+      if (!username) return;
+
+      // The highlighter goes on the tracker, not here. This end only goes bold,
+      // which is enough to show the click landed and to say which name the mark
+      // up there belongs to - two marker swipes for one click would read as two
+      // separate answers.
+      clearHighlight();
+      clearActiveName();
+      target.classList.add('pick-clipboard-suspect-active');
+
+      window.SuspectTracker?.focusPick?.(username, selectedWeek);
+    };
+
+    body.addEventListener('click', (event) => {
+      jump(event.target.closest('[data-tracker-username]'));
+    });
+
+    body.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest('[data-tracker-username]');
+      if (!target) return;
+      event.preventDefault();
+      jump(target);
+    });
+  }
 
   function bindControls() {
     const select = document.getElementById('pickClipboardWeek');
@@ -213,11 +250,71 @@
       </li>
     `).join('');
 
+    fitPadTeams(body);
+    fitPadNames(body);
+
     if (pendingFocus && Number(pendingFocus.week) === Number(selectedWeek)) {
       if (focusPickRow(pendingFocus.username, pendingFocus.week)) {
         pendingFocus = null;
       }
     }
+  }
+
+  // Every team name is held to one line, so the long ones have to be brought
+  // down to fit rather than allowed to wrap. Stepping the type down beats
+  // picking one small size for everybody: "The Jets" keeps the card's full size
+  // and only "The Washington Commanders" pays for being long.
+  //
+  // The same approach fitTeamNames() takes on the lineup placards.
+  const PAD_TEAM_MIN_PX = 11;
+  const PAD_NAME_MIN_PX = 10;
+  // How far below the named team the opponent sits.
+  const PAD_OPPONENT_RATIO = 0.86;
+
+  // A record is one line and nothing scrolls, so a long handle with a long first
+  // name has nowhere to go but down in size. Same treatment as the team names
+  // above it, with a lower floor: these are set smaller to begin with.
+  function fitPadNames(root) {
+    for (const chip of root.querySelectorAll('.pick-clipboard-suspect')) {
+      let size = naturalSize(chip);
+      for (; size >= PAD_NAME_MIN_PX; size -= 0.5) {
+        chip.style.fontSize = `${size}px`;
+        if (chip.scrollWidth <= chip.clientWidth) break;
+      }
+    }
+  }
+
+  function fitPadTeams(root) {
+    for (const block of root.querySelectorAll('.pad-card-victim')) {
+      const victim = block.querySelector('.pad-team-victim .pick-clipboard-team');
+      const opponent = block.querySelector('.pad-team-opponent .pick-clipboard-matchup');
+      if (!victim) continue;
+
+      const victimPx = fitOneLine(victim, naturalSize(victim));
+
+      // Measured against the team that was actually named, not against the
+      // card. Fitting the two independently inverted them on a long name: "The
+      // Washington Commanders" shrank to 13px while its shorter opponent stayed
+      // at 14.3px, so the answer read louder than the accusation.
+      if (opponent) {
+        fitOneLine(opponent, Math.min(naturalSize(opponent), victimPx * PAD_OPPONENT_RATIO));
+      }
+    }
+  }
+
+  function naturalSize(el) {
+    el.style.fontSize = '';
+    return parseFloat(window.getComputedStyle(el).fontSize) || 20;
+  }
+
+  // Steps the type down until the line fits, and reports where it landed.
+  function fitOneLine(el, startPx) {
+    let size = startPx;
+    for (; size >= PAD_TEAM_MIN_PX; size -= 0.5) {
+      el.style.fontSize = `${size}px`;
+      if (el.scrollWidth <= el.clientWidth) break;
+    }
+    return Math.max(size, PAD_TEAM_MIN_PX);
   }
 
   // Biggest crowd first, so the popular pick leads and the lone wolf is last -
@@ -260,7 +357,8 @@
     const username = displayName(pick);
     return nameChipHtml(username, {
       id: pickAnchorId(username, selectedWeek),
-      title: `Filed ${stamp(pick)}`
+      title: `Filed ${stamp(pick)}. Click to find them on the tracker.`,
+      linked: true
     });
   }
 
@@ -270,8 +368,9 @@
   function nameChipHtml(username, options = {}) {
     const first = firstNames.get(String(username).trim().toLowerCase()) || '';
 
-    return `<span class="pick-clipboard-suspect"
-                  ${options.id ? `id="${escapeHtml(options.id)}" tabindex="-1"` : ''}
+    return `<span class="pick-clipboard-suspect${options.linked ? ' pick-clipboard-suspect-linked' : ''}"
+                  ${options.linked ? `role="button" tabindex="0" data-tracker-username="${escapeHtml(username)}"` : ''}
+                  ${options.id ? `id="${escapeHtml(options.id)}"` : ''}
                   ${options.title ? `title="${escapeHtml(options.title)}"` : ''}><span class="pick-clipboard-suspect-handle">${escapeHtml(username)}</span>${
       first ? `<span class="pick-clipboard-suspect-first">(${escapeHtml(first)})</span>` : ''
     }</span>`;
@@ -316,7 +415,10 @@
 
         <span class="pick-clipboard-suspect-names">${
           missing.length
-            ? missing.map((username) => nameChipHtml(username)).join('')
+            ? missing.map((username) => nameChipHtml(username, {
+                title: 'Click to find them on the tracker.',
+                linked: true
+              })).join('')
             : '<span class="pad-card-allin">everyone has filed</span>'
         }</span>
       </li>`;
@@ -558,16 +660,39 @@
   }
 
   function focusPickRow(username, week) {
-    // The tracker still links per suspect, so the anchor is now that suspect's
-    // name inside their team's row. Scroll the row, flash the name.
+    // The tracker links per suspect, so the anchor is that suspect's name inside
+    // their team's box. Scroll to it and run the highlighter over it.
     const row = document.getElementById(pickAnchorId(username, week));
     if (!row) return false;
 
+    clearHighlight();
+    clearActiveName();
+
     row.focus({ preventScroll: true });
     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Reading a layout property between removing and adding the class restarts
+    // the swipe. Without it, clicking the same name twice does nothing visible:
+    // the browser collapses the two changes into no change at all.
+    void row.offsetWidth;
     row.classList.add('pick-clipboard-row-target');
-    window.setTimeout(() => row.classList.remove('pick-clipboard-row-target'), 1600);
     return true;
+  }
+
+  // One mark at a time. It stays put until another name is clicked or the page
+  // is reloaded - it used to wipe itself after 1.6 seconds, which meant looking
+  // away for a moment lost the answer you had just asked for.
+  function clearHighlight() {
+    for (const el of document.querySelectorAll('.pick-clipboard-row-target')) {
+      el.classList.remove('pick-clipboard-row-target');
+    }
+  }
+
+  // One name bold at a time, the same way one name is marked at a time.
+  function clearActiveName() {
+    for (const el of document.querySelectorAll('.pick-clipboard-suspect-active')) {
+      el.classList.remove('pick-clipboard-suspect-active');
+    }
   }
 
   window.PickClipboard = Object.freeze({

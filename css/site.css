@@ -24,6 +24,12 @@
   --paper-raised: #FFFFFF;
 
   --primary-red: #E10600;
+  /* The marker used to point one view at the other: the legal pad swipes a name
+     with it, the suspect tracker swipes the matching suspect and cell. Global,
+     not scoped to the pad - it lived on .pick-clipboard, so on the tracker it
+     resolved to nothing and the band painted itself transparent. Slightly
+     see-through, so whatever is underneath reads through it as on paper. */
+  --pad-highlighter: rgba(120, 205, 245, 0.78);
   --primary-red-dark: #A70400;
   --primary-blue: #0033CC;
   --primary-blue-mid: #002288;
@@ -1267,9 +1273,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .toast-bad{ border-left: 8px solid var(--primary-red); }
 .toast-note{ border-left: 8px solid var(--accent-yellow); }
 
+/* Slides in, but never fades in from nothing. A toast whose only route to being
+   visible is a completed animation is invisible wherever animations do not run
+   - a stalled frame, animations switched off, a browser that skips them - and
+   an unread error is worse than an unanimated one. It is legible at every point
+   of this, including before it starts. */
 @keyframes toastIn{
-  from{ opacity: 0; transform: translateX(10px); }
-  to{ opacity: 1; transform: translateX(0); }
+  from{ transform: translateX(10px); }
+  to{ transform: translateX(0); }
 }
 
 /* ===== MUGSHOT EDITOR ===== */
@@ -2846,18 +2857,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   transform: rotate(0.3deg);
 }
 
-/* One sentence, centred, wrapping only where it has to. Each team is an
-   inline-flex unit so its logo can never be orphaned from its name - the line
-   breaks between the teams and the verb, never inside a team. */
 .pad-card-victim{
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin-top: 2px;
   text-align: center;
-  line-height: 1.5;
-  /* A shade smaller than the rest of the box. At the card's full size the
-     longest names ("The Washington Commanders") could not fit a line even on
-     their own, so they broke mid-name and left the logo holding half a team. */
-  font-size: 1.08rem;
 }
 
 /* The count heads the box and is ruled off from it, the way a tally sheet is
@@ -2922,19 +2927,50 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   opacity: 0.75;
 }
 
+/* One suspect per line, no separators. A wrapped run of names needed commas or
+   gaps to be read apart, and both fought with the handwriting; a list down the
+   page needs neither. */
 .pick-clipboard-suspect-names{
   display: flex;
-  flex-wrap: wrap;
-  gap: 0 10px;
+  flex-direction: column;
+  /* Both axes, not just x. Setting overflow-x alone forces the other axis to
+     `auto` per spec, and the column runs a couple of pixels past its own height
+     from line-height rounding - which was enough to put a scrollbar down the
+     side of a hand-drawn box. The padding keeps that rounding off the
+     descenders now that nothing scrolls. */
+  overflow: hidden;
+  padding-bottom: 3px;
   min-width: 0;
   font-size: 1.05rem;
-  line-height: 1.45;
+  line-height: 1.5;
   opacity: 0.9;
 }
 
 /* A name is a link target: the tracker above deep-links to one suspect inside
    their team's box, so each has to be addressable and able to flash. */
-.pick-clipboard-suspect{ padding: 0 2px; }
+/* One line per record. A handle and its bracketed first name are one entry, so
+   the pair never folds - the list reads down the box, one suspect per row. */
+.pick-clipboard-suspect{
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+/* A name that filed a pick points at its cell on the board. The no-pick box's
+   names are not linked: there is no cell up there to point at. */
+.pick-clipboard-suspect-linked{ cursor: pointer; }
+
+/* Bold on hover and while marked, never underlined. The names rest at regular
+   weight so bold has somewhere to go: --font-hand resolves to Segoe Print or
+   Bradley Hand, which carry Regular and Bold and nothing between, so bolding
+   something already bold would have shown nothing at all. */
+.pick-clipboard-suspect-names{ font-weight: 400; }
+
+.pick-clipboard-suspect-linked:hover,
+.pick-clipboard-suspect-linked:focus-visible,
+.pick-clipboard-suspect-active,
+.pick-clipboard-suspect.pick-clipboard-row-target{ font-weight: 700; }
+
+.pick-clipboard-suspect-linked:focus-visible{ outline: none; }
 
 /* Neither the handle nor the bracketed name ever breaks mid-word. The only
    place the line may fall inside a chip is between the two, which happens
@@ -2954,9 +2990,50 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .pick-clipboard-suspect:focus{ outline: none; }
 
-.pick-clipboard-suspect.pick-clipboard-row-target{
-  background: var(--accent-yellow);
-  outline: 2px solid var(--sharpie-black);
+/* A highlighter stroke, swiped left to right across the name. No outline: a box
+   round it read as a selected cell, and this is meant to read as someone
+   reaching for a marker and running it over the line.
+
+   Four things make it look drawn rather than filled:
+     - the band is an SVG with a wandering top and bottom edge, not a rectangle;
+     - it sits behind the text and multiplies, so the biro darkens through it
+       the way ink does under a real marker instead of being painted over;
+     - it leans a fraction of a degree, because a hand does;
+     - it is revealed by a clip travelling left to right, so the tip appears to
+       pass over the word. Growing a rectangle's width instead stretched the
+       whole band as it went, which no marker does.
+   It stays until another name is clicked or the page reloads. */
+.pick-clipboard-suspect{ position: relative; }
+
+.pick-clipboard-suspect.pick-clipboard-row-target::before{
+  content: "";
+  position: absolute;
+  left: -3px;
+  right: -4px;
+  top: 8%;
+  bottom: 4%;
+  z-index: -1;
+  background-color: var(--pad-highlighter);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M1 5 C38 2 74 7 112 4 C146 1.5 172 6 199 3 L199 20.5 C168 23 138 18.5 106 21.5 C68 24 34 19.5 1 22 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M1 5 C38 2 74 7 112 4 C146 1.5 172 6 199 3 L199 20.5 C168 23 138 18.5 106 21.5 C68 24 34 19.5 1 22 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  mix-blend-mode: multiply;
+  transform: rotate(-0.55deg);
+  transform-origin: left center;
+  animation: padHighlighterSwipe 0.34s cubic-bezier(0.2, 0.72, 0.3, 1) both;
+}
+
+/* The tip travels across; the band itself never changes shape. */
+@keyframes padHighlighterSwipe{
+  from{ clip-path: inset(0 100% 0 0); }
+  to{ clip-path: inset(0 -2px 0 0); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pick-clipboard-suspect.pick-clipboard-row-target::before{ animation: none; }
 }
 
 /* Ruled off from the names above it, in the same pen. */
@@ -2980,7 +3057,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-size: 1.25rem;
 }
 
-@media (max-width: 900px){
+/* Two across sooner than felt necessary. Three columns held down to 900px, but
+   between there and about 1040px each box is under 200px wide - narrower than
+   "The Washington Commanders" can be set without the fit pass hitting its 11px
+   floor and the name being cut. Nothing scrolls in these boxes any more, so a
+   box too small for its contents clips them rather than offering a bar. */
+@media (max-width: 1040px){
   .pad-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -2994,19 +3076,41 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* The accusation reads down the box, not across it: the named team, then what
    is being claimed about them, then who they have to lose to. Each team sits on
    its own line with its logo, so the two are compared like for like. */
+/* Logo and name on one line, centred. Held to a single line by nowrap and kept
+   inside the box by fitPadTeams(), which steps the type down until it fits -
+   the same trick the lineup placards use. The alternative was a size small
+   enough for "The Washington Commanders", which would have shrunk all
+   thirty-two to suit the longest one. */
 .pad-team{
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  vertical-align: middle;
-  gap: 7px;
+  justify-content: center;
+  gap: 6px;
   min-width: 0;
+  white-space: nowrap;
 }
 
-/* "to lose @" carries the sentence between the two teams. Quieter than either
-   of them: it is the connective, not a name. */
+.pad-team .pick-clipboard-team,
+.pad-team .pick-clipboard-matchup{
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* The opponent is the second half of the sentence, not the accusation, so it
+   sits a step down from the team being named. */
+.pad-team-opponent{ font-size: 0.86em; }
+
+.pad-team-opponent .pick-clipboard-team-logo{
+  width: 21px;
+  height: 21px;
+}
+
+/* The middle line - "to lose @" - carries the sentence between the two teams.
+   Quieter than either of them: it is the connective, not a name. */
 .pad-team-verb{
-  display: inline;
-  margin: 0 5px;
+  display: block;
+  margin: 1px 0;
+  text-align: center;
   font-size: 1.05rem;
   font-weight: 700;
   opacity: 0.78;
@@ -3031,19 +3135,23 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     drop-shadow(0.7px 0.4px 0 rgba(0, 71, 171, 0.36));
 }
 
-/* Each team name is unbreakable, so the sentence wraps around whole teams
-   rather than through the middle of one. Sized to fit the longest name in the
-   league on one line of a three-across card. */
-.pick-clipboard-team,
-.pick-clipboard-matchup{ white-space: nowrap; }
-
+/* Team names wrap at their spaces like any other words. Holding them whole was
+   tried and cannot work at three across: the card gives a name 227px, and "The
+   Washington Commanders" wants 267px beside its logo. Even at 0.90rem - too
+   small to sit with the rest of the pad - six of the thirty-two still overflow.
+   So the sentence breaks where a sentence breaks, and the logo stays with the
+   front of its team either way. */
 .pick-clipboard-team{ font-weight: 900; }
 
 /* One pen wrote this page. The opponent used to be set in a lighter blue,
-   which read as a second ink - it is lighter only in weight now. */
+   which read as a second ink - it is lighter only in weight now.
+   Regular, not 700: --font-hand resolves to Segoe Print or Bradley Hand, which
+   ship Regular and Bold and nothing between, so 700 and the named team's 900
+   both landed on the same Bold face and the two read identically. Against
+   Regular the accusation is plainly the heavier of the two. */
 .pick-clipboard-matchup{
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 400;
   text-transform: none;
 }
 
@@ -3374,6 +3482,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border: 0;
 }
 
+/* The photo is no longer the control - the card around it is - so this is just
+   the frame it sits in. */
 .lineup-tracker-mugshot-button{
   display: block;
   width: 44px;
@@ -3381,10 +3491,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding: 0;
   background: var(--paper);
   border: 4px solid var(--tracker-secondary);
-  cursor: pointer;
 }
 
-.lineup-tracker-mugshot-button:focus-visible{
+.lineup-booking-card[role="button"]{ cursor: pointer; }
+
+.lineup-booking-card[role="button"]:focus-visible{
   outline: 3px solid var(--ink);
   outline-offset: 3px;
 }
@@ -3503,6 +3614,55 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background: rgba(255, 250, 210, 0.94);
   outline: 2px solid var(--matrix-ink);
   outline-offset: 2px;
+}
+
+/* Where the legal pad points back to. Drawn round the box rather than over it -
+   a ring in the same highlighter, the way you would circle something on a
+   printout. Laid over the top it buried the logo and the result, which are the
+   things you were sent here to look at.
+   The lopsided radii are the legal pad's hand-drawn box trick at a size that
+   suits a small cell: kept modest, or the browser clamps them into an oval.
+   The mark stays until another is asked for.
+   Two classes on purpose - the result classes below carry their own
+   border-color, and one class here would be too weak to be sure of the order.
+
+   The suspect's own box is ringed as well as the cell. Marking only the cell
+   left you looking eighteen columns away from a name to work out whose row you
+   had landed in. */
+.lineup-booking-card.lineup-booking-card-target{ position: relative; }
+
+.lineup-booking-card.lineup-booking-card-target::after{
+  content: "";
+  position: absolute;
+  inset: -7px -8px;
+  border: 4px solid var(--pad-highlighter);
+  border-radius: 18px 7px 15px 9px / 9px 15px 7px 18px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  animation: padHighlighterSwipe 0.34s cubic-bezier(0.2, 0.72, 0.3, 1) both;
+  transform: rotate(-0.4deg);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .lineup-booking-card.lineup-booking-card-target::after{ animation: none; }
+}
+
+.lineup-week-block.lineup-week-block-target{ position: relative; }
+
+.lineup-week-block.lineup-week-block-target::after{
+  content: "";
+  position: absolute;
+  inset: -6px -5px;
+  border: 4px solid var(--pad-highlighter);
+  border-radius: 14px 6px 12px 8px / 8px 12px 6px 14px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  animation: padHighlighterSwipe 0.34s cubic-bezier(0.2, 0.72, 0.3, 1) both;
+  transform: rotate(-0.9deg);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .lineup-week-block.lineup-week-block-target::after{ animation: none; }
 }
 
 .lineup-week-block-pick{
@@ -4121,33 +4281,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* Under your own card only, so the lineup reads the same for everyone else.
    Deliberately small and quiet: it is a housekeeping control sitting in a grid
    of photographs, not a call to action. */
-.suspect-mugshot-edit{
-  width: var(--mugshot-width);
-  padding: 5px 8px;
-  background: var(--paper-raised);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.08s linear, box-shadow 0.08s linear,
-              background 0.08s linear;
-}
 
-.suspect-mugshot-edit:hover,
-.suspect-mugshot-edit:focus-visible{
-  background: var(--accent-yellow);
-  transform: translate(3px, 3px);
-  box-shadow: 0 0 0 var(--ink);
-  outline: none;
-}
-
-/* ===== MUGSHOT LIGHTBOX ===== */
-body.mugshot-lightbox-open{ overflow: hidden; }
 
 .mugshot-lightbox{
   position: fixed;
@@ -4234,6 +4368,43 @@ body.mugshot-lightbox-open{ overflow: hidden; }
    plate on the card uses. Only drawn when there is a name to draw: signed out,
    first_name is withheld from the public read and never arrives. */
 .mugshot-lightbox-name{ display: block; }
+
+/* The optional action under the picture. Sized and coloured like the site's
+   own buttons rather than the lightbox's chrome, because it does something to
+   the thing on screen rather than dismissing it. */
+.mugshot-lightbox-action{
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--primary-red);
+  color: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+/* Both carry an explicit display, which outranks the browser's own [hidden]
+   rule - so a preview with no action to offer, or no first name to show, still
+   painted the empty element. The action was the visible one: a blank red bar
+   under every mugshot but your own, which looked like a button and did nothing
+   when pressed. Same trap as .btn[hidden] up in BUTTONS. */
+.mugshot-lightbox-action[hidden],
+.mugshot-lightbox-subcaption[hidden]{
+  display: none;
+}
+
+.mugshot-lightbox-action:hover,
+.mugshot-lightbox-action:focus-visible{
+  outline: none;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
 
 .mugshot-lightbox-subcaption{
   display: block;
