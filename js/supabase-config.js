@@ -37,6 +37,12 @@
       adminRemoveMember: '_2026_admin_remove_member',
       emailRegistered: '_2026_email_registered',
       adminSetSuspectColors: '_2026_admin_set_suspect_colors',
+      // A suspect's own record, read and written by js/rap-sheet.js. Functions
+      // rather than table access because last_name, sms and email are not
+      // selectable by a browser role at all - see
+      // supabase/sql/ff_own_rap_sheet.sql.
+      myRapSheet: '_2026_my_rap_sheet',
+      saveMyRapSheet: '_2026_save_my_rap_sheet',
     }),
     dashboard: Object.freeze({
       // The admin page's Database button. 17649 is the table's own id in

@@ -976,6 +976,7 @@ body{
 input[type="email"],
 input[type="password"],
 input[type="file"],
+input[type="tel"],
 input[type="text"]{
   padding: 14px;
   border: var(--rule);
@@ -4841,6 +4842,88 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .helmet{ width: 62px; height: 55px; }
   .modal-actions .btn{ flex: 1 1 100%; }
 }
+
+/* ===== RAP SHEET (js/rap-sheet.js) =====
+   A suspect's whole record in one popup, opened from their own mugshot. It
+   borrows the booking form's field styling wholesale - same labels, same
+   privacy tags, same help text - because it is the same information, and
+   somebody who filled that form in once should recognise this. */
+.rap-sheet-card{
+  max-width: 520px;
+  padding: 28px 22px 22px;
+  /* Taller than most phones with seven fields and a photograph, which
+     .modal-backdrop already answers by scrolling. */
+  text-align: left;
+}
+
+/* The preview carries the placard stripe, so the two colour swatches below are
+   shown doing the thing they actually do rather than as two loose chips. */
+.rap-sheet-frame{
+  --stripe-a: var(--ink);
+  --stripe-b: var(--accent-yellow);
+  position: relative;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  border: var(--rule);
+}
+
+.rap-sheet-frame::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 10px;
+  background: linear-gradient(90deg, var(--stripe-a) 0 6px, var(--stripe-b) 6px 10px);
+  pointer-events: none;
+}
+
+.rap-sheet-preview{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rap-sheet-colours{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* Sized to its words. .btn is a block on this width, and left to itself it took
+   the whole row and read like the form's main action rather than a way to undo
+   the two swatches beside it. */
+.rap-sheet-colours .btn{
+  width: auto;
+  align-self: flex-end;
+}
+
+.rap-sheet-swatch{
+  display: grid;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* A colour input paints its own chrome; the hard border and zero blur are what
+   make it belong to this site rather than to the browser. */
+.rap-sheet-swatch input[type="color"]{
+  width: 64px;
+  height: 34px;
+  padding: 2px;
+  background: var(--paper-raised);
+  border: var(--rule);
+  cursor: pointer;
+}
+
+.rap-sheet-status-bad{ color: var(--error); }
+.rap-sheet-status-good{ color: var(--success); }
 
 /* ===== COLOUR LAB (admin/colors/) =====
    The tool for choosing a suspect's two colours by eye. Every card shows the

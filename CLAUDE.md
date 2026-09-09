@@ -158,6 +158,15 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - [js/password-reset.js](js/password-reset.js) — the recovery lightbox. Replaces the
   old `reset.html`, which no longer exists; recovery links land on the site root.
 - [js/mugshot-lightbox.js](js/mugshot-lightbox.js) — the full-size mugshot viewer.
+- [js/rap-sheet.js](js/rap-sheet.js) — **EDIT RAP SHEET**, a suspect's whole
+  record in one popup, opened from their own mugshot preview on suspects/. It
+  replaces the old `js/mugshot-edit.js`, which could only change the photograph.
+  Reads and writes through `_2026_my_rap_sheet` / `_2026_save_my_rap_sheet`
+  ([supabase/sql/ff_own_rap_sheet.sql](supabase/sql/ff_own_rap_sheet.sql)) rather
+  than the table, because `last_name`, `sms` and `email` are not selectable by a
+  browser role and column grants cannot be narrowed to one row. That script also
+  revokes the browser's UPDATE on the table entirely, so those two functions are
+  the only way a profile row is written from a page.
 - [js/admin.js](js/admin.js) — the admin page.
 - [supabase/sql/](supabase/sql/) — one-off migrations and repair scripts, each
   documenting the problem it solves. Run by hand in the Supabase SQL editor.
@@ -250,6 +259,12 @@ hotlink; nothing is copied into the repo.
   not merely look old, it fails silently. `js/app.js` calling `window.renderHeaderUser?.()`
   against a cached `js/season.js` that predates that function makes the signed-in
   username disappear with nothing in the console — which is exactly what happened.
+- **A username can be changed, so never key anything off the copy stored on a
+  pick.** `_2026_picks` rows carry a snapshot of the handle they were filed
+  under. The Suspect Tracker matches picks to profiles on `user_id`, and the
+  Legal Pad now resolves the display name the same way ([js/pick-clipboard.js](js/pick-clipboard.js));
+  before that a rename split somebody's season across two names. Picks are
+  append-only, so the snapshots are never rewritten to match.
 - **Signing in is by email address, never by username.** The username is a public
   display name (the placard, the tracker, every verdict) and nothing more. It used
   to be accepted at login and traded for the account's email through `_2026_profiles`,

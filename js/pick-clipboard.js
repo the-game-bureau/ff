@@ -29,6 +29,10 @@
   // Every booked suspect, in the order the roster gives them. Needed to work
   // out who has NOT filed, which the picks alone can never say.
   let roster = [];
+  // user id -> the handle on that profile right now. A pick row carries a
+  // snapshot of the name it was filed under, and a suspect can change theirs
+  // from their rap sheet, so the snapshot is only a fallback.
+  let handles = new Map();
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('pickClipboard')) return;
@@ -130,6 +134,7 @@
 
     roster = people.roster;
     firstNames = people.firstNames;
+    handles = people.handles || new Map();
     activePicks = activePicksFromHistory(picks);
     renderWeekOptions();
     renderClipboard();
@@ -138,7 +143,7 @@
   async function fetchPicks() {
     let { data, error } = await pickboardDb
       .from(ACTIVE_PICKS_VIEW)
-      .select('username, team, week, result, opponent, home_away, created_at, submitted_at_utc');
+      .select('user_id, username, team, week, result, opponent, home_away, created_at, submitted_at_utc');
 
     if (error) {
       console.warn('Pick clipboard: active picks view failed, using the table:', error);
@@ -160,7 +165,7 @@
   // column is granted to the authenticated role alone, so requesting it as anon
   // fails the whole read and would cost the handles too.
   async function fetchRoster(withFirstNames) {
-    const columns = withFirstNames ? 'username, first_name' : 'username';
+    const columns = withFirstNames ? 'id, username, first_name' : 'id, username';
     const { data, error } = await pickboardDb
       .from(PROFILES_TABLE)
       .select(columns);
@@ -173,19 +178,21 @@
     }
 
     const names = new Map();
+    const handleById = new Map();
     const people = [];
 
     for (const row of data || []) {
       const username = String(row?.username || '').trim();
       if (!username) continue;
       people.push(username);
+      if (row?.id) handleById.set(String(row.id), username);
 
       const first = String(row?.first_name || '').trim();
       if (first) names.set(username.toLowerCase(), first);
     }
 
     people.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    return { roster: people, firstNames: names };
+    return { roster: people, firstNames: names, handles: handleById };
   }
 
   function renderWeekOptions() {
@@ -480,8 +487,14 @@
       teamName(a).localeCompare(teamName(b));
   }
 
+  // The name on the profile now, not the one stamped on the pick when it was
+  // filed. Without this a rename would split somebody's season across two
+  // names on this pad and break the jump to the Suspect Tracker, which keys off
+  // the profile. The snapshot is the fallback for a pick whose owner has since
+  // left the roster.
   function displayName(pick) {
-    return String(pick?.username || '(unknown)').trim() || '(unknown)';
+    const current = handles.get(String(pick?.user_id || ''));
+    return String(current || pick?.username || '(unknown)').trim() || '(unknown)';
   }
 
   function teamName(pick) {

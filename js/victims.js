@@ -365,8 +365,11 @@ function scheduleInfoForTeamWeek(teamName, week){
 function matchupText(info){
   if(info.isBye) return 'BYE';
 
-  // Spell out the side of the ball: "@" and "vs" alone read as noise on a card.
-  const side = info.homeAway === '@' ? 'Away @' : 'Home vs';
+  // Says what naming this team would mean, not just who they are playing. The
+  // line read "Home vs Bengals", which is the fixture; the card is a place to
+  // accuse a team of losing, so it now reads "Lose at home to Bengals". Same
+  // information, in the direction the whole game runs.
+  const side = info.homeAway === '@' ? 'Lose @' : 'Lose at home to';
   return `${side} ${info.opponentShort || info.opponent}`;
 }
 

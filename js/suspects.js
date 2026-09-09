@@ -105,9 +105,9 @@ function addCurrentUserProfileData(suspect, user, showFirstNames){
 
   return {
     ...suspect,
-    // The one card whose photo the viewer is allowed to replace. Everything
+    // The one card whose record the viewer is allowed to edit. Everything
     // downstream keys off this flag, so there is a single place that decides
-    // whose card is theirs. js/mugshot-edit.js does the replacing.
+    // whose card is theirs. js/rap-sheet.js does the editing.
     is_self: true,
     first_name: showFirstNames ? suspect.first_name || metadata.firstName : '',
     display_name: showFirstNames && (suspect.first_name || metadata.firstName) ?
@@ -145,12 +145,14 @@ function renderSuspects(suspects){
     const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || DEFAULT_MUGSHOT_URL;
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
-    // Retaking your own mugshot lives in the preview now, not under the card:
-    // it is an action on the picture, so it belongs where the picture is being
-    // looked at. Only your own card offers it - it is not rendered-and-hidden
-    // on the others, because there is nothing anyone else is allowed to do.
+    // Editing your own record lives in the preview, not under the card: it
+    // starts from the picture, so it belongs where the picture is being looked
+    // at. Only your own card offers it - it is not rendered-and-hidden on the
+    // others, because there is nothing anyone else is allowed to do. It used to
+    // say Retake Mugshot and change only the photograph; the whole sheet is
+    // editable now, so it says so.
     const retake = suspect.is_self
-      ? ' data-mugshot-action="Retake Mugshot" data-mugshot-action-flag="mugshot-edit"'
+      ? ' data-mugshot-action="Edit Rap Sheet" data-mugshot-action-flag="rap-sheet"'
       : '';
 
     return `
