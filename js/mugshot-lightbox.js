@@ -12,8 +12,10 @@
       <div class="mugshot-lightbox-backdrop" data-mugshot-close></div>
       <figure class="mugshot-lightbox-card" role="dialog" aria-modal="true" aria-label="Image preview">
         <button class="mugshot-lightbox-close" type="button" data-mugshot-close aria-label="Close image preview">X</button>
-        <img class="mugshot-lightbox-image" alt="Image preview"/>
-        <span class="mugshot-lightbox-symbol" hidden></span>
+        <div class="mugshot-lightbox-frame">
+          <img class="mugshot-lightbox-image" alt="Image preview"/>
+          <span class="mugshot-lightbox-symbol" hidden></span>
+        </div>
         <figcaption class="mugshot-lightbox-caption">
           <span class="mugshot-lightbox-name"></span>
           <span class="mugshot-lightbox-subcaption" hidden></span>
@@ -40,6 +42,29 @@
   // The caption and the alt text are not the same thing. The caption is read
   // next to a picture that is already on screen, so it only needs the name;
   // the alt text stands in for the picture entirely and has to say what it is.
+  // The two-tone stripe every other view of a mugshot carries: down the left of
+  // the placard on suspects/, down the booking card on the tracker, down the
+  // thumbnail in the admin roster. Blown up to full size the photo was the one
+  // place it went missing, which is the place a suspect is most recognisable.
+  //
+  // Read off the trigger rather than passed in a data attribute, because both
+  // pages already paint the pair onto an ancestor as custom properties and
+  // custom properties inherit - so whatever is set on the placard frame or the
+  // booking card is readable on the thing inside it that was clicked.
+  function stripeFromTrigger(trigger){
+    if(!trigger) return {};
+
+    const styles = window.getComputedStyle(trigger);
+    const read = (name) => styles.getPropertyValue(name).trim();
+
+    // suspects/ names them one way and the tracker another; they are the same
+    // two colours either way.
+    const primary = read('--stripe-a') || read('--tracker-primary');
+    const secondary = read('--stripe-b') || read('--tracker-secondary');
+
+    return primary && secondary ? { stripeA: primary, stripeB: secondary } : {};
+  }
+
   function legendColorsFromTrigger(trigger){
     const source = trigger?.closest?.('.lineup-emoji-key-mark');
     if(!source) return {};
@@ -56,6 +81,7 @@
 
     const box = ensureLightbox();
     const card = box.querySelector('.mugshot-lightbox-card');
+    const frame = box.querySelector('.mugshot-lightbox-frame');
     const image = box.querySelector('.mugshot-lightbox-image');
     const symbol = box.querySelector('.mugshot-lightbox-symbol');
     const caption = box.querySelector('.mugshot-lightbox-caption');
@@ -72,6 +98,19 @@
       card.style.setProperty('--mugshot-preview-border', options.border);
     } else {
       card.style.removeProperty('--mugshot-preview-border');
+    }
+
+    // Only when the caller actually knows the pair. The legend previews are an
+    // icon on a swatch and have no suspect behind them, so a default stripe
+    // there would be two colours that mean nothing.
+    const striped = Boolean(options.stripeA && options.stripeB);
+    frame.classList.toggle('mugshot-lightbox-frame-striped', striped);
+    if(striped){
+      frame.style.setProperty('--stripe-a', options.stripeA);
+      frame.style.setProperty('--stripe-b', options.stripeB);
+    } else {
+      frame.style.removeProperty('--stripe-a');
+      frame.style.removeProperty('--stripe-b');
     }
 
     if(options.symbol){
@@ -145,6 +184,12 @@
       symbol.removeAttribute('role');
       symbol.removeAttribute('aria-label');
     }
+    const frame = lightbox.querySelector('.mugshot-lightbox-frame');
+    if(frame){
+      frame.classList.remove('mugshot-lightbox-frame-striped');
+      frame.style.removeProperty('--stripe-a');
+      frame.style.removeProperty('--stripe-b');
+    }
     const sub = lightbox.querySelector('.mugshot-lightbox-subcaption');
     if(sub){
       sub.textContent = '';
@@ -211,6 +256,7 @@
         actionLabel: trigger.dataset.mugshotAction || '',
         actionFlag: trigger.dataset.mugshotActionFlag || '',
         actionValue: trigger.dataset.mugshotActionValue || '',
+        ...stripeFromTrigger(trigger),
         ...legendColorsFromTrigger(trigger)
       }
     );

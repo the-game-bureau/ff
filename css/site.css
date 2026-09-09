@@ -3543,12 +3543,33 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* The photo is no longer the control - the card around it is - so this is just
    the frame it sits in. */
 .lineup-tracker-mugshot-button{
+  position: relative;
   display: block;
   width: 44px;
   height: 44px;
   padding: 0;
+  overflow: hidden;
   background: var(--paper);
   border: 4px solid var(--tracker-secondary);
+}
+
+/* The placard stripe, so every mugshot on the site is marked the same way:
+   here, on the suspects page, in the admin roster and in the full-size preview.
+   3px and 2px, the same as the admin thumbnail, which is the closest of them in
+   size - a share-of-the-frame stripe would come out under three pixels at 44
+   and stop reading as two colours at all.
+   The card is already tinted with the primary and this frame is already
+   outlined in the secondary, so the stripe repeats what the card says. That is
+   the point: it is the mark that says mugshot, and it was the one place it was
+   missing. */
+.lineup-tracker-mugshot-button::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 5px;
+  background: linear-gradient(90deg, var(--tracker-primary) 0 3px, var(--tracker-secondary) 3px 5px);
+  pointer-events: none;
 }
 
 .lineup-booking-card[role="button"]{ cursor: pointer; }
@@ -4373,6 +4394,32 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   --mugshot-icon-preview-size: min(512px, calc(100vw - 86px), calc(100vh - 150px));
   --mugshot-icon-preview-size: min(512px, calc(100vw - 86px), calc(100dvh - 150px));
   width: calc(var(--mugshot-icon-preview-size) + 46px);
+}
+
+/* Wraps the photo so the placard stripe has something the height of the photo
+   to hang on. Without it the stripe would have to run down the whole card,
+   past the caption and the action button, which is not where that mark lives
+   anywhere else on the site. */
+.mugshot-lightbox-frame{ position: relative; }
+
+/* The same two-tone stripe suspects/ paints down the left of a placard and the
+   Suspect Tracker paints down a booking card - the colours sampled from this
+   very photograph. Full size was the one view of a mugshot that did not carry
+   it, which is the view where the suspect is most recognisable.
+   Sized as a share of the photo rather than in pixels: the placard's stripe is
+   14px against a card of about 190, and holding that 14 against a 620px photo
+   turned it into a hairline. The clamp keeps it honest at both ends, and the
+   split at 64% is the placard's own 9:5 at whatever width it lands on.
+   Sits inside the photo's own 3px border, and only when a pair was supplied -
+   the legend swatches have no suspect behind them, so they get none. */
+.mugshot-lightbox-frame-striped::before{
+  content: "";
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  z-index: 2;
+  width: clamp(18px, 5%, 34px);
+  background: linear-gradient(90deg, var(--stripe-a) 0 64%, var(--stripe-b) 64% 100%);
+  pointer-events: none;
 }
 
 .mugshot-lightbox-image{
