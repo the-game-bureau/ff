@@ -53,6 +53,7 @@
     els.recordsPanel = document.getElementById('adminRecordsPanel');
     els.recordsBody = document.getElementById('adminRecordsBody');
     els.recordsTitle = document.getElementById('adminRecordsTitle');
+    els.saveAllRecords = document.getElementById('btnSaveAllRecords');
     els.refreshRecords = document.getElementById('btnRefreshRecords');
     els.archivePanel = document.getElementById('adminArchivePanel');
     els.archiveBody = document.getElementById('adminArchiveBody');
@@ -76,6 +77,7 @@
     els.confirmDelete = document.getElementById('btnConfirmDelete');
 
     els.refreshRecords?.addEventListener('click', loadRecords);
+    els.saveAllRecords?.addEventListener('click', saveAllRecords);
 
     els.apbAllEmail?.addEventListener('click', () => drawUpApb('named'));
     els.apbNoPickEmail?.addEventListener('click', () => drawUpApb('nopick'));
@@ -459,6 +461,20 @@
     return count ? changes : null;
   }
 
+  // The one place that calls the update function, so the single-row save and
+  // Save All cannot drift over which arguments they send.
+  function sendRecordUpdate(userId, changes) {
+    return adminDb.rpc(ADMIN_RPCS.adminUpdateProfile || 'ff_admin_update_profile', {
+      target_user_id: userId,
+      new_username: changes.username ?? null,
+      new_first_name: changes.first_name ?? null,
+      new_last_name: changes.last_name ?? null,
+      new_email: changes.email ?? null,
+      new_avatar_data_url: changes.avatar_data_url ?? null,
+      new_sms: changes.sms ?? null
+    });
+  }
+
   async function saveRecord(userId, extra = {}) {
     if (!adminDb || !userId) return;
 
@@ -472,15 +488,7 @@
 
     setRecordsStatus('Saving record.', 'note');
 
-    const { data, error } = await adminDb.rpc(ADMIN_RPCS.adminUpdateProfile || 'ff_admin_update_profile', {
-      target_user_id: userId,
-      new_username: changes.username ?? null,
-      new_first_name: changes.first_name ?? null,
-      new_last_name: changes.last_name ?? null,
-      new_email: changes.email ?? null,
-      new_avatar_data_url: changes.avatar_data_url ?? null,
-      new_sms: changes.sms ?? null
-    });
+    const { data, error } = await sendRecordUpdate(userId, changes);
 
     if (error) {
       setRecordsStatus(`Save failed: ${error.message}${error.code ? ` (${error.code})` : ''}`, 'bad');
@@ -493,6 +501,66 @@
     // is actually on file, not what was typed.
     setRecordsStatus(`Saved ${data?.username || 'record'}.`, 'good');
     await loadRecords();
+  }
+
+  // Everything edited since the table was loaded, sent in one go.
+  //
+  // Deliberately not a loop over saveRecord(): that reloads the table when it
+  // finishes, and a reload rebuilds every row from the database - so the second
+  // row saved would be reading inputs that had just been overwritten, and every
+  // edit after the first would be silently thrown away.
+  //
+  // So the changes are read out of the DOM first, all of them, and the reload
+  // happens once at the end.
+  async function saveAllRecords() {
+    if (!adminDb) return;
+
+    const pending = recordRows
+      .map((row) => ({ id: row.id, name: row.username || 'record', changes: changedFields(row.id) }))
+      .filter((entry) => entry.changes);
+
+    if (!pending.length) {
+      setRecordsStatus('Nothing has been changed.', 'note');
+      return;
+    }
+
+    if (els.saveAllRecords) els.saveAllRecords.disabled = true;
+    setRecordsStatus(`Saving ${pending.length} record${pending.length === 1 ? '' : 's'}.`, 'note');
+
+    const failed = [];
+    let saved = 0;
+
+    // One at a time rather than in parallel. The function tests a new username
+    // for uniqueness across the whole table, and two rows racing for one name
+    // could both pass the test and both think they won.
+    for (const entry of pending) {
+      const { error } = await sendRecordUpdate(entry.id, entry.changes);
+      if (error) {
+        failed.push(`${entry.name}: ${error.message}`);
+        console.error('ff_admin_update_profile failed:', entry.name, error);
+      } else {
+        saved += 1;
+      }
+    }
+
+    // Once, at the end, and after everything has been sent: the function
+    // normalises what it stores, so the table should show what is on file
+    // rather than what was typed.
+    await loadRecords();
+    if (els.saveAllRecords) els.saveAllRecords.disabled = false;
+
+    if (!failed.length) {
+      setRecordsStatus(`Saved ${saved} record${saved === 1 ? '' : 's'}.`, 'good');
+      return;
+    }
+
+    // The ones that went are worth saying too: a failure list alone reads as if
+    // nothing was written, and the failed rows have been reloaded to what is
+    // actually on file, so those edits are gone and need retyping.
+    setRecordsStatus(
+      `${saved} saved, ${failed.length} failed. ${failed.join(' ')}`,
+      'bad'
+    );
   }
 
   function pickRecordMugshot(userId) {
