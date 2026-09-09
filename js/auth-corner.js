@@ -6,10 +6,6 @@
   const AUTH_PROFILES_TABLE = AUTH_CONFIG.tables?.profiles || 'ff_profiles';
   // Must match a Redirect URL configured in Supabase Auth.
   const RESET_REDIRECT_URL = AUTH_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
-  const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email address.\n\n'
-    + 'Previous year accounts were not activated for this season. '
-    + 'Use JOIN to book yourself in, then sign in with that address and the '
-    + 'password you set there.';
 
   const authDb = window.supabase ? window.supabase.createClient(AUTH_SUPABASE_URL, AUTH_SUPABASE_ANON_KEY, {
     auth: {
@@ -337,7 +333,7 @@
     );
 
     if (!lookupError && registered === false) {
-      alert(NO_ACCOUNT_MESSAGE);
+      alert('No account is on file for that address. Use JOIN to book yourself in.');
       return;
     }
 

@@ -2033,11 +2033,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* The way back in for someone who already has an account. Deliberately not a
    button: three equal buttons would put joining, browsing and signing in on the
    same footing, and this card exists to ask a stranger to join. Underlined
-   because nothing else about it says it can be clicked, and kept on the card's
-   shared left edge with everything above it. */
+   because nothing else about it says it can be clicked.
+   Centred under the two buttons rather than held to the card's left edge, which
+   everything above it shares: it belongs to the pair of buttons, not to the
+   column of text. width: fit-content so the hover highlight covers the words
+   and not the whole width of the card. */
 .welcome-signin{
-  display: inline-block;
-  margin-top: 14px;
+  display: block;
+  width: fit-content;
+  margin: 14px auto 0;
+  text-align: center;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;

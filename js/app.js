@@ -6,10 +6,6 @@ const PICKS_TABLE = FF_CONFIG.tables?.picks || 'ff_picks';
 // Where Supabase sends the password-recovery link. This exact URL must be
 // listed under Authentication > URL Configuration > Redirect URLs.
 const RESET_REDIRECT_URL = FF_CONFIG.resetRedirectUrl || 'https://thegamebureau.com/ff/';
-const NO_ACCOUNT_MESSAGE = 'No 2026 account is on file for that email address.\n\n'
-  + 'Previous year accounts were not activated for this season. '
-  + 'Use JOIN to book yourself in, then sign in with that address and the '
-  + 'password you set there.';
 
 // FIXED: Added session persistence to prevent auth cycling
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -465,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         if (!lookupError && registered === false) {
-          alert(NO_ACCOUNT_MESSAGE);
+          alert('No account is on file for that address. Use JOIN to book yourself in.');
           return;
         }
 
