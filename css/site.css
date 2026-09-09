@@ -2577,6 +2577,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* ===== PICK CLIPBOARD ===== */
 .pick-clipboard{
   --bic-blue: #0047AB;
+  /* The boxes are ruled round the sheet in black marker; the notes inside them
+     are written in --bic-blue biro. Not pure black - a sharpie on yellow paper
+     never is, and a true #000 sits too hard against the pad. */
+  --sharpie-black: #141414;
   --legal-pad-rule-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='31' viewBox='0 0 720 31'%3E%3Cpath d='M0 30 C60 29.2 120 30.8 180 30 C240 29.1 300 30.7 360 30 C420 29.2 480 30.7 540 30 C600 29.1 660 30.8 720 30' fill='none' stroke='%23004FAE' stroke-opacity='.42' stroke-width='1.35' stroke-linecap='round'/%3E%3C/svg%3E");
   --legal-pad-margin-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='720' viewBox='0 0 70 720'%3E%3Cpath d='M45 0 C44 80 46 160 45 240 C44 330 46 430 45 520 C44 610 46 670 45 720' fill='none' stroke='%23C92232' stroke-opacity='.62' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M53 0 C54 92 52 174 53 264 C54 360 52 450 53 540 C54 628 52 680 53 720' fill='none' stroke='%23C92232' stroke-opacity='.42' stroke-width='1.45' stroke-linecap='round'/%3E%3C/svg%3E");
   --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
@@ -2775,7 +2779,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .pick-tally-group{
   display: block;
-  width: 50px;
+  /* Width comes from the group's own viewBox, which is cut to the number of
+     strokes in it, so a partial group takes only the room it needs. */
+  width: auto;
   height: 44px;
   overflow: visible;
 }
@@ -2792,75 +2798,218 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   width: 44px;
 }
 
-.pick-clipboard-table-wrap{
-  overflow-x: auto;
+/* ===== LEGAL PAD CARDS ===== */
+/* Three across, each victim ringed in its own pen box - the way someone working
+   a pad actually counts: draw a box round a team, tally the names inside it,
+   mark the verdict. It replaced a four-column table whose Suspect/Victim/Result
+   was the Suspect Tracker above read sideways. */
+.pad-cards{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.pick-clipboard-table{
-  width: 100%;
-  border-collapse: collapse;
-  background: transparent;
+/* The hand-drawn box. Wildly lopsided border-radii - a long one on one axis
+   against a short one on the other - bow each side out slightly instead of
+   meeting at a corner, which is what a line drawn by hand does.
+   One line, all the way round, in black sharpie: it was drawn twice, an outer
+   pen line with a fainter ring inside it, which read as a double rule rather
+   than as one confident stroke. */
+.pad-card{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 14px;
   color: var(--bic-blue);
   font-family: var(--font-hand);
   font-size: 1.25rem;
   font-weight: 700;
-  line-height: 1.36;
+  line-height: 1.3;
+  border: 5px solid var(--sharpie-black);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 }
 
-.pick-clipboard-table th,
-.pick-clipboard-table td{
-  padding: 10px 12px;
-  background: transparent;
-  border: 0;
-  text-align: left;
-  vertical-align: top;
+/* Three wobbles in rotation, so no two boxes side by side are the same shape.
+   One box repeated eighteen times reads as a border-radius; three alternating
+   read as a hand. */
+.pad-card:nth-child(3n+2){
+  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  transform: rotate(-0.35deg);
 }
 
-.pick-clipboard-table th{
-  color: var(--bic-blue);
-  font-weight: 900;
-  text-transform: none;
+.pad-card:nth-child(3n){
+  border-radius: 225px 25px 255px 25px / 25px 255px 25px 225px;
+  transform: rotate(0.3deg);
 }
 
-.pick-clipboard-table tbody tr:nth-child(even){
-  background: rgba(0, 71, 171, 0.035);
+/* One sentence, centred, wrapping only where it has to. Each team is an
+   inline-flex unit so its logo can never be orphaned from its name - the line
+   breaks between the teams and the verb, never inside a team. */
+.pad-card-victim{
+  display: block;
+  margin-top: 2px;
+  text-align: center;
+  line-height: 1.5;
+  /* A shade smaller than the rest of the box. At the card's full size the
+     longest names ("The Washington Commanders") could not fit a line even on
+     their own, so they broke mid-name and left the logo holding half a team. */
+  font-size: 1.08rem;
 }
 
-/* Team over opponent, each with its score box at the right-hand end of the
-   line, so the two numbers stack into a column you can read down. */
-.pick-clipboard-line{
+/* The count heads the box and is ruled off from it, the way a tally sheet is
+   kept: the marks first, then what they are counting underneath. Struck as
+   tally marks rather than set as a numeral - it is the same hand that wrote the
+   heading, and on a pad you count by striking, not by writing "7". */
+/* Two drawn rules per box: one under the count, one under the teams. Named as
+   properties on the card so the strokes are written once, and paired so a card
+   never uses the same one twice - two identical wobbles stacked read as a
+   repeat, which is the one thing a hand-drawn line must not do. */
+.pad-card{
+  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.pad-card:nth-child(3n+2){
+  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.pad-card:nth-child(3n){
+  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Drawn, not ruled. A border-bottom was a perfect line under a box whose whole
+   point is that it was drawn by hand, and the two sat badly together. These are
+   strokes with a wander in them, stretched to the width of the box -
+   preserveAspectRatio is off, so it is the length that stretches while the
+   wobble keeps its height. */
+.pad-card-head,
+.pad-card-victim{
+  padding-bottom: 12px;
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 100% 10px;
+}
+
+.pad-card-head{
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  background-image: var(--pad-rule-a);
 }
 
-.pick-clipboard-victim-line,
-.pick-clipboard-opponent-line{
-  align-items: center;
+.pad-card-victim{ background-image: var(--pad-rule-b); }
+
+.pad-card-tally{ min-width: 0; }
+
+/* Smaller than the heading's tally, which has a whole line to itself. */
+.pad-card-tally .pick-tally{
+  gap: 4px 7px;
+  min-height: 30px;
 }
 
-.pick-clipboard-line + .pick-clipboard-line{ margin-top: 3px; }
+.pad-card-tally .pick-tally-group{ height: 30px; }
 
-.pick-clipboard-victim-name,
-.pick-clipboard-opponent-name{
+.pad-card-tally .pick-tally-empty{ width: 30px; }
+
+.pick-clipboard-suspect-word{
+  font-size: 1.05rem;
+  opacity: 0.75;
+}
+
+.pick-clipboard-suspect-names{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  min-width: 0;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  opacity: 0.9;
+}
+
+/* A name is a link target: the tracker above deep-links to one suspect inside
+   their team's box, so each has to be addressable and able to flash. */
+.pick-clipboard-suspect{ padding: 0 2px; }
+
+/* Neither the handle nor the bracketed name ever breaks mid-word. The only
+   place the line may fall inside a chip is between the two, which happens
+   rarely and still reads as one person. Holding the whole chip together
+   instead overflowed the box for a long handle with a long first name. */
+.pick-clipboard-suspect-handle,
+.pick-clipboard-suspect-first{ white-space: nowrap; }
+
+/* The handle is who you are in the game; the real name is only there so
+   signed-in players can tell each other apart, so it follows in brackets and a
+   little quieter. Absent entirely when signed out - the column is never read. */
+.pick-clipboard-suspect-first{
+  margin-left: 4px;
+  font-size: 0.9em;
+  opacity: 0.72;
+}
+
+.pick-clipboard-suspect:focus{ outline: none; }
+
+.pick-clipboard-suspect.pick-clipboard-row-target{
+  background: var(--accent-yellow);
+  outline: 2px solid var(--sharpie-black);
+}
+
+/* Ruled off from the names above it, in the same pen. */
+.pad-card-verdict{
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(20, 20, 20, 0.22);
+}
+
+/* The first box has no team in it - it is the picks that are not there - so it
+   carries only the count and the names, and no rule under a block that does not
+   exist. */
+.pad-card-unfiled .pick-clipboard-suspect-names{ margin-top: 8px; }
+
+.pad-card-allin{ opacity: 0.7; }
+
+.pick-clipboard-empty{
+  grid-column: 1 / -1;
+  color: var(--bic-blue);
+  font-family: var(--font-hand);
+  font-size: 1.25rem;
+}
+
+@media (max-width: 900px){
+  .pad-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px){
+  /* One across, and the boxes stop leaning: a column of tilted cards reads as
+     a mistake where a row of them reads as a hand. */
+  .pad-cards{ grid-template-columns: minmax(0, 1fr); }
+  .pad-card{ transform: none; }
+}
+
+/* The accusation reads down the box, not across it: the named team, then what
+   is being claimed about them, then who they have to lose to. Each team sits on
+   its own line with its logo, so the two are compared like for like. */
+.pad-team{
   display: inline-flex;
   align-items: center;
-  min-width: 0;
+  vertical-align: middle;
   gap: 7px;
+  min-width: 0;
 }
 
-.pick-clipboard-opponent-team{
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  gap: 7px;
-}
-
-.pick-clipboard-matchup-action,
-.pick-clipboard-matchup-prefix{
-  flex: 0 0 auto;
-  white-space: nowrap;
+/* "to lose @" carries the sentence between the two teams. Quieter than either
+   of them: it is the connective, not a name. */
+.pad-team-verb{
+  display: inline;
+  margin: 0 5px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  opacity: 0.78;
 }
 
 .pick-clipboard-team-logo{
@@ -2882,6 +3031,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     drop-shadow(0.7px 0.4px 0 rgba(0, 71, 171, 0.36));
 }
 
+/* Each team name is unbreakable, so the sentence wraps around whole teams
+   rather than through the middle of one. Sized to fit the longest name in the
+   league on one line of a three-across card. */
+.pick-clipboard-team,
+.pick-clipboard-matchup{ white-space: nowrap; }
+
 .pick-clipboard-team{ font-weight: 900; }
 
 /* One pen wrote this page. The opponent used to be set in a lighter blue,
@@ -2890,16 +3045,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-size: 1.05rem;
   font-weight: 700;
   text-transform: none;
-}
-
-/* Placeholder until results land. Right-aligned and fixed width so the ones and
-   the tens line up down the column the way a hand-kept scoresheet does. */
-.pick-clipboard-score{
-  flex: 0 0 auto;
-  min-width: 2.2ch;
-  text-align: right;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
 }
 
 .pick-clipboard-time{
@@ -2944,17 +3089,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   text-transform: uppercase;
 }
 
-.pick-clipboard-table tr.pick-clipboard-row-target{
-  background: rgba(255, 212, 0, 0.22);
-  outline: 3px solid rgba(0, 71, 171, 0.85);
-  outline-offset: -3px;
-}
-
-.pick-clipboard-table tr[tabindex="-1"]:focus{
-  outline: 3px solid rgba(0, 71, 171, 0.85);
-  outline-offset: -3px;
-}
-
 /* ===== REPORT PICK POOL ===== */
 .suspect-lineup-chart{
   --lineup-pick-fill: #FFF1A6;
@@ -2971,6 +3105,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
      the row box is not the same as centring it on the ink. */
   --pool-name-col-w: 220px;
   --pool-week-size: 34px;
+  /* How tall a board cell actually stands. Not set on the cell - it stretches
+     to the row, and the row is sized by the booking card beside it: a 44px
+     avatar plus 10px of padding plus its 4px of dotted border. Named here so
+     the legend can match a real cell instead of guessing at it. */
+  --pool-row-h: 58px;
   --pool-gap: 4px;
   --pool-row-w: calc(var(--pool-name-col-w) + 18 * (var(--pool-week-size) + var(--pool-gap)));
   position: relative;
@@ -3028,7 +3167,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  /* The heading beside it is visually hidden, so the tally is the only thing
+     in this row and centring it centres it over the board. */
+  justify-content: center;
   gap: 12px;
   margin-bottom: 14px;
   padding-bottom: 0;
@@ -3068,6 +3209,21 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .lineup-chart-status-bad{ color: var(--error); }
+
+/* Printed, not typed: the same dot-matrix as SUSPECT TRACKER and capped at the
+   same 16px, so the two read as one machine rather than two. */
+.lineup-chart-status-tally{ min-height: 16px; }
+
+.lineup-tally-dot-svg{
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 16px;
+  overflow: visible;
+}
+
+.lineup-tally-dot{ fill: var(--matrix-ink); }
 .lineup-chart-status-good{ color: var(--success); }
 
 .lineup-chart-list{
@@ -3173,10 +3329,23 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   fill: currentColor;
 }
 
+/* The open week, marked by printing harder rather than by reversing out of a
+   black block. The block read as a hole punched in the sheet - the one cell on
+   a page of dotted outlines that was solid - so the week you actually care
+   about looked like a fault. Now the number and its dotted rule are simply
+   struck heavier, which is what a dot-matrix printer would do. */
 .lineup-week-label-current{
-  background: var(--matrix-ink);
-  color: #F8F5E7;
   border-color: var(--matrix-ink);
+  border-style: dotted;
+  border-width: 3px;
+}
+
+/* Same trick as the usernames: there is no weight axis in a face made of dots,
+   so a stroke in the same ink fattens each one. */
+.lineup-week-label-current .lineup-week-label-dot{
+  stroke: currentColor;
+  stroke-width: 1;
+  paint-order: stroke fill;
 }
 
 .lineup-booking-card{
@@ -3254,8 +3423,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   max-height: 13px;
 }
 
+/* Bold, for a face made of dots. There is no weight axis here - every dot is
+   the same r=1.5 circle - so the way to set it heavier is to fatten the dots
+   themselves. A stroke in the same ink grows each one by half a unit without
+   touching the geometry, so the letters stay on their grid and simply print
+   harder. The pitch is 4, so this stays well clear of neighbouring dots
+   bleeding into each other. */
 .lineup-booking-name-dot{
   fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1;
+  paint-order: stroke fill;
 }
 
 /* Deliberately quieter than the username: the handle is who you are in the
@@ -3418,15 +3596,20 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   color: var(--matrix-ink);
 }
 
+/* No fill, the same as the cells above it: the green bars and the dotted grain
+   run straight through, and the swatch inside is read against the sheet it will
+   actually sit on. The cream chip this used to carry made every swatch a card
+   on paper rather than a sample of the board.
+
+   The first column tracks the swatch, which is a board cell wide now. */
 .lineup-emoji-key-item{
   display: grid;
-  grid-template-columns: 30px max-content;
+  grid-template-columns: var(--pool-week-size) max-content;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
   min-width: 0;
   padding: 4px 9px 4px 4px;
-  background: rgba(248, 245, 231, 0.9);
+  background: transparent;
   border: 2px dotted rgba(35, 35, 35, 0.78);
 }
 
@@ -3436,11 +3619,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   min-width: 0;
 }
 
+/* Sized from the board rather than by eye, so a swatch is the same box as the
+   cell it stands for. It was 30x30 against a real cell's 34x58, which made the
+   key read as a set of small chips rather than as samples. */
 .lineup-emoji-key-mark{
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: var(--pool-week-size);
+  height: var(--pool-row-h);
   background: #F8F5E7;
   border: 2px dotted rgba(35, 35, 35, 0.78);
   font-size: 0.9rem;
@@ -3459,6 +3645,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .lineup-emoji-key-empty{
   background: transparent;
 }
+
 
 .lineup-emoji-key-survived{
   background: var(--success-tint);
@@ -3489,14 +3676,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   outline-offset: 2px;
 }
 
-.lineup-emoji-key-mark .lineup-nfl-shield-icon{
-  width: 17px;
-  height: 17px;
-}
+/* Was shrunk to fit the old 30px chip. The swatch is a full-size cell now, so
+   the shield is the board's own 22px and needs no override. */
 
-.lineup-logo-marker-legend .lineup-logo-marker-text{
-  font-size: 0.34rem;
-}
+
 
 @media (max-width: 980px){
   .lineup-chart-list{
@@ -3588,6 +3771,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
        from them without being restated. */
     --pool-name-col-w: 172px;
     --pool-week-size: 31px;
+    /* The booking card shrinks here too: 40px avatar + 8px padding + 4px border. */
+    --pool-row-h: 52px;
     --pool-gap: 3px;
     width: 100%;
     max-width: 100%;
@@ -3663,99 +3848,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     font-size: 2rem;
   }
 
-  .pick-clipboard-table{
-    font-size: 1.18rem;
-    line-height: 1.36;
-  }
-
-  .pick-clipboard-matchup{
-    font-size: 1.02rem;
-  }
-
-  .pick-clipboard-table,
-  .pick-clipboard-table tbody,
-  .pick-clipboard-table tr,
-  .pick-clipboard-table td{
-    display: block;
-    width: 100%;
-  }
-
-  .pick-clipboard-table thead{
-    display: none;
-  }
-
-  .pick-clipboard-table tr{
-    margin-bottom: 12px;
-    border: 0;
-    background: rgba(255, 255, 255, 0.28);
-  }
-
-  .pick-clipboard-table tbody tr:nth-child(even){
-    background: rgba(255, 255, 255, 0.28);
-  }
-
-  .pick-clipboard-table td{
-    display: grid;
-    grid-template-columns: 90px minmax(0, 1fr);
-    gap: 8px;
-    padding: 8px 10px;
-  }
-
-  .pick-clipboard-table td:last-child{
-    border-bottom: 0;
-  }
-
-  .pick-clipboard-table td::before{
-    content: attr(data-label);
-    color: var(--bic-blue);
-    font-weight: 700;
-  }
-
-  .pick-clipboard-table td[data-label="Victim"]::before{
-    grid-row: 1 / span 2;
-  }
-
-  .pick-clipboard-table td[data-label="Victim"]{
-    grid-template-columns: 90px minmax(0, 1fr);
-    row-gap: 3px;
-  }
-
-  .pick-clipboard-table td[data-label="Victim"] .pick-clipboard-line{
-    display: flex;
-    grid-column: 2;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .pick-clipboard-line{
-    gap: 8px;
-  }
-
-  .pick-clipboard-victim-name,
-  .pick-clipboard-opponent-name{
-    flex: 1 1 auto;
-  }
-
-  .pick-clipboard-team,
-  .pick-clipboard-matchup{
-    overflow-wrap: anywhere;
-  }
-
-  .pick-clipboard-table td[data-label="Victim"] .pick-clipboard-score{
-    flex: 0 0 auto;
-    min-width: 2ch;
-    margin-left: 6px;
-  }
-
-  .pick-clipboard-time{
-    font-size: 0.96rem;
-    white-space: normal;
-  }
-
-  /* Stacked into label/value rows, so the mark lines up under the values
-     rather than centring itself across the whole card. */
   .pick-clipboard-verdict{
     width: auto;
     text-align: left;

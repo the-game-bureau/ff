@@ -13,7 +13,7 @@
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="https://lawandorder-svu.app/reports/"/>
   <meta property="og:title" content="Case File - Law &amp; Order: Special Victory Unit"/>
-  <meta property="og:description" content="Week by week, how many prosecutors are left standing."/>
+  <meta property="og:description" content="Week by week, how many suspects are left standing."/>
   <meta property="og:image" content="../src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
@@ -73,20 +73,12 @@
           </h2>
         </div>
 
-        <div class="pick-clipboard-table-wrap">
-          <table class="pick-clipboard-table">
-            <caption class="sr-only">Picks filed for the selected week</caption>
-            <thead>
-              <tr>
-                <th scope="col">Suspect</th>
-                <th scope="col">Victim</th>
-                <th scope="col">Filed</th>
-                <th scope="col">Result</th>
-              </tr>
-            </thead>
-            <tbody id="pickClipboardBody"></tbody>
-          </table>
-        </div>
+        <!-- Boxed rather than tabled: each victim gets its own hand-drawn pen
+             box, three across, the way someone working a pad would ring each
+             team as they counted it. js/pick-clipboard.js fills #pickClipboardBody
+             with one <li> per team. -->
+        <ul class="pad-cards" id="pickClipboardBody"
+            aria-label="Teams named for the selected week, and who named them"></ul>
       </div>
     </section>
 

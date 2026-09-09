@@ -254,7 +254,18 @@ begin
     p.color_primary::text,
     p.color_secondary::text,
     p.created_at,
-    (select count(*) from public._2026_picks k where k.user_id = p.id) as pick_count,
+    -- Weeks this suspect currently holds a victim in, at most one each.
+    -- Counting _2026_picks directly counts the history instead: picks are
+    -- append-only, so changing a pick three times counted four, and a released
+    -- week still counted its SKIP tombstone. _2026_active_picks is already
+    -- distinct on (user_id, season, week) and keeps only the newest row, so
+    -- dropping the skips off that leaves exactly the live picks.
+    (
+      select count(*)
+      from public._2026_active_picks ap
+      where ap.user_id = p.id
+        and coalesce(upper(btrim(ap.result)), '') <> 'SKIP'
+    ) as pick_count,
     -- The team named for the week being asked about, or null for "no victim
     -- named". A SKIP row is a release, not a pick, so it reads as null here.
     (
