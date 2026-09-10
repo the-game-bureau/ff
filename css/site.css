@@ -3202,6 +3202,24 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    front of its team either way. */
 .pick-clipboard-team{ font-weight: 900; }
 
+/* The final, written under the fixture the way a score gets added to a sheet
+   after the fact. Same pen, its own line, and in the order of the two lines
+   above it: the named team first, then whoever they had to lose to. */
+.pad-final{
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.32em;
+  margin-top: 2px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  /* A shade off the ink of the words: it is the answer to the sentence above,
+     not part of it. */
+  opacity: 0.8;
+}
+
+.pad-final-dash{ opacity: 0.55; }
+
 /* One pen wrote this page. The opponent used to be set in a lighter blue,
    which read as a second ink - it is lighter only in weight now.
    Regular, not 700: --font-hand resolves to Segoe Print or Bradley Hand, which
@@ -4383,6 +4401,57 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     var(--stripe-b) 9px 14px
   );
 }
+
+/* CASE CLOSED. The show's own sting, stamped across the mugshot of a suspect
+   whose season is over - the same rubber-stamp idiom as TRUTH and LIE on the
+   legal pad, in the same red, pressed by the same unsteady hand.
+   It says the thing the site says everywhere else something ends, which a plain
+   cross did not: an X is a mark, DUN DUN is a verdict. */
+.suspect-stamp{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  padding: 5px 10px 7px;
+  /* One plate whatever the card width, and wider than the frame on purpose: a
+     stamp lands where the hand puts it, not inside the lines. */
+  min-width: 106cqw;
+  font-family: var(--font-display);
+  font-size: clamp(0.85rem, 12cqw, 1.85rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  color: #C92232;
+  /* The double rule a rubber stamp carries: a heavy outer box and a hairline
+     outside it. */
+  border: 3px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  /* Varies card to card. Nothing on a board of thirty faces should look
+     printed, and a row of identical stamps would. */
+  transform: translate(-50%, -50%) rotate(var(--stamp-tilt, -9deg));
+  /* Ink sinks into the photograph rather than sitting on it. */
+  mix-blend-mode: multiply;
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+/* cqw above measures the card, which only works if the card is a container. */
+.suspect-card{ container-type: inline-size; }
+
+/* Four tilts against the grid's own rhythm, so the stamps do not fall into step
+   down a column. */
+.suspect-card{ --stamp-tilt: -9deg; }
+.suspect-card:nth-child(4n+2){ --stamp-tilt: 5deg; }
+.suspect-card:nth-child(4n+3){ --stamp-tilt: -4.5deg; }
+.suspect-card:nth-child(4n){   --stamp-tilt: 11deg; }
+
+/* The card steps back with it. A closed case is still on the board, but it is
+   not one of the faces still in the game. */
+.suspect-card-out .suspect-avatar{ filter: grayscale(0.75) contrast(0.92); }
 
 .suspect-avatar-button{
   display: block;

@@ -591,6 +591,8 @@
   // as a row of fields across it.
   function victimBlockHtml(pick) {
     const matchup = matchupDetails(pick);
+    const score = finalScore(pick, matchup);
+
     const victim = `
       <span class="pad-team pad-team-victim">
         ${victimLogoHtml(pick)}
@@ -608,6 +610,46 @@
       <span class="pad-team pad-team-opponent">
         ${opponent ? teamLogoHtml(opponent) : ''}
         <span class="pick-clipboard-matchup">The ${escapeHtml(matchup.opponent || matchup.shortName)}</span>
+      </span>
+      ${scoreHtml(score)}`;
+  }
+
+  // The final, written in beside each team. The pad had no scores because the
+  // machinery behind them was an empty array - js/nfl-scores.js is generated
+  // now, so a sheet that says who lost can say by how much.
+  //
+  // Only a finished game gets one. A number next to a team that has not played
+  // would read as a prediction.
+  function finalScore(pick, matchup) {
+    const helpers = window.NFL_SCORE_HELPERS;
+    if (!helpers || matchup.isBye) return null;
+
+    const victimName = teamName(pick);
+    const game = helpers.getGameForTeams?.(victimName, matchup.opponent, Number(pick.week));
+    if (!game || !game.final) return null;
+
+    const victim = helpers.getTeamScoreFromGame?.(game, victimName);
+    const opponent = helpers.getTeamScoreFromGame?.(game, matchup.opponent);
+    if (!Number.isInteger(victim) || !Number.isInteger(opponent)) return null;
+
+    return { victim, opponent };
+  }
+
+  // On its own line under the fixture, not tucked in beside each team name.
+  // Beside them it had to share a flex row with the name, and the fitting pass
+  // that holds a team to one line would run out of room before it ran out of
+  // name: "The Seattle Seahawks" came out as "The Seattle Seaha". A score is
+  // two numbers; it does not need to be threaded through the words.
+  //
+  // The order matches the two lines above it - the named team first, then who
+  // they had to lose to - so it reads down the box without a label.
+  function scoreHtml(score) {
+    if (!score) return '';
+    return `
+      <span class="pad-final">
+        <span class="pad-final-score">${score.victim}</span>
+        <span class="pad-final-dash" aria-hidden="true">-</span>
+        <span class="pad-final-score">${score.opponent}</span>
       </span>`;
   }
 

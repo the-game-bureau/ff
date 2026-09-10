@@ -75,10 +75,14 @@ function profileSelect(showFirstNames, includeAvatar = true){
   return fields.join(', ');
 }
 
-function viewSelect(showFirstNames){
+function viewSelect(showFirstNames, withStatus = true){
   const fields = ['username'];
   if(showFirstNames) fields.push('first_name');
   fields.push('avatar_data_url');
+  // Who is out. The view derives it from the newest pick, and until now nobody
+  // asked for it - gameStatusForSuspect() has been answering SUSPECT for
+  // everyone since the column was never in the select.
+  if(withStatus) fields.push('game_status');
   return fields.join(', ');
 }
 
@@ -155,13 +159,19 @@ function renderSuspects(suspects){
     // others, because there is nothing anyone else is allowed to do. It used to
     // say Retake Mugshot and change only the photograph; the whole sheet is
     // editable now, so it says so.
+    // Eliminated: the case is closed and the file gets crossed out. Derived
+    // from the newest pick's result, so a suspect stamped here is the same one
+    // the Suspect Tracker shows a DUN DUN for.
+    const isOut = gameStatusForSuspect(suspect).includes('DUN DUN');
+
     const retake = suspect.is_self
       ? ' data-mugshot-action="Edit Rap Sheet" data-mugshot-action-flag="rap-sheet"'
       : '';
 
     return `
-      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}" data-username="${escapeHtml(username)}">
+      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}${isOut ? ' suspect-card-out' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
+          ${isOut ? '<span class="suspect-stamp" aria-hidden="true">Dun Dun</span><span class="sr-only">Case closed.</span>' : ''}
           <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}"${retake} aria-label="${escapeHtml(avatarLabel)}">
             <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
           </button>
@@ -331,6 +341,17 @@ async function fetchSuspectsFromView(showFirstNames){
     .from(SUSPECTS_VIEW)
     .select(viewSelect(showFirstNames))
     .order('username', { ascending: true });
+
+  // game_status is a nice-to-have: without it nobody is stamped, which is a
+  // lineup missing a mark rather than a lineup missing. Dropped first, before
+  // the first_name retry below, so a failure over it never costs the names too.
+  if(result.error){
+    const withoutStatus = await suspectsDb
+      .from(SUSPECTS_VIEW)
+      .select(viewSelect(showFirstNames, false))
+      .order('username', { ascending: true });
+    if(!withoutStatus.error) return withoutStatus;
+  }
 
   // first_name is the only optional column in this select, and it can fail in
   // more ways than "column missing": the view grants it per role, so a role
