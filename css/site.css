@@ -3229,15 +3229,56 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   text-align: center;
 }
 
+/* The verdict, stamped across the box rather than initialled under it. It used
+   to be a small word in the corner, which is what a clerk writes; this is what
+   an office does to a file when the answer is no longer in question.
+   Taken out of the flow and laid over the whole card, so the pick underneath
+   still reads through it - the stamp is the answer, not a replacement for the
+   question. Its slot keeps its rule and its padding, which is what holds the
+   hand-drawn line under the teams. */
 .pick-clipboard-verdict-word{
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 0.86rem;
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  z-index: 4;
+  padding: 6px 14px 8px;
+  font-family: var(--font-display);
+  /* Sized off the box, not the page: three across at a desk and one across on a
+     phone are very different widths, and a stamp that overflows its card reads
+     as a mistake rather than as ink. */
+  /* Held just under the plate width below, so the plate governs both words
+     rather than TRUTH pushing its own box wider than LIE's. */
+  font-size: clamp(1.8rem, 21cqw, 3.5rem);
+  /* The plate is one size whatever the word is, so LIE stamps as wide as
+     TRUTH - a stamp is a fixed block of rubber, not type set to fit. Wider than
+     the card on purpose: a stamp lands where the hand puts it, not inside the
+     lines. */
+  min-width: 112cqw;
+  text-align: center;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  transform: rotate(-2deg);
+  white-space: nowrap;
+  /* Never straight, and never twice the same. A stamp is pressed by a hand in a
+     hurry. The angle comes from the card so it varies down the sheet - see
+     --stamp-tilt below. */
+  transform: translate(-50%, -50%) rotate(var(--stamp-tilt, -13deg));
+  /* Ink sinks into paper rather than sitting on it, and the names underneath
+     have to survive being stamped over. */
+  mix-blend-mode: multiply;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+/* The double rule a rubber stamp carries: a heavy outer box and a hairline
+   inside it. outline rather than a second element, because it draws outside the
+   border without changing what the box measures. */
+.pick-clipboard-verdict-truth,
+.pick-clipboard-verdict-lie{
+  border: 4px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
 }
 
 .pick-clipboard-verdict-truth{
@@ -3246,7 +3287,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .pick-clipboard-verdict-lie{
   color: #C92232;
-  transform: rotate(2deg);
+  /* Leaning the other way, and by a little less: two stamps in one drawer, used
+     by the same hand. */
+  transform: translate(-50%, -50%) rotate(calc(var(--stamp-tilt, -13deg) * -0.72));
+}
+
+/* A five-card cycle against the boxes' three, so a stamp and the wobble of the
+   box it sits on only line up again fifteen cards later. Nothing on this sheet
+   should look printed. */
+.pad-card{ --stamp-tilt: -13deg; }
+.pad-card:nth-child(5n+2){ --stamp-tilt: -8.5deg; }
+.pad-card:nth-child(5n+3){ --stamp-tilt: -16.5deg; }
+.pad-card:nth-child(5n+4){ --stamp-tilt: -10.5deg; }
+.pad-card:nth-child(5n){   --stamp-tilt: -14.5deg; }
+
+/* cqw above measures the card, which only works if the card is a container. */
+.pad-card{ container-type: inline-size; }
+
+/* One across on a phone: the card gets much wider than it is on a desk, so the
+   percentage would run the stamp off the edge. */
+@media (max-width: 600px){
+  .pick-clipboard-verdict-word{ font-size: clamp(1.8rem, 15cqw, 3rem); }
 }
 
 .pick-clipboard-empty{
