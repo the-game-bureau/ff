@@ -4843,6 +4843,96 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .modal-actions .btn{ flex: 1 1 100%; }
 }
 
+/* A week nobody filed for. The marker keeps the cell's shape and its dot-matrix
+   caption but carries no logo, because no team was named - a shield there read
+   as a pick that had lost. */
+.lineup-logo-marker-none{
+  display: grid;
+  place-items: center;
+}
+
+/* ===== SCORE THE WEEK (js/admin-score.js) =====
+   A week picker, a preview and a commit, and then four rows saying exactly what
+   is about to happen to whom. The report is the point: nothing here should ever
+   be pressed blind. */
+.admin-score-controls{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 18px 0 12px;
+}
+
+.admin-score-pick{
+  display: grid;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-score-pick select{ min-width: 130px; }
+.admin-score-controls .btn{ width: auto; }
+
+.admin-score-report:empty{ display: none; }
+
+.admin-score-headline{
+  margin: 16px 0 10px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Label, count, names. The count is its own column so four groups of wildly
+   different lengths still line up and can be read down. */
+.admin-score-group{
+  display: grid;
+  grid-template-columns: 128px 48px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--paper-raised);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.admin-score-group + .admin-score-group{ margin-top: 8px; }
+
+.admin-score-label{
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-score-count{
+  font-size: 1.1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.admin-score-names{
+  min-width: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* The verdict colours the site already uses, on the left edge where it does not
+   fight the text. */
+.admin-score-group-good{ border-left: 6px solid var(--success); }
+.admin-score-group-bad{ border-left: 6px solid var(--primary-red); }
+.admin-score-group-note{ border-left: 6px solid var(--text-tertiary); }
+
+@media (max-width: 600px){
+  .admin-score-group{ grid-template-columns: minmax(0, 1fr) 48px; }
+  .admin-score-names{ grid-column: 1 / -1; }
+}
+
 /* ===== SQUAD ROOM TO DO LIST (js/admin-todo.js) =====
    Three controls per line and no chrome around them: a tick box, the text, and
    a way to bin it. Everything is a button because everything does something -

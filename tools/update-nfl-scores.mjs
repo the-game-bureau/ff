@@ -3,6 +3,21 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+// Reads finals off the season schedule page - the same page js/nfl-schedule.js
+// was generated from - because that is where Plain Text Sports now publishes
+// them. It used to fetch a scoreboard per week at /nfl/<season>/week<N>/, and
+// that URL has since become a stub that redirects to "today's scoreboard": the
+// fetch still returned HTTP 200, the parser found nothing in it, and the tool
+// reported "Wrote 0 final NFL scores" every time without ever saying why.
+//
+// A played game on the schedule page carries a score pair where an unplayed one
+// carries a kickoff time:
+//
+//   Patriots    0-1 @ Seahawks    1-0    10-13     <- final, 10 to 13
+//   49ers       0-0 @ Rams        0-0  @  8:35 PM  <- not played
+//
+// The 0-1 and 1-0 are win-loss records, which is why the score is taken from the
+// LAST pair on the line and not the first one that matches.
 const DEFAULT_SEASON = 2026;
 const DEFAULT_OUTFILE = 'js/nfl-scores.js';
 const TEAM_BY_ABBR = new Map([
@@ -40,6 +55,12 @@ const TEAM_BY_ABBR = new Map([
   ['WAS', 'Washington Commanders']
 ]);
 
+// Every team's last word is unique across the 32, so the short names the
+// schedule page prints map back without a second table to maintain.
+const TEAM_BY_SHORT = new Map(
+  [...TEAM_BY_ABBR.values()].map((full) => [full.split(' ').pop().toLowerCase(), full])
+);
+
 const args = parseArgs(process.argv.slice(2));
 const season = Number(args.season || DEFAULT_SEASON);
 const outfile = args.out || DEFAULT_OUTFILE;
@@ -52,68 +73,96 @@ if (isMain()) {
 }
 
 export async function fetchSeasonScores(scoreSeason = DEFAULT_SEASON, scoreWeeks = weekRange()) {
-  const games = [];
-
-  for (const week of scoreWeeks) {
-    const sourceUrl = scoreUrlForWeek(scoreSeason, week);
-    const response = await fetch(sourceUrl, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Plain Text Sports returned HTTP ${response.status} for ${sourceUrl}`);
-    }
-
-    const html = await response.text();
-    games.push(...parseScoreboardHtml(html, { season: scoreSeason, week, sourceUrl }));
+  const sourceUrl = scheduleUrl(scoreSeason);
+  const response = await fetch(sourceUrl, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Plain Text Sports returned HTTP ${response.status} for ${sourceUrl}`);
   }
+
+  const wanted = new Set(scoreWeeks.map(Number));
+  const games = parseScheduleHtml(await response.text(), { season: scoreSeason, sourceUrl })
+    .filter((game) => wanted.has(game.week));
 
   return sortScores(dedupeScores(games));
 }
 
-export function parseScoreboardHtml(html, { season = DEFAULT_SEASON, week = 1, sourceUrl = '' } = {}) {
+export function parseScheduleHtml(html, { season = DEFAULT_SEASON, sourceUrl = '' } = {}) {
+  const text = htmlToText(String(html || ''));
   const games = [];
-  const anchorPattern = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
-  let match;
+  let week = 0;
 
-  while ((match = anchorPattern.exec(String(html || '')))) {
-    const attrs = match[1] || '';
-    const href = attrValue(attrs, 'href');
-    if (!href || !href.includes(`/nfl/${season}/week${week}/`)) continue;
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
 
-    const slugMatch = href.match(new RegExp(`/nfl/${season}/week${week}/([a-z]+)-([a-z]+)`, 'i'));
-    if (!slugMatch) continue;
+    // The same page carries the preseason under its own headings, and those
+    // games are not the season. Without this they kept whatever week number was
+    // last seen - which is week 18 - and 36 August friendlies arrived as Week 18
+    // finals.
+    if (/^Preseason\b/i.test(line)) {
+      week = 0;
+      continue;
+    }
 
-    const awayAbbr = slugMatch[1].toUpperCase();
-    const homeAbbr = slugMatch[2].toUpperCase();
-    const away = TEAM_BY_ABBR.get(awayAbbr);
-    const home = TEAM_BY_ABBR.get(homeAbbr);
-    if (!away || !home) continue;
+    const weekHeading = line.match(/^Week\s+(\d+)\s*:/i);
+    if (weekHeading) {
+      week = Number(weekHeading[1]);
+      continue;
+    }
+    if (!week) continue;
 
-    const body = match[2] || '';
-    if (/<time\b/i.test(body)) continue;
-
-    const text = htmlToText(body);
-    if (!/\bFinal\b/i.test(text)) continue;
-
-    const teamScores = parseTeamScores(text);
-    const awayScore = teamScores.get(awayAbbr);
-    const homeScore = teamScores.get(homeAbbr);
-    if (!Number.isInteger(awayScore) || !Number.isInteger(homeScore)) continue;
-
-    games.push({
-      season,
-      week,
-      away,
-      awayAbbr,
-      awayScore,
-      home,
-      homeAbbr,
-      homeScore,
-      status: finalStatus(text),
-      final: true,
-      sourceUrl: absoluteUrl(sourceUrl, href)
-    });
+    const game = parseScheduleLine(line, { season, week, sourceUrl });
+    if (game) games.push(game);
   }
 
   return games;
+}
+
+// away  W-L @ home  W-L  AWAYSCORE-HOMESCORE
+//
+// Two things the obvious pattern gets wrong. A record can carry ties, so it is
+// W-L-T and not always W-L - the Colts and Patriots opened 0-0-1 apiece in the
+// preseason. And the next day's heading is appended to the end of the last line
+// of the previous day, so the score pair is not at the end of the line:
+//
+//   Patriots  0-1 @ Seahawks  1-0  10-13     Thursday, September 10, 2026:
+//
+// Anything with no score pair has not been played, so it is skipped: this file
+// is a record of finals, and a fixture is already in the schedule.
+export function parseScheduleLine(line, { season = DEFAULT_SEASON, week = 1, sourceUrl = '' } = {}) {
+  const match = line.match(
+    /^(.+?)\s+\d+-\d+(?:-\d+)?\s+@\s+(.+?)\s+\d+-\d+(?:-\d+)?\s+(\d+)-(\d+)(?:\s|$)/
+  );
+  if (!match) return null;
+
+  const away = TEAM_BY_SHORT.get(match[1].trim().toLowerCase());
+  const home = TEAM_BY_SHORT.get(match[2].trim().toLowerCase());
+  if (!away || !home) return null;
+
+  const awayScore = Number(match[3]);
+  const homeScore = Number(match[4]);
+  if (!Number.isInteger(awayScore) || !Number.isInteger(homeScore)) return null;
+
+  return {
+    season,
+    week,
+    away,
+    awayAbbr: abbrFor(away),
+    awayScore,
+    home,
+    homeAbbr: abbrFor(home),
+    homeScore,
+    status: 'Final',
+    final: true,
+    sourceUrl
+  };
+}
+
+function abbrFor(fullName) {
+  for (const [abbr, name] of TEAM_BY_ABBR) {
+    if (name === fullName) return abbr;
+  }
+  return '';
 }
 
 export function renderScoreFile({ season = DEFAULT_SEASON, scores = [], fetchedAt = new Date().toISOString() } = {}) {
@@ -228,8 +277,8 @@ function absoluteUrl(pageUrl, href) {
   }
 }
 
-function scoreUrlForWeek(scoreSeason, week) {
-  return `https://plaintextsports.com/nfl/${scoreSeason}/week${Number(week)}/`;
+function scheduleUrl(scoreSeason) {
+  return `https://plaintextsports.com/nfl/${scoreSeason}/schedule`;
 }
 
 function dedupeScores(scores) {

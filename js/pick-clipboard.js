@@ -9,6 +9,9 @@
   const PICKS_TABLE = PICKBOARD_CONFIG.tables?.picks || 'ff_picks';
   const PROFILES_TABLE = PICKBOARD_CONFIG.tables?.profiles || 'ff_profiles';
   const SKIP_RESULT = 'SKIP';
+  // The team scoring writes for a suspect who never filed. Not a club, so it is
+  // kept off this sheet entirely - see supabase/sql/ff_score_week.sql.
+  const NO_PICK_TEAM = 'NO PICK';
 
   const pickboardDb = window.supabase
     ? window.supabase.createClient(PICKBOARD_SUPABASE_URL, PICKBOARD_SUPABASE_ANON_KEY, {
@@ -234,8 +237,13 @@
     if (prev) prev.disabled = selectedWeek <= 1;
     if (next) next.disabled = selectedWeek >= maxWeek();
 
+    // A "never filed" row is a verdict, not a pick: it carries no team, so it
+    // cannot be grouped under one, and counting it would report a week as more
+    // filed than it was. The Suspect Tracker shows it; this sheet is about who
+    // named whom. See supabase/sql/ff_score_week.sql.
     const weekPicks = activePicks
       .filter((pick) => Number(pick.week) === Number(selectedWeek))
+      .filter((pick) => normalizeTeamName(teamName(pick)) !== normalizeTeamName(NO_PICK_TEAM))
       .sort(compareFiledOldestFirst);
 
     renderPickTally(weekPicks.length);

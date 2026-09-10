@@ -33,6 +33,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     els.databasePanel = document.getElementById('adminDatabasePanel');
     els.todoPanel = document.getElementById('adminTodoPanel');
+    els.scorePanel = document.getElementById('adminScorePanel');
 
     els.databaseLink = document.getElementById('adminDatabaseLink');
     els.schedulePanel = document.getElementById('adminSchedulePanel');
@@ -223,6 +224,7 @@
 
     if (els.databasePanel) els.databasePanel.hidden = false;
     if (els.todoPanel) els.todoPanel.hidden = false;
+    if (els.scorePanel) els.scorePanel.hidden = false;
     // The list reads itself, but only the admin is allowed any rows, so this is
     // the moment it is worth asking for them.
     window.ffAdminTodoLoad?.();
@@ -1591,6 +1593,9 @@
     }
     if (els.todoPanel) {
       els.todoPanel.hidden = true;
+    }
+    if (els.scorePanel) {
+      els.scorePanel.hidden = true;
     }
     if (els.recordsPanel) {
       els.recordsPanel.hidden = true;

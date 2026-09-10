@@ -13,6 +13,10 @@
   const POOL_WEEKS = Array.from({ length: TOTAL_WEEKS }, (_, index) => index + 1);
   const THEME_SAMPLE_SIZE = 24;
   const SKIP_RESULT = 'SKIP';
+  // Scoring writes a row carrying this team for a suspect who never filed, so a
+  // missed week is a fact on the board rather than a gap that looks the same as
+  // a week not yet played. See supabase/sql/ff_score_week.sql.
+  const NO_PICK_TEAM = 'NO PICK';
   // The signed-in suspect's id, or '' for a passer-by.
   let viewerId = '';
   const NFL_SHIELD_ICON_SRC = new URL('../src/generated/nfl-shield.png', window.location.href).href;
@@ -510,7 +514,7 @@
     const username = row.username;
     const fallbackId = `pick-clipboard-w${week}-${anchorSlug(username)}`;
     const targetId = window.PickClipboard?.anchorIdFor?.(username, week) || fallbackId;
-    const team = pick.team ? `, ${pick.team}` : '';
+    const team = pick.team && !isNoPickRow(pick) ? `, ${pick.team}` : '';
     const resultClass = pickResultClass(pick);
 
     return `
@@ -520,7 +524,7 @@
          data-lineup-username="${escapeHtml(username)}"
          data-lineup-week="${week}"
          aria-label="${escapeHtml(`${username} Week ${week} pick on the legal pad${team}. ${pickResultLabel(pick)}`)}"
-         title="${escapeHtml(`Week ${week}${team}`)}">${pickMarkerHtml(pick)}</a>
+         title="${escapeHtml(isNoPickRow(pick) ? `Week ${week}: no victim named` : `Week ${week}${team}`)}">${pickMarkerHtml(pick)}</a>
     `;
   }
 
@@ -581,7 +585,21 @@
     return `../victims/index.html?week=${encodeURIComponent(String(week))}`;
   }
 
+  function isNoPickRow(pick) {
+    return normalizeTeamName(pick?.team) === normalizeTeamName(NO_PICK_TEAM);
+  }
+
   function pickMarkerHtml(pick) {
+    // No logo, because no team was named. A shield here would read as a pick
+    // that lost rather than as a week that was let go.
+    if (isNoPickRow(pick)) {
+      return `
+      <span class="lineup-logo-marker lineup-logo-marker-none">
+        <span class="lineup-logo-marker-text" aria-hidden="true">NONE</span>
+      </span>
+    `;
+    }
+
     const team = teamForPick(pick);
     const src = team ? teamLogoSrc(team.abbr) : NFL_SHIELD_ICON_SRC;
     const label = team ? `${team.name} logo` : 'NFL shield';
@@ -595,6 +613,7 @@
   }
 
   function pickMarkerText(pick) {
+    if (isNoPickRow(pick)) return 'NONE';
     const result = resultText(pick);
     if (result.includes('survived')) return 'LOST';
     if (result.includes('dun dun')) return 'WON';
@@ -628,6 +647,7 @@
   }
 
   function pickResultLabel(pick) {
+    if (isNoPickRow(pick)) return 'No victim named. Case closed.';
     const result = resultText(pick);
     if (result.includes('survived')) return 'NFL team lost.';
     if (result.includes('dun dun')) return 'NFL team won.';

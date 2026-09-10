@@ -168,6 +168,19 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   revokes the browser's UPDATE on the table entirely, so those two functions are
   the only way a profile row is written from a page.
 - [js/admin.js](js/admin.js) — the admin page.
+- [js/admin-score.js](js/admin-score.js) — **SCORE THE WEEK**, the process that
+  turns NFL results into league results. Reads finals out of `js/nfl-scores.js`,
+  previews what it would write, then calls `_2026_admin_score_week`
+  ([supabase/sql/ff_score_week.sql](supabase/sql/ff_score_week.sql)). Preview and
+  commit are the same call with one argument flipped, so what you are shown is
+  what happens.
+- `tools/update-nfl-scores.mjs` — regenerates `js/nfl-scores.js`. Run it, deploy,
+  then score. It reads the **season schedule page**, which is where Plain Text
+  Sports publishes finals; the per-week scoreboard URL it used to fetch is now a
+  redirect stub that returned HTTP 200 and nothing to parse, so the tool
+  reported "Wrote 0 final NFL scores" indefinitely without saying why. It also
+  skips the preseason, which lives further down the same page under its own
+  headings and otherwise arrived as 36 Week 18 finals.
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).
   Plain table reads and writes behind four RLS policies, not an RPC: nothing in
@@ -362,9 +375,36 @@ Tables in use:
   case-insensitively for `survived` / `dun dun` / `pick is in`, which drives the status
   badge colors. Results are entered out-of-band (admin page, not in this repo).
 
+### Scoring a week
+
+`SURVIVED` and `DUN DUN` are written by `_2026_admin_score_week` and nothing
+else. Picked a team that lost, you survive; won or tied, the case closes; **filed
+nothing by the time every game in the week is final, the case closes too.** That
+last one writes a real picks row carrying the team `NO PICK`, so the board can
+show a missed week rather than a gap that looks like a week not yet played —
+`js/suspect-lineup-chart.js` renders it as NONE with no logo, and
+`js/pick-clipboard.js` keeps it off the legal pad entirely, since it is a verdict
+and not a pick.
+
+Nobody is eliminated for a missing pick until **the last game of the week has
+kicked off** - not until it has finished. Picks lock five minutes before their
+own team's game, so once the last one starts there is no way left to file, and
+waiting for the whistle would just be waiting. Mid-week, somebody with no pick
+has not run out of time yet.
+
+The button is meant to be pressed over and over through the week: unfinished
+games are left alone and reported as pending, a result already written is
+written again to the same value, and somebody already marked as never having
+filed is not marked twice.
+
 ### Picks are append-only
 
-Nothing is ever updated or deleted in `ff_picks`. **The newest row for a
+Nothing is ever updated or deleted in `ff_picks`, **with one exception: a
+result.** That rule is about changing a pick — the newest row for a (user, week)
+wins, so a change is an insert and history is never rewritten. A result is the
+world's verdict on a pick already made; it arrives afterwards and belongs on the
+row it judges. `_2026_admin_score_week` updates `result` and nothing else, and is
+the only thing that may. **The newest row for a
 (user, week) is the pick** — changing a pick inserts another row, and every
 reader funnels the table through `activePicksFromHistory()` (one copy in
 [js/victims.js](js/victims.js), one in [js/app.js](js/app.js)) to collapse it.

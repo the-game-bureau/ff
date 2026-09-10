@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260909k"></script>
+  <script src="../js/supabase-config.js?v=20260910b"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260909k"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260910b"/>
 </head>
 
 <body>
@@ -101,6 +101,27 @@
     <!-- The credentials gate and the links out. This was the Schedule
          Reconciliation panel; the audit tool it was built around is gone, and
          the schedule and playoff games are adjusted by hand in the table now. -->
+    <!-- Turning NFL results into league results. The finals come from
+         js/nfl-scores.js; the writing is done by _2026_admin_score_week
+         (supabase/sql/ff_score_week.sql). -->
+    <section class="game-info admin-panel" id="adminScorePanel" aria-labelledby="adminScoreTitle" hidden>
+      <details class="admin-collapse">
+        <summary id="adminScoreTitle">Score The Week</summary>
+
+        <div class="admin-score-controls">
+          <label class="admin-score-pick" for="adminScoreWeek">Week
+            <select id="adminScoreWeek" class="admin-cell-input"></select>
+          </label>
+          <button id="btnPreviewScore" class="btn btn-secondary" type="button">Preview</button>
+          <button id="btnCommitScore" class="btn btn-primary" type="button" disabled>Score The Week</button>
+        </div>
+
+        <p class="gate-help" id="adminScoreGames"></p>
+
+        <div id="adminScoreReport" class="admin-score-report" role="status" aria-live="polite"></div>
+      </details>
+    </section>
+
     <!-- A scratchpad for whoever runs the league. The rows live in
          public._2026_admin_todos, readable and writable by the admin alone -
          see supabase/sql/ff_admin_todos.sql. -->
@@ -322,18 +343,20 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260909k"></script>
-  <script src="../js/toast.js?v=20260909k"></script>
-  <script src="../js/season.js?v=20260909k"></script>
-  <script src="../js/teams.js?v=20260909k"></script>
-  <script src="../js/nav.js?v=20260909k"></script>
-  <script src="../js/auth-corner.js?v=20260909k"></script>
-  <script src="../js/admin-todo.js?v=20260909k"></script>
-  <script src="../js/admin.js?v=20260909k"></script>
-  <script src="../js/join-form.js?v=20260909k"></script>
-  <script src="../js/join-modal.js?v=20260909k"></script>
-  <script src="../js/join.js?v=20260909k"></script>
-  <script src="../js/username-gate.js?v=20260909k"></script>
-  <script src="../js/password-reset.js?v=20260909k"></script>
+  <script src="../js/nfl-schedule.js?v=20260910b"></script>
+  <script src="../js/toast.js?v=20260910b"></script>
+  <script src="../js/nfl-scores.js?v=20260910b"></script>
+  <script src="../js/season.js?v=20260910b"></script>
+  <script src="../js/teams.js?v=20260910b"></script>
+  <script src="../js/nav.js?v=20260910b"></script>
+  <script src="../js/auth-corner.js?v=20260910b"></script>
+  <script src="../js/admin-score.js?v=20260910b"></script>
+  <script src="../js/admin-todo.js?v=20260910b"></script>
+  <script src="../js/admin.js?v=20260910b"></script>
+  <script src="../js/join-form.js?v=20260910b"></script>
+  <script src="../js/join-modal.js?v=20260910b"></script>
+  <script src="../js/join.js?v=20260910b"></script>
+  <script src="../js/username-gate.js?v=20260910b"></script>
+  <script src="../js/password-reset.js?v=20260910b"></script>
 </body>
 </html>

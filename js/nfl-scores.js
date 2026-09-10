@@ -1,7 +1,21 @@
 // Generated from Plain Text Sports NFL week scoreboards
-// Fetched: 2026-08-15T16:59:52.070Z
+// Fetched: 2026-09-10T05:19:14.802Z
 const NFL_SCORE_SEASON = 2026;
-const NFL_SCORE_GAMES = [];
+const NFL_SCORE_GAMES = [
+  {
+    "season": 2026,
+    "week": 1,
+    "away": "New England Patriots",
+    "awayAbbr": "NE",
+    "awayScore": 10,
+    "home": "Seattle Seahawks",
+    "homeAbbr": "SEA",
+    "homeScore": 13,
+    "status": "Final",
+    "final": true,
+    "sourceUrl": "https://plaintextsports.com/nfl/2026/schedule"
+  }
+];
 
 function getNflWeekScores(week){
   return NFL_SCORE_GAMES.filter(game => game.week === Number(week));
