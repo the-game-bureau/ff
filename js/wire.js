@@ -736,27 +736,11 @@
       : 'as of: no fetch on record');
   }
 
-  // "as of friday, september 11th 9:32 am central". Central because that is the
-  // zone every other time on this site is given in - the kickoffs on the wire
-  // above it included - and a scoreboard timestamp quietly rendered in the
-  // reader's own zone would disagree with them by an hour or three.
+  // "as of friday, september 11th 9:32 am central". The wording is
+  // window.ffLongWhen in js/season.js, shared with the admin screen's scoring
+  // panel so the two cannot drift.
   function stampText(at) {
-    const zone = { timeZone: 'America/Chicago' };
-    const part = (options) => new Intl.DateTimeFormat('en-US', { ...zone, ...options }).format(at);
-
-    const day = Number(part({ day: 'numeric' }));
-    const time = part({ hour: 'numeric', minute: '2-digit' }).toLowerCase();
-
-    return `as of ${part({ weekday: 'long' })}, ${part({ month: 'long' })} ` +
-      `${day}${ordinal(day)} ${time} central`;
-  }
-
-  // 1st, 2nd, 3rd, 4th - and 11th, 12th, 13th, which break the pattern and are
-  // the whole reason this is not a lookup on the last digit alone.
-  function ordinal(day) {
-    const teens = day % 100;
-    if (teens >= 11 && teens <= 13) return 'th';
-    return ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
+    return `as of ${window.ffLongWhen?.(at) || ''}`;
   }
 
 

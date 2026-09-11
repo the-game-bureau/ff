@@ -118,6 +118,36 @@ function fillPickLockMinutes(){
   }
 }
 
+// ===== SAYING WHEN =====
+// "friday, september 11th 9:32 am central". Every time this site quotes a
+// moment to a reader it is quoted in Central, the zone the kickoffs are given
+// in, so two times on one page can never be an hour apart for no visible
+// reason. Written once here because the wire on the Precinct and the scoring
+// panel on the admin screen both say it, and two copies of a date format is two
+// formats the first time either is touched.
+function longWhen(value){
+  const at = value instanceof Date ? value : new Date(value);
+  if(!at || Number.isNaN(at.getTime())) return '';
+
+  const zone = { timeZone: 'America/Chicago' };
+  const part = (options) => new Intl.DateTimeFormat('en-US', { ...zone, ...options }).format(at);
+
+  const day = Number(part({ day: 'numeric' }));
+  const time = part({ hour: 'numeric', minute: '2-digit' }).toLowerCase();
+
+  return `${part({ weekday: 'long' })}, ${part({ month: 'long' })} ` +
+    `${day}${ordinalDay(day)} ${time} central`;
+}
+
+// 1st, 2nd, 3rd, 4th - and 11th, 12th, 13th, which break the pattern and are
+// the whole reason this is not a lookup on the last digit alone.
+function ordinalDay(day){
+  const teens = day % 100;
+  if(teens >= 11 && teens <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
+}
+
+window.ffLongWhen = longWhen;
 window.fillPickLockMinutes = fillPickLockMinutes;
 window.renderHeaderUser = renderHeaderUser;
 window.fitHeaderUser = fitHeaderUser;

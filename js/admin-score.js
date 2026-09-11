@@ -34,6 +34,7 @@
 (function () {
   const SCORE_CONFIG = window.FF_SUPABASE_CONFIG || {};
   const SCORE_RPC = SCORE_CONFIG.rpcs?.adminScoreWeek || '_2026_admin_score_week';
+  const PICKS_TABLE = SCORE_CONFIG.tables?.picks || 'ff_picks';
 
   // Read by js/wire.js in whatever other tabs are open. The value is only a
   // timestamp; what matters is that it changed.
@@ -57,6 +58,7 @@
     els.panel = document.getElementById('adminScorePanel');
     els.week = document.getElementById('adminScoreWeek');
     els.games = document.getElementById('adminScoreGames');
+    els.last = document.getElementById('adminScoreLast');
     els.preview = document.getElementById('btnPreviewScore');
     els.commit = document.getElementById('btnCommitScore');
     els.report = document.getElementById('adminScoreReport');
@@ -76,13 +78,52 @@
       els.commit.disabled = true;
       els.report.innerHTML = '';
       describeWeek();
+      showLastScored();
     });
 
     els.preview.addEventListener('click', () => run(false));
     els.commit.addEventListener('click', () => run(true));
 
     describeWeek();
+    showLastScored();
   });
+
+  // When this week was last judged. Comes off _2026_picks.scored_at, which the
+  // trigger in supabase/sql/ff_scored_at.sql stamps whenever a row's result
+  // becomes a verdict - so it answers "was this week scored, and when" without
+  // anybody having to remember.
+  //
+  // Its own forgiving query: the column arrives with that file, and asking for
+  // a column that is not there yet fails the request. A failure here is a line
+  // that says it cannot tell, not a broken panel.
+  async function showLastScored() {
+    if (!els.last || !scoreDb) return;
+
+    const week = selectedWeek();
+    els.last.textContent = '';
+
+    const { data, error } = await scoreDb
+      .from(PICKS_TABLE)
+      .select('scored_at')
+      .eq('week', week)
+      .not('scored_at', 'is', null)
+      .order('scored_at', { ascending: false })
+      .limit(1);
+
+    // The week may have changed while this was in flight.
+    if (week !== selectedWeek()) return;
+
+    if (error) {
+      els.last.textContent =
+        'Cannot tell when this week was last scored: run supabase/sql/ff_scored_at.sql.';
+      return;
+    }
+
+    const at = data?.[0]?.scored_at ? new Date(data[0].scored_at) : null;
+    els.last.textContent = at && !Number.isNaN(at.getTime())
+      ? `Week ${week} was last scored ${window.ffLongWhen?.(at) || 'at an unknown time'}.`
+      : `Week ${week} has never been scored.`;
+  }
 
   function selectedWeek() {
     return Number(els.week?.value) || 1;
@@ -329,6 +370,7 @@
       // The roster's pick counts and everything else on the page are now stale.
       window.dispatchEvent(new CustomEvent('ff-auth-changed', { detail: { user: null, profile: null } }));
       announceScored();
+      showLastScored();
     } else {
       previewedWeek = week;
       els.commit.disabled = false;
