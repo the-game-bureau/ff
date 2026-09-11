@@ -1,6 +1,11 @@
 // Generated from Plain Text Sports NFL week scoreboards
-// Fetched: 2026-09-10T05:19:14.802Z
+// Fetched: 2026-09-11T14:32:57.510Z
 const NFL_SCORE_SEASON = 2026;
+// When this file was built. Exposed as a value and not just the comment above,
+// so the admin screen can say how old the scores are - a stale file is the one
+// failure of this whole arrangement that looks exactly like "no games have
+// finished yet".
+const NFL_SCORE_FETCHED_AT = "2026-09-11T14:32:57.510Z";
 const NFL_SCORE_GAMES = [
   {
     "season": 2026,
@@ -11,6 +16,19 @@ const NFL_SCORE_GAMES = [
     "home": "Seattle Seahawks",
     "homeAbbr": "SEA",
     "homeScore": 13,
+    "status": "Final",
+    "final": true,
+    "sourceUrl": "https://plaintextsports.com/nfl/2026/schedule"
+  },
+  {
+    "season": 2026,
+    "week": 1,
+    "away": "San Francisco 49ers",
+    "awayAbbr": "SF",
+    "awayScore": 27,
+    "home": "Los Angeles Rams",
+    "homeAbbr": "LAR",
+    "homeScore": 7,
     "status": "Final",
     "final": true,
     "sourceUrl": "https://plaintextsports.com/nfl/2026/schedule"
@@ -58,6 +76,7 @@ function normalizeNflScoreTeam(value){
 }
 
 window.NFL_SCORE_SEASON = NFL_SCORE_SEASON;
+window.NFL_SCORE_FETCHED_AT = NFL_SCORE_FETCHED_AT;
 window.NFL_SCORE_GAMES = NFL_SCORE_GAMES;
 window.NFL_SCORE_HELPERS = {
   getWeekScores: getNflWeekScores,

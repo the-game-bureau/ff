@@ -5008,6 +5008,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .admin-score-report:empty{ display: none; }
 
+/* The scores file is behind the real world. Marked rather than merely worded,
+   because the sentence it carries is the difference between "nothing has
+   finished" and "you have not fetched today". */
+.admin-score-stale{
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border-left: 6px solid var(--primary-red);
+  font-weight: 700;
+}
+
 .admin-score-headline{
   margin: 16px 0 10px;
   font-family: var(--font-display);

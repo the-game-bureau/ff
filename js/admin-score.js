@@ -98,6 +98,50 @@
       .filter((game) => game.final).length;
   }
 
+  // Games that kicked off long enough ago to be over, with no final on file.
+  //
+  // This is the one way the whole arrangement fails quietly: js/nfl-scores.js is
+  // a generated file, so a week's second game is not "not detected", it is not
+  // in the file yet - and an out-of-date file looks exactly like a week where
+  // nothing has finished. Counting them lets the panel say which it is.
+  //
+  // Four hours: an NFL game runs a little over three, and being early here only
+  // costs a warning that clears itself on the next fetch.
+  const LIKELY_OVER_MS = 4 * 60 * 60 * 1000;
+
+  function missingFinals(week, now = Date.now()) {
+    const scored = window.NFL_SCORE_HELPERS?.getWeekScores?.(week) || [];
+    const haveFinal = new Set(
+      scored.filter((game) => game.final).map((game) => matchKey(game.away, game.home))
+    );
+
+    return (window.NFL_SCHEDULE_GAMES || [])
+      .filter((game) => Number(game.week) === Number(week))
+      .filter((game) => {
+        const kickoff = Date.parse(game.kickoffUtc || '');
+        if (!Number.isFinite(kickoff)) return false;
+        if (now - kickoff < LIKELY_OVER_MS) return false;
+        return !haveFinal.has(matchKey(game.away, game.home));
+      }).length;
+  }
+
+  function matchKey(away, home) {
+    return [away, home]
+      .map((name) => String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ''))
+      .join('|');
+  }
+
+  function fetchedAgo(now = Date.now()) {
+    const stamp = Date.parse(window.NFL_SCORE_FETCHED_AT || '');
+    if (!Number.isFinite(stamp)) return 'at an unknown time';
+
+    const hours = Math.floor((now - stamp) / (60 * 60 * 1000));
+    if (hours < 1) return 'just now';
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.round(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
+
   // Picks lock five minutes before their own team's game, so once the last game
   // of the week has kicked off there is no way left to file one. That, and not
   // the last final, is the moment a missing pick becomes an elimination -
@@ -129,9 +173,22 @@
       return;
     }
 
-    els.games.textContent = picksClosed(week)
-      ? `${finals} of ${scheduled} final. Picks are closed for the week, so anyone who never filed is out.`
-      : `${finals} of ${scheduled} final. Picks are still open, so nobody is out for a missing one yet.`;
+    const missing = missingFinals(week);
+
+    const state = picksClosed(week)
+      ? 'Picks are closed for the week, so anyone who never filed is out.'
+      : 'Picks are still open, so nobody is out for a missing one yet.';
+
+    // Said first, because it is the reason a game that has plainly been played
+    // is not in the count.
+    const stale = missing
+      ? `${missing} game${missing === 1 ? ' has' : 's have'} been played with no score on file - ` +
+        'run tools/update-nfl-scores.mjs and deploy. '
+      : '';
+
+    els.games.textContent =
+      `${stale}${finals} of ${scheduled} final. ${state} Scores fetched ${fetchedAgo()}.`;
+    els.games.classList.toggle('admin-score-stale', Boolean(missing));
   }
 
   async function run(commit) {
@@ -154,6 +211,17 @@
         `No final scores on file for Week ${week} yet. Run tools/update-nfl-scores.mjs and deploy.`,
         'note', 'score');
       return;
+    }
+
+    // Not a refusal - scoring what IS on file is still worth doing - but it has
+    // to be said, or a week gets committed against a file that is a day behind
+    // and the games missing from it look like nobody picked them.
+    const behind = missingFinals(week);
+    if (behind) {
+      window.ffToast?.(
+        `${behind} played game${behind === 1 ? '' : 's'} missing from js/nfl-scores.js. ` +
+        'Scoring what is on file; regenerate it to catch the rest.',
+        'note', 'score-stale');
     }
 
     els.preview.disabled = true;

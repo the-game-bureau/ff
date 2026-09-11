@@ -169,6 +169,11 @@ export function renderScoreFile({ season = DEFAULT_SEASON, scores = [], fetchedA
   return `// Generated from Plain Text Sports NFL week scoreboards
 // Fetched: ${fetchedAt}
 const NFL_SCORE_SEASON = ${JSON.stringify(season)};
+// When this file was built. Exposed as a value and not just the comment above,
+// so the admin screen can say how old the scores are - a stale file is the one
+// failure of this whole arrangement that looks exactly like "no games have
+// finished yet".
+const NFL_SCORE_FETCHED_AT = ${JSON.stringify(fetchedAt)};
 const NFL_SCORE_GAMES = ${JSON.stringify(sortScores(scores), null, 2)};
 
 function getNflWeekScores(week){
@@ -212,6 +217,7 @@ function normalizeNflScoreTeam(value){
 }
 
 window.NFL_SCORE_SEASON = NFL_SCORE_SEASON;
+window.NFL_SCORE_FETCHED_AT = NFL_SCORE_FETCHED_AT;
 window.NFL_SCORE_GAMES = NFL_SCORE_GAMES;
 window.NFL_SCORE_HELPERS = {
   getWeekScores: getNflWeekScores,
