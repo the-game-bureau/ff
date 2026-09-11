@@ -216,6 +216,57 @@ execute function public._2026_apply_pick_schedule();
 drop function if exists public._2026_admin_score_week(integer, jsonb, boolean, boolean);
 
 -- ---------------------------------------------------------------------------
+-- EVERY RUN OF THE SCORER, whether it wrote anything or not.
+--
+-- WHY scored_at ON THE PICKS ROW IS NOT ENOUGH
+-- supabase/sql/ff_scored_at.sql stamps a row when its result BECOMES a verdict.
+-- That answers "when was this pick judged", which is not the same question as
+-- "when was this week last looked at". Press SCORE THE WEEK on a Wednesday with
+-- nothing new final and not one row changes, so the date does not move, and the
+-- screen goes on quoting last Sunday - as though the week had not been checked
+-- since, when it had been checked a minute ago.
+--
+-- WHAT finals_count IS FOR
+-- How many games were final at the moment of the run. Compare it against how
+-- many are final NOW and you have the thing that actually matters: whether
+-- anything has been played since the last run and is therefore not yet counted.
+-- Without it a timestamp is just a timestamp - it says when somebody last
+-- pressed the button, not whether the league is up to date.
+--
+-- Readable by everyone: the wire on the Precinct dates itself from this, and
+-- there is nothing private in when a league was scored.
+-- ---------------------------------------------------------------------------
+create table if not exists public._2026_score_runs (
+  season         integer not null default 2026,
+  week           integer not null,
+  last_run_at    timestamptz not null default now(),
+  -- Games, not teams. p_finals carries two entries per game because a pick
+  -- names one side of it.
+  finals_count   integer not null default 0,
+  survived_count integer not null default 0,
+  dun_dun_count  integer not null default 0,
+  no_pick_count  integer not null default 0,
+  picks_closed   boolean not null default false,
+  primary key (season, week)
+);
+
+comment on table public._2026_score_runs is
+  'One row per week, rewritten every time that week is scored - including runs '
+  'that wrote nothing. finals_count is how many games were final at the time, '
+  'which is what makes "has anything been played since?" answerable.';
+
+alter table public._2026_score_runs enable row level security;
+
+drop policy if exists "_2026_score_runs readable" on public._2026_score_runs;
+create policy "_2026_score_runs readable"
+  on public._2026_score_runs for select
+  to anon, authenticated
+  using (true);
+
+grant select on public._2026_score_runs to anon, authenticated;
+
+
+-- ---------------------------------------------------------------------------
 -- THE SCORING ITSELF, with no opinion about who is asking.
 --
 -- Split out from the admin entry point so it can have a second caller: the
@@ -360,6 +411,25 @@ begin
     end if;
   end loop;
 
+  -- The run itself, recorded whether or not it changed anything. Only on a
+  -- commit: a preview is a question, not a run.
+  if p_commit then
+    insert into public._2026_score_runs as r
+      (season, week, last_run_at, finals_count,
+       survived_count, dun_dun_count, no_pick_count, picks_closed)
+    values
+      (v_season, p_week, now(), coalesce(jsonb_array_length(p_finals), 0) / 2,
+       jsonb_array_length(v_survived), jsonb_array_length(v_dun_dun),
+       jsonb_array_length(v_no_pick), coalesce(p_picks_closed, false))
+    on conflict (season, week) do update
+      set last_run_at    = excluded.last_run_at,
+          finals_count   = excluded.finals_count,
+          survived_count = excluded.survived_count,
+          dun_dun_count  = excluded.dun_dun_count,
+          no_pick_count  = excluded.no_pick_count,
+          picks_closed   = excluded.picks_closed;
+  end if;
+
   return jsonb_build_object(
     'week', p_week,
     'committed', p_commit,
@@ -379,6 +449,13 @@ begin
       where out_pick.season = v_season
         and out_pick.week < p_week
         and upper(btrim(out_pick.result)) = 'DUN DUN'
+    ),
+    -- What the screen puts next to the date: when this week was last run, and
+    -- how much of it was final then. After a commit these are this run.
+    'last_run', (
+      select jsonb_build_object('at', r.last_run_at, 'finals', r.finals_count)
+      from public._2026_score_runs r
+      where r.season = v_season and r.week = p_week
     )
   );
 end;

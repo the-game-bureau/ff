@@ -16,7 +16,7 @@
   const WIRE_KEY = WIRE_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
   const SUSPECTS_VIEW = WIRE_CONFIG.views?.currentSuspects || 'ff_current_suspects';
   const PICKS_VIEW = WIRE_CONFIG.views?.activePicks || 'ff_active_picks';
-  const PICKS_TABLE = WIRE_CONFIG.tables?.picks || 'ff_picks';
+  const RUNS_TABLE = WIRE_CONFIG.tables?.scoreRuns || '_2026_score_runs';
 
   // Seconds of travel per entry. Fixed per entry rather than per strip, so a
   // forty-suspect wire reads at the same speed as a four-suspect one.
@@ -92,28 +92,33 @@
   }
 
   // When SCORE THE WEEK was last run, which is when the sentences on this strip
-  // last changed. Its own query, and a forgiving one: the column arrives with
-  // supabase/sql/ff_scored_at.sql, and asking for a column that is not there
-  // yet fails the whole request. So it is asked for separately and a failure
-  // just means the wire dates itself from the scoreboard file instead.
+  // last changed.
+  //
+  // _2026_score_runs and not _2026_picks.scored_at. The column on the pick row
+  // records when that row's verdict was written, which sounds like the same
+  // thing and is not: ff_scored_at.sql backfilled it from created_at for
+  // everything already judged, so for those rows it holds the moment the PICK
+  // WAS FILED. That produced a wire dated an hour before the week's first
+  // kickoff - a scoring time that could not possibly have been one. The runs
+  // table is only ever written by a commit actually happening, so it has
+  // nothing to be wrong about.
+  //
+  // Forgiving, because the table arrives with supabase/sql/ff_score_week.sql and
+  // asking for one that is not there yet fails the request. A failure just means
+  // the wire dates itself from the scoreboard file instead.
   async function fetchLastScored() {
-    // The table, not the view. _2026_active_picks is defined with SELECT *,
-    // which Postgres expands once when the view is created - a column added to
-    // the table afterwards never appears in it. The table has the column and
-    // the grant, and the newest stamp is the newest stamp either way.
     const { data, error } = await wireDb
-      .from(PICKS_TABLE)
-      .select('scored_at')
-      .not('scored_at', 'is', null)
-      .order('scored_at', { ascending: false })
+      .from(RUNS_TABLE)
+      .select('last_run_at')
+      .order('last_run_at', { ascending: false })
       .limit(1);
 
     if (error) {
-      console.warn('No scored_at on file; dating the wire from the scoreboard instead:', error);
+      console.warn('No scoring runs on file; dating the wire from the scoreboard instead:', error);
       return null;
     }
 
-    const at = data?.[0]?.scored_at ? new Date(data[0].scored_at) : null;
+    const at = data?.[0]?.last_run_at ? new Date(data[0].last_run_at) : null;
     return at && !Number.isNaN(at.getTime()) ? at : null;
   }
 

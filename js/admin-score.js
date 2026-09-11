@@ -34,7 +34,7 @@
 (function () {
   const SCORE_CONFIG = window.FF_SUPABASE_CONFIG || {};
   const SCORE_RPC = SCORE_CONFIG.rpcs?.adminScoreWeek || '_2026_admin_score_week';
-  const PICKS_TABLE = SCORE_CONFIG.tables?.picks || 'ff_picks';
+  const RUNS_TABLE = SCORE_CONFIG.tables?.scoreRuns || '_2026_score_runs';
 
   // Read by js/wire.js in whatever other tabs are open. The value is only a
   // timestamp; what matters is that it changed.
@@ -88,26 +88,35 @@
     showLastScored();
   });
 
-  // When this week was last judged. Comes off _2026_picks.scored_at, which the
-  // trigger in supabase/sql/ff_scored_at.sql stamps whenever a row's result
-  // becomes a verdict - so it answers "was this week scored, and when" without
-  // anybody having to remember.
+  // When this week was last RUN, and whether it is still a true statement about
+  // the league.
   //
-  // Its own forgiving query: the column arrives with that file, and asking for
-  // a column that is not there yet fails the request. A failure here is a line
-  // that says it cannot tell, not a broken panel.
+  // Two different questions, and the date alone only answers the first:
+  //
+  //   1. When did the scorer last look at this week? _2026_score_runs, written
+  //      on every commit including the ones that changed nothing. A pick row's
+  //      own scored_at cannot answer this - press the button on a quiet
+  //      Wednesday and no row changes, so that date would still be quoting
+  //      Sunday as though the week had not been checked since.
+  //
+  //   2. Is that date still the whole story? Only if nothing has gone final
+  //      since. The run recorded how many games were final at the time; compare
+  //      it with how many are final now and the gap is exactly the games that
+  //      have been played and not yet counted.
+  //
+  // Said together, because a date without the second half invites the reading
+  // it cannot support - that the league is up to date as of then.
   async function showLastScored() {
     if (!els.last || !scoreDb) return;
 
     const week = selectedWeek();
     els.last.textContent = '';
+    els.last.classList.remove('admin-score-stale');
 
     const { data, error } = await scoreDb
-      .from(PICKS_TABLE)
-      .select('scored_at')
+      .from(RUNS_TABLE)
+      .select('last_run_at, finals_count')
       .eq('week', week)
-      .not('scored_at', 'is', null)
-      .order('scored_at', { ascending: false })
       .limit(1);
 
     // The week may have changed while this was in flight.
@@ -115,14 +124,39 @@
 
     if (error) {
       els.last.textContent =
-        'Cannot tell when this week was last scored: run supabase/sql/ff_scored_at.sql.';
+        'Cannot tell when this week was last scored: run supabase/sql/ff_score_week.sql.';
+      els.last.classList.add('admin-score-stale');
       return;
     }
 
-    const at = data?.[0]?.scored_at ? new Date(data[0].scored_at) : null;
-    els.last.textContent = at && !Number.isNaN(at.getTime())
-      ? `Week ${week} was last scored ${window.ffLongWhen?.(at) || 'at an unknown time'}.`
-      : `Week ${week} has never been scored.`;
+    const run = data?.[0];
+    const at = run?.last_run_at ? new Date(run.last_run_at) : null;
+    if (!at || Number.isNaN(at.getTime())) {
+      els.last.textContent = `Week ${week} has never been scored.`;
+      els.last.classList.add('admin-score-stale');
+      return;
+    }
+
+    const wasFinal = Number(run.finals_count) || 0;
+    const nowFinal = finalCount(week);
+    const since = Math.max(0, nowFinal - wasFinal);
+
+    // Only trustworthy when it is the live scoreboard being counted. Against the
+    // generated file a "nothing since" is only as current as the last deploy,
+    // and saying so plainly beats implying more than is known.
+    const counted = isLive(week)
+      ? `${nowFinal} of ${scheduledCount(week)} final now`
+      : `${nowFinal} final in js/nfl-scores.js`;
+
+    els.last.textContent = since
+      ? `Week ${week} last scored ${window.ffLongWhen(at)} with ${wasFinal} ` +
+        `game${wasFinal === 1 ? '' : 's'} final - ${since} more ` +
+        `${since === 1 ? 'has' : 'have'} finished since and ${since === 1 ? 'is' : 'are'} ` +
+        'not counted yet. Score it again.'
+      : `Week ${week} last scored ${window.ffLongWhen(at)}, with ${counted} and ` +
+        'nothing played since.';
+
+    els.last.classList.toggle('admin-score-stale', Boolean(since));
   }
 
   function selectedWeek() {
@@ -311,6 +345,7 @@
     els.games.textContent = 'Reading the scoreboard...';
     await ensureLiveScores(week, true);
     describeWeek();
+    showLastScored();
 
     const finals = finalsForWeek(week);
 

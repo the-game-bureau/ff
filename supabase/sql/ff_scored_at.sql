@@ -106,16 +106,43 @@ grant select (scored_at) on public._2026_picks to anon, authenticated;
 -- rebuilt for other reasons the column will come along, and nothing needs
 -- changing here.
 
--- Backfill, so the wire has something to say before the next scoring run rather
--- than falling back to the scoreboard file's age. created_at is the best
--- available stand-in: it is when the row was filed, which for a NO PICK row IS
--- the scoring run, and for a judged pick is at worst an underestimate.
-update public._2026_picks
-   set scored_at = created_at
- where scored_at is null
-   and public._2026_is_verdict(result);
+-- DO NOT BACKFILL THIS FROM created_at.
+--
+-- An earlier version of this file did, reasoning that the filing time was a
+-- decent stand-in for the judging time. It is not a stand-in for it at all: it
+-- is a different event, and it is always EARLIER. On the live database it
+-- produced a Week 1 stamped 1:46 pm on the 9th, five and a half hours before
+-- that week's first kickoff - a scoring time that could not possibly have been
+-- one, and no way to tell from the value itself that it was fiction.
+--
+-- Rows judged before this file was first run therefore have a null scored_at,
+-- which is the honest answer: nothing recorded when they were judged, because
+-- nothing was recording it. _2026_score_runs in supabase/sql/ff_score_week.sql
+-- is what answers "when was this week last scored" now, and it is written only
+-- by a run that actually happened.
 
--- What the wire will read: one row, newest first.
-select max(scored_at) as last_scored_at,
+-- ---------------------------------------------------------------------------
+-- CLEAR OUT WHAT THE OLD BACKFILL PUT THERE.
+--
+-- A verdict cannot have been written before the game it judges was played, so
+-- any stamp earlier than its own kickoff is provably not a scoring time - it is
+-- a filing time wearing the wrong name. Nulled rather than corrected, because
+-- there is nothing to correct it to: that moment was never recorded.
+--
+-- Rows with no scheduled game (the NO PICK sentinel) are left alone: those are
+-- written by the scorer at the moment it runs, so their stamp is real.
+-- ---------------------------------------------------------------------------
+update public._2026_picks pk
+   set scored_at = null
+  from public._2026_nfl_schedule s
+ where s.season = pk.season
+   and s.week = pk.week
+   and s.team = pk.team
+   and pk.scored_at is not null
+   and s.kickoff_at_utc is not null
+   and pk.scored_at < s.kickoff_at_utc;
+
+-- Per-row provenance: when each verdict was written, from here on.
+select max(scored_at) as newest_verdict,
        count(*) filter (where scored_at is not null) as rows_stamped
   from public._2026_picks;

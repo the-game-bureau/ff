@@ -25,6 +25,9 @@
       schedule: '_2026_nfl_schedule',
       archivePlayers: '_2026_archive_players',
       adminTodos: '_2026_admin_todos',
+      // One row per week, rewritten on every scoring run - see
+      // supabase/sql/ff_score_week.sql. What the admin screen dates itself from.
+      scoreRuns: '_2026_score_runs',
     }),
     views: Object.freeze({
       activePicks: '_2026_active_picks',
