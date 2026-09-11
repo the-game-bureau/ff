@@ -30,6 +30,11 @@
      resolved to nothing and the band painted itself transparent. Slightly
      see-through, so whatever is underneath reads through it as on paper. */
   --pad-highlighter: rgba(120, 205, 245, 0.78);
+  /* The second pen in the drawer. Pink strikes a suspect off the Suspect
+     Tracker for good; the blue above only answers a click and moves on. Global
+     for the same reason that one is: scoped to a section it resolves to nothing
+     everywhere else and the band paints itself transparent. */
+  --tracker-crossout: rgba(255, 122, 182, 0.82);
   --primary-red-dark: #A70400;
   --primary-blue: #0033CC;
   --primary-blue-mid: #002288;
@@ -1479,11 +1484,19 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* ===== APB ===== */
 /* Two audiences side by side, each its own stacked card. Same hard rule and
    zero-blur offset as everything else on the page. */
+/* Two across, fixed. auto-fit put three on a wide screen and left the fourth
+   stranded on a line of its own, and the bulletins pair up anyway: who has
+   filed against who has not, then who is still walking against who is out. */
 .apb-grid{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 18px;
+}
+
+/* One across once two would be narrower than the names they have to list. */
+@media (max-width: 700px){
+  .apb-grid{ grid-template-columns: minmax(0, 1fr); }
 }
 
 .apb-card{
@@ -1539,6 +1552,26 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .apb-name-row b{ color: var(--ink); }
+
+/* Case Closed sends one bulletin per suspect, so the button lives on the row
+   rather than under the card. Baseline alignment is for text; a button sits on
+   the line it belongs to. */
+.apb-name-row:has(.apb-name-send){ align-items: center; }
+
+.apb-name-send{
+  width: auto;
+  padding: 4px 12px;
+  font-size: 0.6875rem;
+}
+
+/* Why this card has no single send button of its own. */
+.apb-card-note{
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
 
 .apb-name-real{
   font-weight: 400;
@@ -3652,6 +3685,41 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   pointer-events: none;
 }
 
+/* CROSSED OUT. A pink highlighter drawn clean through the row of a suspect
+   whose team was supposed to lose and won instead - the name block, every pick,
+   and every empty week after it. A season struck off in one stroke.
+   The same masked band the legal pad uses for its blue marker, so the two read
+   as two pens from one drawer rather than as two effects. Unlike that one this
+   is permanent: it is not answering a click, it is the state of the row. */
+.lineup-chart-row-out{ position: relative; }
+
+.lineup-chart-row-out::before{
+  content: "";
+  position: absolute;
+  /* 98%, centred, so the stroke runs out just short of each end the way a
+     hand-drawn one does rather than stopping dead on the border. */
+  left: 1%;
+  width: 98%;
+  /* Through the middle of the row, not over it: a crossing-out goes through
+     what it cancels, and the name and the logos have to stay readable. */
+  top: 34%;
+  height: 32%;
+  /* Over the week cells, which carry their own fills and dotted rules. */
+  z-index: 5;
+  background-color: var(--tracker-crossout);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M1 5 C38 2 74 7 112 4 C146 1.5 172 6 199 3 L199 20.5 C168 23 138 18.5 106 21.5 C68 24 34 19.5 1 22 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M1 5 C38 2 74 7 112 4 C146 1.5 172 6 199 3 L199 20.5 C168 23 138 18.5 106 21.5 C68 24 34 19.5 1 22 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  mix-blend-mode: multiply;
+  /* Barely off level. At this width even a degree would drop the far end most
+     of a row. */
+  transform: rotate(-0.22deg);
+  pointer-events: none;
+}
+
 .lineup-booking-card[role="button"]{ cursor: pointer; }
 
 .lineup-booking-card[role="button"]:focus-visible{
@@ -4369,15 +4437,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .suspect-card:nth-child(4n + 3) .suspect-avatar-frame{ transform: rotate(-0.5deg); }
 .suspect-card:nth-child(4n + 4) .suspect-avatar-frame{ transform: rotate(1.3deg); }
 
-/* The whole card is the mugshot now: photo, two-tone edge sampled from that
-   photo, and the name plate laid over the bottom of it. */
+/* A polaroid: white stock, an even border on three sides and a deep one at the
+   bottom, with the writing on that bottom border. Nothing is laid over the
+   picture - the print is the print, and everything said about the suspect is
+   said underneath it. */
 .suspect-avatar-frame{
   position: relative;
   width: var(--mugshot-width);
-  aspect-ratio: 1;
   display: grid;
-  place-items: stretch;
-  overflow: hidden;
+  grid-template-rows: auto auto;
+  padding: 9px 9px 12px;
   background: var(--paper-raised);
   border: var(--rule);
   /* A harder shadow than the site default: on cork these are objects lying on
@@ -4388,18 +4457,19 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   --stripe-b: var(--accent-yellow);
 }
 
-/* Full-height stripe down the left edge, over the photo. */
-.suspect-avatar-frame::before{
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 14px;
-  z-index: 2;
-  background: linear-gradient(
-    90deg,
-    var(--stripe-a) 0 9px,
-    var(--stripe-b) 9px 14px
-  );
+/* Square, and its own positioning context: the stamp goes over the picture,
+   the writing never does. Clipped, so an overhanging stamp stops at the print
+   edge instead of running out across the white border. */
+.suspect-photo{
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--paper-raised);
+  /* The stamp is sized in cqw and this is the nearest container, so it now
+     measures the print rather than the card. It has to be: the card is the
+     polaroid, and a stamp cut to the card's width overhangs a photo inset from
+     it by the white border and loses a letter at each end. */
+  container-type: inline-size;
 }
 
 /* CASE CLOSED. The show's own sting, stamped across the mugshot of a suspect
@@ -4415,31 +4485,43 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   padding: 5px 10px 7px;
   /* One plate whatever the card width, and wider than the frame on purpose: a
      stamp lands where the hand puts it, not inside the lines. */
-  min-width: 106cqw;
+  /* Inside .suspect-photo, which clips: a stamp sized to overhang simply lost
+     its ends. It reads as pressed slightly askew rather than pressed off the
+     edge, which is the better of the two anyway. */
+  min-width: 94cqw;
   font-family: var(--font-display);
-  font-size: clamp(0.85rem, 12cqw, 1.85rem);
+  font-size: clamp(0.9rem, 12.5cqw, 2rem);
+  /* The plate is the width; the letters have to live inside it. */
+  letter-spacing: 0.02em;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
   white-space: nowrap;
-  color: #C92232;
+  /* Darker than the legal pad's red. That one is ink on yellow paper; this one
+     has to hold up over a photograph, and half of them are dark. */
+  color: #B3121F;
   /* The double rule a rubber stamp carries: a heavy outer box and a hairline
      outside it. */
-  border: 3px solid currentColor;
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
+  border: 4px solid currentColor;
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
   /* Varies card to card. Nothing on a board of thirty faces should look
      printed, and a row of identical stamps would. */
   transform: translate(-50%, -50%) rotate(var(--stamp-tilt, -9deg));
-  /* Ink sinks into the photograph rather than sitting on it. */
-  mix-blend-mode: multiply;
-  opacity: 0.82;
+  /* A light plate under the ink. Without it the stamp was multiply-blended
+     straight onto the photograph, which is fine over a bright one and nearly
+     invisible over a dark one - and half the mugshots are dark. The plate gives
+     the letters something to sit on whatever is behind them.
+     Deliberately not opaque: a stamp is pressed onto a photo, not stuck over
+     it, and the face still shows through. */
+  background: rgba(255, 252, 250, 0.62);
+  opacity: 0.96;
   pointer-events: none;
 }
 
-/* cqw above measures the card, which only works if the card is a container. */
+/* An outer container as well, so anything sized against the whole card still
+   can. .suspect-photo is the nearer one and is what the stamp measures. */
 .suspect-card{ container-type: inline-size; }
 
 /* Four tilts against the grid's own rhythm, so the stamps do not fall into step
@@ -4471,21 +4553,37 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background: var(--paper-raised);
 }
 
-/* Name plate over the photo. Starts clear of the stripe so neither covers the
-   other, and carries a solid ground so the text survives any photo under it. */
-.suspect-caption{
+/* A print has an edge. Inset rather than a border so it does not add to the
+   square and push the polaroid out of proportion. */
+.suspect-photo::after{
+  content: "";
   position: absolute;
-  left: 14px;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 3;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* The writing on the bottom border. In flow under the print, so it can never
+   overlap it however many lines it runs to. */
+.suspect-caption{
   display: grid;
   gap: 1px;
-  padding: 6px 8px;
-  background: var(--paper-raised);
-  border-top: var(--rule);
+  min-width: 0;
+  padding: 0 2px;
   text-align: center;
   pointer-events: none;
+}
+
+/* The two-tone edge sampled from the photo, which used to run down the left of
+   the print itself. On a polaroid it becomes the rule between the picture and
+   the writing: same two colours, same 9:5 split, none of it over the face. */
+.suspect-caption::before{
+  content: "";
+  display: block;
+  height: 5px;
+  margin: 7px 0 6px;
+  background: linear-gradient(90deg, var(--stripe-a) 0 64%, var(--stripe-b) 64% 100%);
 }
 
 /* Under your own card only, so the lineup reads the same for everyone else.
@@ -4697,6 +4795,43 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .suspect-first{ color: var(--text-secondary); }
+
+/* Bottom line of the name plate: where this suspect stands on the open week.
+   Nothing is drawn for a closed case, so the plate keeps its height either way
+   only because every card in the grid is the same size. */
+.suspect-week{
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.5625rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* Two even lines rather than one long one and an orphan: the plate is only
+     as wide as a mugshot, and shrinking the type far enough to fit WAITING FOR
+     WEEK 00 PICK on one row would put it below reading size. */
+  text-wrap: balance;
+  color: var(--text-secondary);
+}
+
+/* Yellow is the site's attention colour, but #FFD400 type on white paper is
+   barely there - so the waiting line wears the yellow rather than being drawn
+   in it, which is how the rest of the site highlights. Green does the same for
+   a suspect who has already survived the live week and is only waiting on the
+   next one, matching .status-survived rather than inventing a second green. */
+.suspect-week-waiting{
+  background: var(--accent-yellow);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent-yellow);
+}
+
+.suspect-week-cleared{
+  background: var(--success);
+  color: var(--paper-raised);
+  box-shadow: 0 0 0 2px var(--success);
+}
 
 .suspect-empty,
 .suspect-notice{
@@ -5028,6 +5163,22 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Label, count, names. The count is its own column so four groups of wildly
    different lengths still line up and can be read down. */
+/* Does the report cover everybody. Quiet when it does, loud when it does not:
+   a short list is the failure this exists to catch. */
+.admin-score-tally{
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.admin-score-tally-off{
+  font-weight: 700;
+  color: var(--error);
+}
+
 .admin-score-group{
   display: grid;
   grid-template-columns: 128px 48px minmax(0, 1fr);
@@ -5350,9 +5501,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .lab-shot-wrap{ position: relative; width: 168px; }
 
-/* The placard stripe from suspects/: 9px of primary, then 5px of secondary,
-   down the left edge. Same geometry as .suspect-avatar-frame::before so what is
-   judged here is what ships. */
+/* The placard stripe from suspects/: 9px of primary, then 5px of secondary.
+   The lineup draws it as a bar under the print now that the cards are
+   polaroids; here it stays down the left edge of the photo, because what this
+   lab judges is whether the two sampled colours read against the face. */
 .lab-shot-frame{
   --stripe-a: var(--ink);
   --stripe-b: var(--accent-yellow);
@@ -5524,4 +5676,295 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .lab-grid{ grid-template-columns: minmax(0, 1fr); }
   .lab-card{ grid-template-columns: minmax(0, 1fr); }
   .lab-shot-wrap{ width: 100%; }
+}
+
+/* ===== THE WIRE ===== */
+/* The squad room radio, across the top of the Precinct. One strip, travelling
+   right to left forever, with a diamond between entries so the eye can find
+   where one suspect ends and the next begins. Black ground and mono type: this
+   is equipment, not paper. */
+/* Full width, hard against the nav row above it. Its own border and shadow come
+   off so it reads as part of that block rather than as a panel dropped below
+   it - the nav's bottom rule is black and so is the strip, and they meet with
+   nothing between them. */
+.wire-bleed{
+  width: 100%;
+  background: var(--ink);
+  border-bottom: var(--rule-fat);
+}
+
+.wire-bleed .wire-strip{
+  border: 0;
+  box-shadow: none;
+}
+
+.wire-strip{
+  position: relative;
+  overflow: hidden;
+  /* The height of one loaded row, held from the first paint. The strip is empty
+     until js/wire.js has run, and without this the page opens with a 28px
+     sliver that jumps to full height the moment anything is written into it -
+     including the LOADING message. Revisit alongside the type size below. */
+  min-height: 62px;
+  background: var(--ink);
+  border: var(--rule-fat);
+  box-shadow: var(--shadow-sm);
+  padding: 9px 0;
+}
+
+/* The fade sits over the strip, so it would swallow a pointer landing near
+   either end. It is decoration; the drag has to reach the strip underneath. */
+.wire-strip::before,
+.wire-strip::after{ pointer-events: none; }
+
+/* Fade at both ends so entries arrive and leave rather than appearing at a
+   hard edge. Drawn over the strip, not applied as a mask, because a mask would
+   take the border with it. */
+.wire-strip::before,
+.wire-strip::after{
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wire-strip::before{
+  left: 0;
+  background: linear-gradient(90deg, var(--ink), transparent);
+}
+
+.wire-strip::after{
+  right: 0;
+  background: linear-gradient(270deg, var(--ink), transparent);
+}
+
+.wire-track{
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: max-content;
+  will-change: transform;
+}
+
+/* Grabbable. js/wire.js runs the travel rather than a keyframe, precisely
+   so it can be taken hold of: pull right to rewind, push left to run it on.
+   Hovering parks it - forty entries go past in a few minutes and the one worth
+   reading is always the one about to leave. */
+.wire-strip{ cursor: grab; touch-action: pan-y; user-select: none; }
+.wire-strip.is-dragging{ cursor: grabbing; }
+
+/* One typeface, one size, one weight, all the way down the strip. A wire is a
+   single run of characters clattering past; mixing display type, four sizes and
+   two weights into it made every entry read as four separate things. Colour is
+   the only thing that varies, and it is the only thing that needs to - which
+   suspect, what they filed, and what the scoreboard says.
+   Uppercased like the rest of the site's mono type. It is a transform, not the
+   text: the handles keep the capitals their owners chose everywhere they are
+   read rather than shouted, including the roll call under the strip. */
+.wire-item,
+.wire-item *{
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Printed, not typed. The Suspect Tracker draws its dot-matrix titles as real
+   SVG dot grids from a 5x7 glyph table (js/suspect-lineup-chart.js); forty
+   sentences of that would be tens of thousands of circles and would throw away
+   the colour every phrase is carrying. So the head is simulated instead: a dot
+   grid punched through the glyphs as a mask, which leaves each span its own
+   colour and costs nothing.
+   3px against 22px type is about seven dots to a capital, which is the pitch a
+   real head prints at and the whole reason the dots are visible as dots. A 2px
+   pitch is easier to read and stops looking like a printer at all - it was
+   tried, and it read as slightly rough type rather than as print. */
+.wire-item *{
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
+  -webkit-mask-size: 3px 3px;
+  mask-size: 3px 3px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+.wire-item{
+  display: inline-flex;
+  /* Centred, not baseline-aligned. Every span on the strip is the same size, so
+     for the words the two are the same thing - but the mugshot card is an
+     inline-flex box whose baseline is its bottom edge rather than its name's,
+     and on a baseline row it hung the name above the sentence it belongs to. */
+  align-items: center;
+  --wire-gap: 10px;
+  gap: var(--wire-gap);
+  padding: 0 18px;
+  white-space: nowrap;
+  color: var(--paper-raised);
+}
+
+/* Punctuation inside a line - the full stop between its two sentences, and the
+   comma after the club that was accused. The item is a flex row with a gap
+   between every child, so a mark given its own box lands a clear space away
+   from the word it belongs to - "10-13 ." - and the negative margin takes that
+   space back. The gap after it stays, which is what the break wants. */
+.wire-stop{ margin-left: calc(-1 * var(--wire-gap)); }
+
+/* The suspect's mugshot in front of their name, marked the way the Suspect
+   Tracker marks every row: a framed photograph carrying the placard stripe in
+   the two colours sampled from that photograph. No plate behind the name and no
+   border around the pair - on a black strip the card read as a box cut out of
+   the sentence, and the sentence is the point. The defaults are the house pair,
+   used until js/suspect-colors.js has resolved the suspect's own, and kept by
+   anyone whose mugshot cannot be sampled. */
+.wire-mug{
+  --wire-primary: var(--accent-yellow);
+  --wire-secondary: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wire-mug-frame{
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 3px solid var(--wire-secondary);
+}
+
+/* 3px and 2px, the same stripe the tracker's 44px thumbnail wears - a
+   share-of-the-frame stripe comes out too thin at this size to read as two
+   colours at all. */
+.wire-mug-frame::before{
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 5px;
+  background: linear-gradient(90deg, var(--wire-primary) 0 3px, var(--wire-secondary) 3px 5px);
+  pointer-events: none;
+}
+
+.wire-mug-shot{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The dot mask is punched through every span on the strip, and a mask applies
+   to an element's BACKGROUND as much as its text: left on, the frame's stripe
+   came out as a field of dots with the photograph shredded inside it. So the
+   frame and the photograph are exempt. The name is not - a printed name is what
+   the tracker does too. */
+.wire-mug,
+.wire-mug-frame,
+.wire-mug-shot{
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.wire-name{ color: var(--accent-yellow); }
+
+/* The copula, and the joining words of a closed case's sentence. Quiet, because
+   they are the words on the strip carrying no information - they are there so
+   the line reads as a sentence rather than a row of labels butted together. */
+.wire-is,
+.wire-because{ color: var(--paper-raised); }
+
+/* The verdict itself, said rather than stamped: a closed case is one sentence
+   now, with no chip in the middle of it to break the reading. */
+.wire-gone{ color: #FF8A8A; }
+
+/* The two clubs in the game that ended it, or that the open week turns on. */
+.wire-side{ color: var(--paper-raised); }
+
+/* When the game is, and the one sentence on the line that is not yet a fact. */
+.wire-when,
+.wire-pending{ color: var(--accent-yellow); }
+
+.wire-flag{ padding: 2px 7px; }
+
+/* Said in green rather than wearing it. #6FD39A, not --success: the token is a
+   dark green meant for white paper and all but disappears on the strip's black
+   ground - the same lighter green the SURVIVED verdict already uses here. */
+.wire-flag-live{ padding: 2px 0; color: #6FD39A; }
+.wire-flag-out{ background: var(--primary-red); color: var(--paper-raised); }
+
+.wire-pick strong{ color: var(--accent-yellow); }
+.wire-pick-none{ color: var(--accent-yellow); }
+
+.wire-verdict{ color: var(--paper-raised); }
+.wire-verdict-good{ color: #6FD39A; }
+.wire-verdict-bad{ color: #FF8A8A; }
+
+/* The fixture is the evidence, so it is boxed off from the commentary. */
+.wire-game{
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+}
+
+.wire-game-none{ color: var(--paper-raised); }
+
+.wire-at{ opacity: 0.7; }
+
+.wire-state{ opacity: 0.85; }
+.wire-state-final{ color: var(--accent-yellow); opacity: 1; }
+
+/* Three strokes between entries, the way a teletype feed breaks one message
+   from the next. A diamond was a typeset ornament sitting in a line of printed
+   type; this is the same machine. */
+.wire-sep{
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-red);
+}
+
+/* A provenance note for the scores in the strip above it - a stale file
+   otherwise looks exactly like "no games have finished yet" - so it sits on the
+   paper with the rest of the page's own writing rather than inside the black
+   band with the equipment. */
+.wire-stamp{
+  margin: 10px 0 0;
+  padding: 0 16px;
+  /* Its line is held open from the first paint, so that the wire finishing
+     loading does not shove the page down. */
+  min-height: 17px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.wire-list{
+  margin: 12px 0 0;
+  padding-left: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+/* A strip that will not stop is unusable for anyone who asked motion to stop.
+   js/wire.js checks the same query and never starts the travel; the wire is
+   still there to be dragged through by hand. */
+
+@media (max-width: 767px){
+  .wire-item,
+  .wire-item *,
+  .wire-sep{ font-size: 1.25rem; }
+  .wire-item{ --wire-gap: 8px; padding: 0 12px; }
 }

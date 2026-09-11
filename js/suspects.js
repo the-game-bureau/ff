@@ -35,18 +35,6 @@ function setSuspectsTitle(count){
   el.textContent = `${count} Suspect${count === 1 ? '' : 's'}`;
 }
 
-// The header line counts the faces pinned to the board, so it grows with the
-// league on its own.
-function setLineupCall(count){
-  const el = document.getElementById('lineupCall');
-  if(!el) return;
-
-  const total = Number(count || 0);
-  el.textContent = total === 1
-    ? '"One face on the board. Nobody comes down until the case closes."'
-    : `"${total} faces on the board. Nobody comes down until the case closes."`;
-}
-
 function escapeHtml(value){
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -76,7 +64,10 @@ function profileSelect(showFirstNames, includeAvatar = true){
 }
 
 function viewSelect(showFirstNames, withStatus = true){
-  const fields = ['username'];
+  // id, because the board is ordered by how many picks each suspect has filed
+  // and picks are matched on user_id. A username can be changed from the rap
+  // sheet, so it is not an identity to count by.
+  const fields = ['id', 'username'];
   if(showFirstNames) fields.push('first_name');
   fields.push('avatar_data_url');
   // Who is out. The view derives it from the newest pick, and until now nobody
@@ -88,6 +79,11 @@ function viewSelect(showFirstNames, withStatus = true){
 
 function displayNameForSuspect(suspect){
   return (suspect.display_name || suspect.first_name || suspect.username || 'Unknown').trim();
+}
+
+// The same free-text match the rest of the site makes on a result.
+function isOutOfTheGame(suspect){
+  return gameStatusForSuspect(suspect).includes('DUN DUN');
 }
 
 function gameStatusForSuspect(suspect){
@@ -125,14 +121,131 @@ function addCurrentUserProfileData(suspect, user, showFirstNames){
   };
 }
 
-function normalizeSuspects(suspects, user, showFirstNames){
+// Which band of the board a suspect sits in, in the order they are drawn. The
+// numbers are the colours of the week line under the name: none, yellow, green,
+// plain. Keep this in step with weekLineHtml - they are two readings of the
+// same state, and a suspect sorted into a band whose colour they are not
+// wearing is the bug this exists to prevent.
+const BAND_CLOSED = 0;
+const BAND_WAITING = 1;
+const BAND_CLEARED = 2;
+const BAND_FILED = 3;
+
+function lineupBand(suspect){
+  if(isOutOfTheGame(suspect)) return BAND_CLOSED;
+  if(suspect.filed_open_week) return BAND_FILED;
+  return suspect.cleared_this_week ? BAND_CLEARED : BAND_WAITING;
+}
+
+function normalizeSuspects(suspects, user, showFirstNames, pickWeeks = new Map()){
+  const thisWeek = Number(window.CURRENT_WEEK) || 1;
+
   return (suspects || [])
-    .map((suspect) => addCurrentUserProfileData({
-      ...suspect,
-      display_name: showFirstNames && suspect.first_name ? suspect.first_name : suspect.username,
-      game_status: suspect.game_status || suspect.status || 'SUSPECT'
-    }, user, showFirstNames))
-    .sort((a, b) => (a.username || '').localeCompare(b.username || ''));
+    .map((suspect) => {
+      const filed = pickWeeks.get(String(suspect.id || '')) || EMPTY_WEEKS;
+      // Survive the week being played and the week you are waiting on is the
+      // next one, not this one. Everyone else is still on this week, whether
+      // they have filed for it or not.
+      const clearedThisWeek = (filed.get(thisWeek) || '').includes('SURVIVED');
+      const openWeek = clearedThisWeek ? thisWeek + 1 : thisWeek;
+      return addCurrentUserProfileData({
+        ...suspect,
+        // Weeks filed, never rows: the view collapses history per (user,
+        // season, week), so a second season on file would otherwise hand back
+        // two rows for week 1 and count them both.
+        pick_count: filed.size,
+        open_week: openWeek,
+        filed_open_week: filed.has(openWeek),
+        cleared_this_week: clearedThisWeek,
+        display_name: showFirstNames && suspect.first_name ? suspect.first_name : suspect.username,
+        game_status: suspect.game_status || suspect.status || 'SUSPECT'
+      }, user, showFirstNames);
+    })
+    // The board reads top to bottom in the order the name plates are coloured:
+    // closed cases, then anyone the clock is running on, then anyone already
+    // through to next week, then the picks still waiting on Sunday. Alphabetical
+    // inside a band, so the order holds still between loads rather than
+    // reshuffling on whatever came back first.
+    //
+    // One pick per week is the most anyone can have, so the number that orders
+    // the board is the open week's: filed or not, nothing else. It used to be a
+    // running total of weeks filed, which counted a pick already banked for next
+    // week and pushed whoever had worked ahead to the bottom of their own band -
+    // three suspects who were level with everyone else on the week being played.
+    // That is the band's job to say, and it already says it.
+    .sort((a, b) => {
+      const byBand = lineupBand(a) - lineupBand(b);
+      if(byBand) return byBand;
+
+      return (a.username || '').localeCompare(b.username || '', undefined, { sensitivity: 'base' });
+    });
+}
+
+// Which weeks each suspect has named a victim for, out of the ones close enough
+// to matter: everything up to and including next week. The set size orders the
+// board; whether this week is in it decides what the name plate says.
+//
+// Capped there on purpose. A pick can be filed for any week of the season at
+// any time, so counting all of them would put whoever filled in the whole
+// season last on a board meant to show who is behind. Up to next week is the
+// question actually being asked - are you caught up.
+//
+// SKIP rows are tombstones for a released week, not picks. NO PICK rows are the
+// scorer's verdict on a week nobody filed, which is the opposite of a pick.
+//
+// Keyed by week rather than tallied as rows: one pick per week is the most
+// anyone can have, so a week can only ever add one. The view collapses history
+// per (user, season, week), which means a second season on file would hand back
+// two rows for week 1 and quietly count them both. The value is the result, so
+// the name plate can tell a pick still waiting on Sunday from one already won.
+const EMPTY_WEEKS = new Map();
+
+async function fetchPickWeeks(){
+  const weeks = new Map();
+  const throughWeek = (Number(window.CURRENT_WEEK) || 1) + 1;
+  const season = String(window.SEASON || '');
+
+  const { data, error } = await suspectsDb
+    .from(SUSPECTS_CONFIG.views?.activePicks || 'ff_active_picks')
+    .select('user_id, season, week, team, result');
+
+  if(error){
+    // Not fatal: without counts every suspect scores zero and the board falls
+    // back to plain alphabetical, which is where it started.
+    console.warn('Pick counts unavailable, ordering the lineup by name:', error);
+    return weeks;
+  }
+
+  for(const row of data || []){
+    const id = String(row?.user_id || '');
+    if(!id) continue;
+    const week = Number(row.week);
+    if(!week || week > throughWeek) continue;
+    if(season && String(row.season || season) !== season) continue;
+    if(String(row.result || '').trim().toUpperCase() === 'SKIP') continue;
+    if(String(row.team || '').trim().toUpperCase() === 'NO PICK') continue;
+    if(!weeks.has(id)) weeks.set(id, new Map());
+    weeks.get(id).set(week, String(row.result || '').trim().toUpperCase());
+  }
+
+  return weeks;
+}
+
+// The bottom line of the name plate: which week this suspect is on, and whether
+// they have filed for it. A closed case gets nothing - there is no pick left to
+// wait for, and the DUN DUN stamp across the photograph has already said it.
+//
+// Waiting is yellow when the week is still live, because the clock is running
+// on them, and green when they have already survived it, because the wait is
+// just the schedule catching up.
+function weekLineHtml(suspect, isOut){
+  if(isOut) return '';
+
+  const week = Number(suspect.open_week) || Number(window.CURRENT_WEEK) || 1;
+  if(suspect.filed_open_week) return `<span class="suspect-week">Pick is in for Week ${week}</span>`;
+
+  const tone = suspect.cleared_this_week ? 'suspect-week-cleared' : 'suspect-week-waiting';
+  return `<span class="suspect-week ${tone}">Waiting for Week ${week} pick</span>`;
 }
 
 function renderSuspects(suspects){
@@ -162,7 +275,7 @@ function renderSuspects(suspects){
     // Eliminated: the case is closed and the file gets crossed out. Derived
     // from the newest pick's result, so a suspect stamped here is the same one
     // the Suspect Tracker shows a DUN DUN for.
-    const isOut = gameStatusForSuspect(suspect).includes('DUN DUN');
+    const isOut = isOutOfTheGame(suspect);
 
     const retake = suspect.is_self
       ? ' data-mugshot-action="Edit Rap Sheet" data-mugshot-action-flag="rap-sheet"'
@@ -171,14 +284,20 @@ function renderSuspects(suspects){
     return `
       <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}${isOut ? ' suspect-card-out' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
-          ${isOut ? '<span class="suspect-stamp" aria-hidden="true">Dun Dun</span><span class="sr-only">Case closed.</span>' : ''}
-          <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}"${retake} aria-label="${escapeHtml(avatarLabel)}">
-            <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
-          </button>
-          <!-- The name plate sits on the photo, the way a booking board does. -->
+          <!-- The photo, and only the photo. Its own box so the DUN DUN stamp
+               centres on the picture rather than on the whole polaroid, and so
+               nothing written below can creep back over it. -->
+          <div class="suspect-photo">
+            ${isOut ? '<span class="suspect-stamp" aria-hidden="true">Dun Dun</span><span class="sr-only">Case closed.</span>' : ''}
+            <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}"${retake} aria-label="${escapeHtml(avatarLabel)}">
+              <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
+            </button>
+          </div>
+          <!-- Written on the wide bottom border, the way a polaroid is. -->
           <div class="suspect-caption">
             <strong class="suspect-team">${escapeHtml(username)}</strong>
             ${firstName ? `<span class="suspect-first">${escapeHtml(firstName)}</span>` : ''}
+            ${weekLineHtml(suspect, isOut)}
           </div>
         </div>
       </li>
@@ -409,11 +528,10 @@ async function loadCurrentSuspects(){
     return;
   }
 
-  const suspects = normalizeSuspects(data || [], user, showFirstNames);
+  const suspects = normalizeSuspects(data || [], user, showFirstNames, await fetchPickWeeks());
   // The count lives in the heading now, so the status line has nothing left to
   // say on success and clears itself. It still carries loading and errors.
   setSuspectsTitle(suspects.length);
-  setLineupCall(suspects.length);
   setSuspectsStatus('', '');
   renderSuspects(suspects);
   openRequestedSuspect();

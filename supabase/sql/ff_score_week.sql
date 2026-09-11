@@ -224,6 +224,7 @@ declare
   v_survived jsonb := '[]'::jsonb;
   v_dun_dun  jsonb := '[]'::jsonb;
   v_no_pick  jsonb := '[]'::jsonb;
+  v_unfiled  jsonb := '[]'::jsonb;
   v_pending  jsonb := '[]'::jsonb;
   v_row      record;
   v_outcome  text;
@@ -295,37 +296,48 @@ begin
     end if;
   end loop;
 
-  -- ---- suspects who never filed ----
-  -- Only once the last game has started, and only for suspects still in the
-  -- game: a season that ended in Week 3 does not end again every week after it.
-  if p_picks_closed then
-    for v_row in
-      select p.id as user_id, p.username
-      from public._2026_profiles p
-      where not exists (
-              select 1 from public._2026_active_picks ap
-              where ap.user_id = p.id
-                and ap.season = v_season
-                and ap.week = p_week
-                and coalesce(upper(btrim(ap.result)), '') <> 'SKIP'
-            )
-        and not exists (
-              select 1 from public._2026_active_picks out_pick
-              where out_pick.user_id = p.id
-                and out_pick.season = v_season
-                and upper(btrim(out_pick.result)) = 'DUN DUN'
-            )
-      order by p.username
-    loop
-      v_no_pick := v_no_pick || jsonb_build_object('username', v_row.username);
+  -- ---- suspects with nothing filed for the week ----
+  -- Swept every run, not only once the week has closed. Reported either way;
+  -- only the consequence waits. Before the last kickoff they are listed as
+  -- still having time, and mid-week runs used to leave them out of the report
+  -- altogether - which made the numbers on the admin screen add up to fewer
+  -- suspects than the league has, with no way to tell who was missing.
+  --
+  -- Suspects already out are skipped in both cases: a season that ended in
+  -- Week 3 does not end again every week after it.
+  for v_row in
+    select p.id as user_id, p.username
+    from public._2026_profiles p
+    where not exists (
+            select 1 from public._2026_active_picks ap
+            where ap.user_id = p.id
+              and ap.season = v_season
+              and ap.week = p_week
+              and coalesce(upper(btrim(ap.result)), '') <> 'SKIP'
+          )
+      and not exists (
+            select 1 from public._2026_active_picks out_pick
+            where out_pick.user_id = p.id
+              and out_pick.season = v_season
+              and upper(btrim(out_pick.result)) = 'DUN DUN'
+          )
+    order by p.username
+  loop
+    if not p_picks_closed then
+      -- Still time to file. Named so the report covers the whole roster, but
+      -- nothing is written against them.
+      v_unfiled := v_unfiled || jsonb_build_object('username', v_row.username);
+      continue;
+    end if;
 
-      if p_commit then
-        insert into public._2026_picks (user_id, season, week, team, username, result)
-        values (v_row.user_id, v_season, p_week, public._2026_no_pick_team(),
-                v_row.username, 'DUN DUN');
-      end if;
-    end loop;
-  end if;
+    v_no_pick := v_no_pick || jsonb_build_object('username', v_row.username);
+
+    if p_commit then
+      insert into public._2026_picks (user_id, season, week, team, username, result)
+      values (v_row.user_id, v_season, p_week, public._2026_no_pick_team(),
+              v_row.username, 'DUN DUN');
+    end if;
+  end loop;
 
   return jsonb_build_object(
     'week', p_week,
@@ -334,7 +346,19 @@ begin
     'survived', v_survived,
     'dun_dun', v_dun_dun,
     'no_pick', v_no_pick,
-    'pending', v_pending
+    'unfiled', v_unfiled,
+    'pending', v_pending,
+    -- So the screen can say whether the report covers everybody. Suspects whose
+    -- case closed in an earlier week are not in any of the lists above and
+    -- should not be: they have nothing left to file.
+    'roster', (select count(*) from public._2026_profiles),
+    'closed_before', (
+      select count(distinct out_pick.user_id)
+      from public._2026_active_picks out_pick
+      where out_pick.season = v_season
+        and out_pick.week < p_week
+        and upper(btrim(out_pick.result)) = 'DUN DUN'
+    )
   );
 end;
 $score$;

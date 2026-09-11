@@ -29,9 +29,9 @@
   <!-- Pinned: @2 floats, and a release that declares a global `var supabase`
        collides with our client and kills the whole script at parse time. -->
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="js/supabase-config.js?v=20260912f"></script>
+  <script src="js/supabase-config.js?v=20260911zm"></script>
 
-<link rel="stylesheet" href="css/site.css?v=20260912f"/>
+<link rel="stylesheet" href="css/site.css?v=20260911zm"/>
 </head>
 
 <!-- data-page drives the tighter desktop spacing in site.css: this page is one
@@ -72,27 +72,6 @@
   </header>
 
   <div id="siteNav" data-current="home"></div>
-
-  <!-- The wire, running under the nav: every suspect's standing, the pick it
-       turns on, and the game that decides it. Full width and flush against the
-       row above on purpose - see .wire-bleed. Built by js/wire.js. -->
-  <section class="wire-bleed" aria-labelledby="wireHeading">
-    <h2 id="wireHeading" class="sr-only">The wire</h2>
-    <div class="wire-strip" aria-hidden="true">
-      <div id="wireTrack" class="wire-track"></div>
-    </div>
-    <!-- The strip is aria-hidden, because a marquee is a miserable thing to
-         read with a screen reader. These are the same entries as sentences,
-         off-screen rather than absent. -->
-    <ul id="wireList" class="wire-list sr-only"></ul>
-  </section>
-
-  <!-- On the page rather than inside the black band, so it reads as a note
-       about the wire above it instead of part of the equipment. It carries
-       whatever the strip is carrying until there are real entries, so it is
-       never an empty line holding space open. -->
-  <p id="wireScoreStamp" class="wire-stamp">Wire loading&hellip;</p>
-
 
   <!-- The sign-in popup and the username gate used to be markup here, driven
        by a second copy of the auth code inside js/app.js. Both are built by
@@ -175,24 +154,21 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="js/nfl-schedule.js?v=20260912f"></script>
-  <script src="js/nfl-scores.js?v=20260912f"></script>
-  <script src="js/season.js?v=20260912f"></script>
-  <script src="js/teams.js?v=20260912f"></script>
-  <script src="js/nav.js?v=20260912f"></script>
-  <script src="js/toast.js?v=20260912f"></script>
-  <script src="js/auth-corner.js?v=20260912f"></script>
-  <script src="js/app.js?v=20260912f"></script>
+  <script src="js/nfl-schedule.js?v=20260911zm"></script>
+  <script src="js/season.js?v=20260911zm"></script>
+  <script src="js/teams.js?v=20260911zm"></script>
+  <script src="js/nav.js?v=20260911zm"></script>
+  <script src="js/toast.js?v=20260911zm"></script>
+  <script src="js/auth-corner.js?v=20260911zm"></script>
+  <script src="js/app.js?v=20260911zm"></script>
 
-  <script src="js/share.js?v=20260912f"></script>
-  <script src="js/join-form.js?v=20260912f"></script>
-  <script src="js/join-modal.js?v=20260912f"></script>
-  <script src="js/join.js?v=20260912f"></script>
-  <script src="js/password-reset.js?v=20260912f"></script>
-  <script src="js/username-gate.js?v=20260912f"></script>
-  <script src="js/join-prefill.js?v=20260912f"></script>
-  <script src="js/welcome.js?v=20260912f"></script>
-  <script src="js/suspect-colors.js?v=20260912f"></script>
-  <script src="js/wire.js?v=20260912f"></script>
+  <script src="js/share.js?v=20260911zm"></script>
+  <script src="js/join-form.js?v=20260911zm"></script>
+  <script src="js/join-modal.js?v=20260911zm"></script>
+  <script src="js/join.js?v=20260911zm"></script>
+  <script src="js/password-reset.js?v=20260911zm"></script>
+  <script src="js/username-gate.js?v=20260911zm"></script>
+  <script src="js/join-prefill.js?v=20260911zm"></script>
+  <script src="js/welcome.js?v=20260911zm"></script>
 </body>
 </html>

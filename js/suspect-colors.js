@@ -92,4 +92,103 @@
   }
 
   document.addEventListener('DOMContentLoaded', loadSuspectColors);
+
+  // ===== THE SUSPECT'S OWN TWO COLOURS =====
+  // An overridden pair if one was set from the admin screen, otherwise the two
+  // dominant colours of their mugshot. Every placard, card and thumbnail on the
+  // site is marked with these, so a suspect looks the same whichever page they
+  // turn up on.
+  //
+  // This is the canonical copy. js/suspects.js and js/suspect-lineup-chart.js
+  // still carry their own samplers, written before this file existed; they do
+  // the same thing and should be pointed at this one.
+  const SAMPLE_SIZE = 24;
+
+  function dominantPair(img) {
+    let pixels;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = SAMPLE_SIZE;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
+      pixels = ctx.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE).data;
+    } catch (error) {
+      // A photo from another origin taints the canvas. Not worth reporting: a
+      // thumbnail wearing the house colours is not a fault anyone can act on.
+      return null;
+    }
+
+    const buckets = new Map();
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i + 3] < 128) continue;
+      const key = ((pixels[i] >> 5) << 10) | ((pixels[i + 1] >> 5) << 5) | (pixels[i + 2] >> 5);
+      const entry = buckets.get(key) || { count: 0, r: 0, g: 0, b: 0 };
+      entry.count++;
+      entry.r += pixels[i];
+      entry.g += pixels[i + 1];
+      entry.b += pixels[i + 2];
+      buckets.set(key, entry);
+    }
+
+    const ranked = [...buckets.values()]
+      .map((entry) => ({
+        count: entry.count,
+        r: Math.round(entry.r / entry.count),
+        g: Math.round(entry.g / entry.count),
+        b: Math.round(entry.b / entry.count)
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    if (!ranked.length) return null;
+
+    const first = ranked[0];
+    // Far enough apart to read as two colours rather than two shades of one.
+    const second = ranked.find((color) =>
+      Math.hypot(color.r - first.r, color.g - first.g, color.b - first.b) > 60) || ranked[1] || first;
+
+    return [rgb(first), rgb(second)];
+  }
+
+  function rgb(color) {
+    return `rgb(${color.r}, ${color.g}, ${color.b})`;
+  }
+
+  // Takes hex or rgb(): an override arrives as '#FDCB03', the sampler as
+  // 'rgb(253, 203, 3)'.
+  function channelsOf(color) {
+    const value = String(color || '').trim();
+
+    const hex = value.match(/^#([0-9a-f]{6})$/i);
+    if (hex) {
+      const n = parseInt(hex[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+
+    const parts = value.match(/(\d+(?:\.\d+)?)/g);
+    return parts && parts.length >= 3 ? parts.slice(0, 3).map(Number) : null;
+  }
+
+  // Which ink stays readable on that fill.
+  window.suspectInkFor = function (color) {
+    const channels = channelsOf(color);
+    if (!channels) return '#FFFFFF';
+
+    const [r, g, b] = channels;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.58 ? '#0D0D0D' : '#FFFFFF';
+  };
+
+  // Resolves once the pair is known. An override wins without touching the
+  // photograph at all, which is also why it can answer on the first frame
+  // instead of waiting for a decode.
+  window.suspectThemeFor = function (img, username) {
+    const override = window.suspectColorOverride?.(username);
+    if (override) return Promise.resolve(override);
+    if (!img) return Promise.resolve(null);
+
+    const ready = img.complete && img.naturalWidth
+      ? Promise.resolve()
+      : img.decode().catch(() => null);
+
+    return ready.then(() => dominantPair(img)).catch(() => null);
+  };
 })();

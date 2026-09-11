@@ -147,6 +147,19 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   `join/index.html` mounts it inline. Two hand-maintained copies drifted within
   a day; do not add a third.
 - [js/app.js](js/app.js) — the game: picks, stats, tickers. Not auth.
+- [js/wire.js](js/wire.js) — **the wire**, the scrolling strip under the nav on
+  the Precinct. One entry per suspect: where they stand, the pick it turns on,
+  and the game that decides it, each written as a sentence rather than a row of
+  labels. Reads `_2026_current_suspects` and `_2026_active_picks` as `anon`, and
+  takes its scores from the generated `js/nfl-scores.js` — so the page prints
+  when that file was built, because a stale scoreboard otherwise looks exactly
+  like "no games have finished yet". The travel is a `requestAnimationFrame`
+  loop rather than a CSS keyframe, because a keyframe cannot be grabbed: the
+  strip is draggable, right to rewind and left to run on. The strip itself is
+  `aria-hidden` (a marquee is unreadable with a screen reader) and the same
+  entries go out as sentences in an `.sr-only` list beside it. It briefly had
+  its own page at `dispatch/`; that page is gone and the Precinct is the only
+  place it lives.
 - [js/victims.js](js/victims.js) — the registry grid and the pick flow.
 - [js/suspects.js](js/suspects.js) — the mugshot cards, including the placard
   stripes sampled from each photo.

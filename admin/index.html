@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260911"></script>
+  <script src="../js/supabase-config.js?v=20260912f"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260911"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260912f"/>
 </head>
 
 <body>
@@ -35,6 +35,30 @@
   <div id="siteNav" data-current="admin" data-prefix="../"></div>
 
   <div class="container">
+    <!-- Turning NFL results into league results, and the first thing on the
+         page because through the season it is what the page is for. The finals
+         come from js/nfl-scores.js; the writing is done by
+         _2026_admin_score_week (supabase/sql/ff_score_week.sql). -->
+    <section class="game-info admin-panel" id="adminScorePanel" aria-labelledby="adminScoreTitle" hidden>
+      <!-- Open on arrival, unlike every other panel here: through the season
+           this is what the page is opened to do. -->
+      <details class="admin-collapse" open>
+        <summary id="adminScoreTitle">Score The Week</summary>
+
+        <div class="admin-score-controls">
+          <label class="admin-score-pick" for="adminScoreWeek">Week
+            <select id="adminScoreWeek" class="admin-cell-input"></select>
+          </label>
+          <button id="btnPreviewScore" class="btn btn-secondary" type="button">Preview</button>
+          <button id="btnCommitScore" class="btn btn-primary" type="button" disabled>Score The Week</button>
+        </div>
+
+        <p class="gate-help" id="adminScoreGames"></p>
+
+        <div id="adminScoreReport" class="admin-score-report" role="status" aria-live="polite"></div>
+      </details>
+    </section>
+
     <!-- An all points bulletin: one message out to the whole league, or to just
          the suspects who have not named a victim yet this week. Addresses go in
          BCC so nobody's inbox learns anyone else's, and it hands off to the
@@ -72,6 +96,34 @@
               <button id="btnApbNoPickCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
             </div>
           </article>
+
+          <!-- Everyone the last scored week let through. Not the same as
+               "has not been eliminated": somebody whose pick is still pending
+               has not been judged yet, and telling them they survived would be
+               getting ahead of the result. -->
+          <article class="apb-card apb-card-survived">
+            <h3 class="apb-card-title" id="apbSurvivedTitle">Still A Suspect</h3>
+            <p class="apb-count" id="apbSurvivedCount">-</p>
+            <ul class="apb-names" id="apbSurvivedNames"></ul>
+            <div class="apb-actions">
+              <button id="btnApbSurvivedEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
+              <button id="btnApbSurvivedCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
+            </div>
+          </article>
+
+          <!-- The one bulletin that is not about this week. It goes to everyone
+               the game has already finished with, and it is the only group that
+               grows rather than turning over. -->
+          <article class="apb-card apb-card-closed">
+            <h3 class="apb-card-title" id="apbClosedTitle">Case Closed</h3>
+            <p class="apb-count" id="apbClosedCount">-</p>
+            <ul class="apb-names" id="apbClosedNames"></ul>
+            <p class="apb-card-note">One at a time: each of these names its own team,
+              so there is an Email button per suspect rather than one for the group.</p>
+            <div class="apb-actions">
+              <button id="btnApbClosedCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
+            </div>
+          </article>
         </div>
 
         <!-- What actually goes out. Drawn up when a card's Email button is
@@ -101,26 +153,7 @@
     <!-- The credentials gate and the links out. This was the Schedule
          Reconciliation panel; the audit tool it was built around is gone, and
          the schedule and playoff games are adjusted by hand in the table now. -->
-    <!-- Turning NFL results into league results. The finals come from
-         js/nfl-scores.js; the writing is done by _2026_admin_score_week
-         (supabase/sql/ff_score_week.sql). -->
-    <section class="game-info admin-panel" id="adminScorePanel" aria-labelledby="adminScoreTitle" hidden>
-      <details class="admin-collapse">
-        <summary id="adminScoreTitle">Score The Week</summary>
-
-        <div class="admin-score-controls">
-          <label class="admin-score-pick" for="adminScoreWeek">Week
-            <select id="adminScoreWeek" class="admin-cell-input"></select>
-          </label>
-          <button id="btnPreviewScore" class="btn btn-secondary" type="button">Preview</button>
-          <button id="btnCommitScore" class="btn btn-primary" type="button" disabled>Score The Week</button>
-        </div>
-
-        <p class="gate-help" id="adminScoreGames"></p>
-
-        <div id="adminScoreReport" class="admin-score-report" role="status" aria-live="polite"></div>
-      </details>
-    </section>
+    
 
     <!-- A scratchpad for whoever runs the league. The rows live in
          public._2026_admin_todos, readable and writable by the admin alone -
@@ -232,7 +265,6 @@
           files carry usernames and nothing else.
         </p>
 
-
         <div class="table-wrap">
           <table id="adminArchiveTable" aria-label="2025 season players">
             <thead>
@@ -266,7 +298,6 @@
     <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="mugshotTitle">
       <button class="modal-close" id="btnCloseMugshot" type="button" aria-label="Close">&times;</button>
       <h2 id="mugshotTitle">Mugshot</h2>
-
 
       <div class="shot-editor">
         <div class="shot-editor-shot">
@@ -343,20 +374,20 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260911"></script>
-  <script src="../js/toast.js?v=20260911"></script>
-  <script src="../js/nfl-scores.js?v=20260911"></script>
-  <script src="../js/season.js?v=20260911"></script>
-  <script src="../js/teams.js?v=20260911"></script>
-  <script src="../js/nav.js?v=20260911"></script>
-  <script src="../js/auth-corner.js?v=20260911"></script>
-  <script src="../js/admin-score.js?v=20260911"></script>
-  <script src="../js/admin-todo.js?v=20260911"></script>
-  <script src="../js/admin.js?v=20260911"></script>
-  <script src="../js/join-form.js?v=20260911"></script>
-  <script src="../js/join-modal.js?v=20260911"></script>
-  <script src="../js/join.js?v=20260911"></script>
-  <script src="../js/username-gate.js?v=20260911"></script>
-  <script src="../js/password-reset.js?v=20260911"></script>
+  <script src="../js/nfl-schedule.js?v=20260912f"></script>
+  <script src="../js/toast.js?v=20260912f"></script>
+  <script src="../js/nfl-scores.js?v=20260912f"></script>
+  <script src="../js/season.js?v=20260912f"></script>
+  <script src="../js/teams.js?v=20260912f"></script>
+  <script src="../js/nav.js?v=20260912f"></script>
+  <script src="../js/auth-corner.js?v=20260912f"></script>
+  <script src="../js/admin-score.js?v=20260912f"></script>
+  <script src="../js/admin-todo.js?v=20260912f"></script>
+  <script src="../js/admin.js?v=20260912f"></script>
+  <script src="../js/join-form.js?v=20260912f"></script>
+  <script src="../js/join-modal.js?v=20260912f"></script>
+  <script src="../js/join.js?v=20260912f"></script>
+  <script src="../js/username-gate.js?v=20260912f"></script>
+  <script src="../js/password-reset.js?v=20260912f"></script>
 </body>
 </html>

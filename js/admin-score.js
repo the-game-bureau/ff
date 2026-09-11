@@ -27,6 +27,10 @@
 (function () {
   const SCORE_CONFIG = window.FF_SUPABASE_CONFIG || {};
   const SCORE_RPC = SCORE_CONFIG.rpcs?.adminScoreWeek || '_2026_admin_score_week';
+
+  // Read by js/wire.js in whatever other tabs are open. The value is only a
+  // timestamp; what matters is that it changed.
+  const WEEK_SCORED_KEY = 'ff-week-scored-at';
   const TOTAL_WEEKS = 18;
 
   let previewedWeek = 0;
@@ -258,10 +262,28 @@
         'good', 'score');
       // The roster's pick counts and everything else on the page are now stale.
       window.dispatchEvent(new CustomEvent('ff-auth-changed', { detail: { user: null, profile: null } }));
+      announceScored();
     } else {
       previewedWeek = week;
       els.commit.disabled = false;
       window.ffToast?.('Nothing written yet. Check it, then Score The Week.', 'note', 'score');
+    }
+  }
+
+  // Every other tab of this site is now showing results that are a week out of
+  // date - the wire on the Precinct most of all, since every sentence on it is
+  // built from the rows this just rewrote. A storage write fires the storage
+  // event in the OTHER tabs of the origin and not in this one, which is the
+  // reach wanted: nothing here needs telling, everything else does.
+  //
+  // Best effort. Private windows and blocked site data throw on write, and a
+  // scored week is not worth failing over a notification nobody may be
+  // listening for.
+  function announceScored() {
+    try {
+      window.localStorage.setItem(WEEK_SCORED_KEY, String(Date.now()));
+    } catch (err) {
+      console.warn('Could not announce the scored week to other tabs:', err);
     }
   }
 
@@ -270,6 +292,11 @@
       ['Survived', data.survived, 'good'],
       ['Dun Dun', data.dun_dun, 'bad'],
       ['Never filed', data.no_pick, 'bad'],
+      // Nothing filed, but the last game has not kicked off, so nothing is
+      // written against them yet. Reported so the totals below cover the whole
+      // roster - they used to be left out entirely, and a mid-week run listed
+      // fewer suspects than the league has with no way to tell who was missing.
+      ['No victim yet', data.unfiled, 'note'],
       ['Not final yet', data.pending, 'note']
     ];
 
@@ -281,7 +308,41 @@
           <span class="admin-score-count">${(rows || []).length}</span>
           <span class="admin-score-names">${(rows || []).map(nameOf).join(', ') || '-'}</span>
         </div>`).join('')}
+      ${tallyHtml(data, groups)}
     `;
+  }
+
+  // Does the report add up? Everyone on the roster is either in one of the
+  // groups above or was already out before this week. If those do not sum to
+  // the roster, something upstream is dropping suspects and the screen says so
+  // rather than quietly showing a short list.
+  function tallyHtml(data, groups) {
+    // The old function returned neither of these. Without them there is no way
+    // to tell a genuine zero from a group the database never filled in - which
+    // is exactly how NO VICTIM YET sat at 0 while three suspects had filed
+    // nothing at all. Say which it is instead of printing a number that looks
+    // like an answer.
+    if (data.roster === undefined || data.unfiled === undefined) {
+      return `
+        <p class="admin-score-tally admin-score-tally-off">
+          Scoring function is out of date: suspects who have filed nothing are not
+          being reported, so the counts above cover only the suspects who have.
+          Run supabase/sql/ff_score_week.sql.
+        </p>`;
+    }
+
+    const roster = Number(data.roster || 0);
+    if (!roster) return '';
+
+    const listed = groups.reduce((sum, [, rows]) => sum + (rows || []).length, 0);
+    const closed = Number(data.closed_before || 0);
+    const accounted = listed + closed;
+
+    return `
+      <p class="admin-score-tally${accounted === roster ? '' : ' admin-score-tally-off'}">
+        ${listed} listed + ${closed} already out = ${accounted} of ${roster} suspects
+        ${accounted === roster ? '' : ' - some are unaccounted for'}
+      </p>`;
   }
 
   function nameOf(row) {

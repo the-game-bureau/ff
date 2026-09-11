@@ -380,9 +380,10 @@
 
   function rowHtml(row) {
     return `
-      <li class="lineup-chart-row" data-picks-in="${row.picksIn}" data-weeks-won="${row.wins}"
+      <li class="lineup-chart-row${isEliminatedRow(row) ? ' lineup-chart-row-out' : ''}"
+          data-picks-in="${row.picksIn}" data-weeks-won="${row.wins}"
           data-username="${escapeHtml(row.username)}"
-          aria-label="${escapeHtml(row.username)}">
+          aria-label="${escapeHtml(isEliminatedRow(row) ? `${row.username}, case closed` : row.username)}">
         <!-- The whole card opens the mugshot, not just the thumbnail on it. The
              photo was a 44px target sitting beside a name that looked every bit
              as clickable and was not. The image is a plain span now: a button
