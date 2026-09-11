@@ -187,8 +187,17 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   ([supabase/sql/ff_score_week.sql](supabase/sql/ff_score_week.sql)). Preview and
   commit are the same call with one argument flipped, so what you are shown is
   what happens.
-- `tools/update-nfl-scores.mjs` — regenerates `js/nfl-scores.js`. Run it, deploy,
-  then score. It reads the **season schedule page**, which is where Plain Text
+- [js/nfl-live-scores.js](js/nfl-live-scores.js) — the finals, fetched from
+  ESPN's scoreboard in the browser when the admin presses the button. This is
+  the **primary** source now: Preview scrapes and previews, Score The Week
+  scrapes and writes, and there is nothing to regenerate or deploy first. It
+  works from the browser at all because that endpoint sends
+  `Access-Control-Allow-Origin: *`, and needs no team-name mapping because all
+  32 of its `displayName` values match [js/teams.js](js/teams.js) exactly. If the
+  fetch fails the panel says so and falls back to the generated file below.
+- `tools/update-nfl-scores.mjs` — regenerates `js/nfl-scores.js`, the **fallback**
+  source. Still works: run it, deploy, then score. Nothing depends on it in the
+  normal course any more. It reads the **season schedule page**, which is where Plain Text
   Sports publishes finals; the per-week scoreboard URL it used to fetch is now a
   redirect stub that returned HTTP 200 and nothing to parse, so the tool
   reported "Wrote 0 final NFL scores" indefinitely without saying why. It also
@@ -387,6 +396,29 @@ Tables in use:
 - `picks` — `user_id`, `week`, `team`, `result`. `result` is free text matched
   case-insensitively for `survived` / `dun dun` / `pick is in`, which drives the status
   badge colors. Results are entered out-of-band (admin page, not in this repo).
+
+### The league scores itself
+
+[supabase/sql/ff_auto_score.sql](supabase/sql/ff_auto_score.sql) schedules a
+`pg_cron` job every fifteen minutes that fetches the open week's ESPN scoreboard
+with `pg_net` and runs the same scoring the button runs. Nobody has to be
+present, and nothing has to be deployed.
+
+Two things to know before touching it:
+
+- **The fetch and the scoring are different runs.** `pg_net` does not block:
+  `net.http_get` queues a request and the reply lands in `net._http_response`
+  later, so one job cannot both ask and read. Each run consumes the previous
+  run's reply, scores it, then queues the next.
+- **The scoring logic has one body and two doors.** `_2026_score_week_core` does
+  the work; `_2026_admin_score_week` is a thin admin-checked wrapper over it, and
+  the scheduled job calls the core directly because it has nobody signed in. The
+  core sets `ff.scoring` for its transaction, which is what lets the NO PICK row
+  past the insert trigger - an admin check cannot be satisfied by a cron job.
+
+Every run writes a row to `_2026_auto_score_log` saying what it asked for, what
+came back and what it wrote. That log is the whole reason an unattended writer is
+acceptable: read it when a week scored itself unexpectedly, or did not.
 
 ### Scoring a week
 

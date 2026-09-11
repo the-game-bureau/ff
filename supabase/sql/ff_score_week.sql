@@ -108,7 +108,15 @@ begin
 
   -- The scoring function's row. No schedule to attach, no window to be inside,
   -- and no team to have used up somewhere else.
-  if new.team = public._2026_no_pick_team() and public._2026_is_admin() then
+  --
+  -- Two ways past, and the flag is the real one: _2026_score_week_core sets
+  -- ff.scoring for the length of its transaction, so this opens only while
+  -- scoring is actually running - including the unattended run, which has
+  -- nobody signed in and so cannot satisfy an admin check at all. The admin
+  -- clause stays for a correction made by hand in the SQL editor.
+  if new.team = public._2026_no_pick_team()
+     and (coalesce(current_setting('ff.scoring', true), '') = 'on'
+          or public._2026_is_admin()) then
     return new;
   end if;
 
@@ -207,7 +215,19 @@ execute function public._2026_apply_pick_schedule();
 -- rename an argument, and this one used to be called p_week_complete.
 drop function if exists public._2026_admin_score_week(integer, jsonb, boolean, boolean);
 
-create or replace function public._2026_admin_score_week(
+-- ---------------------------------------------------------------------------
+-- THE SCORING ITSELF, with no opinion about who is asking.
+--
+-- Split out from the admin entry point so it can have a second caller: the
+-- unattended run in supabase/sql/ff_auto_score.sql, which happens on a schedule
+-- with nobody signed in and so cannot pass an admin check. One body, two doors,
+-- rather than two implementations that would drift the first time either was
+-- touched.
+--
+-- Not granted to any browser role. The only ways in are the admin wrapper below
+-- and the scheduled job, both of which decide for themselves who may call them.
+-- ---------------------------------------------------------------------------
+create or replace function public._2026_score_week_core(
   p_week         integer,
   p_finals       jsonb,
   p_picks_closed boolean default false,
@@ -230,13 +250,14 @@ declare
   v_outcome  text;
   v_verdict  text;
 begin
-  if not public._2026_is_admin() then
-    raise exception 'Not authorised' using errcode = '42501';
-  end if;
-
   if p_week is null or p_week < 1 then
     raise exception 'Which week?' using errcode = '22023';
   end if;
+
+  -- Tells the insert trigger that the NO PICK rows below are the scorer's and
+  -- not somebody filing a pick for a week that has already finished. Local to
+  -- this transaction, so it cannot leak into anything else on the connection.
+  perform set_config('ff.scoring', 'on', true);
 
   -- ---- picks that were actually filed ----
   for v_row in
@@ -362,6 +383,36 @@ begin
   );
 end;
 $score$;
+
+revoke all on function public._2026_score_week_core(integer, jsonb, boolean, boolean) from public;
+
+
+-- ---------------------------------------------------------------------------
+-- The admin's door. Checks who is asking, then hands over to the core above.
+-- Deliberately thin: if this ever grows logic of its own, the scheduled run
+-- stops doing the same thing as the button and the two drift apart in the one
+-- place where that is hardest to notice.
+-- ---------------------------------------------------------------------------
+create or replace function public._2026_admin_score_week(
+  p_week         integer,
+  p_finals       jsonb,
+  p_picks_closed boolean default false,
+  p_commit       boolean default false
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public, pg_temp
+as $admin$
+begin
+  if not public._2026_is_admin() then
+    raise exception 'Not authorised' using errcode = '42501';
+  end if;
+
+  return public._2026_score_week_core(p_week, p_finals, p_picks_closed, p_commit);
+end;
+$admin$;
 
 revoke all on function public._2026_admin_score_week(integer, jsonb, boolean, boolean) from public;
 grant execute on function public._2026_admin_score_week(integer, jsonb, boolean, boolean) to authenticated;
