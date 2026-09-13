@@ -5772,8 +5772,15 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    3px against 22px type is about seven dots to a capital, which is the pitch a
    real head prints at and the whole reason the dots are visible as dots. A 2px
    pitch is easier to read and stops looking like a printer at all - it was
-   tried, and it read as slightly rough type rather than as print. */
-.wire-item *{
+   tried, and it read as slightly rough type rather than as print.
+
+   DIRECT CHILDREN ONLY. A mask applies to the whole subtree it is set on, so a
+   span inside a masked span is masked twice - dots punched through dots, which
+   eats the glyph and leaves it thin and grey beside its neighbours. That is
+   what happened the moment the bracketed matchups arrived: (LIONS OVER SAINTS)
+   put .wire-side and .wire-victim one level deeper than everything else on the
+   line, and only those words came out faint. */
+.wire-item > *{
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
   mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
   -webkit-mask-size: 3px 3px;
