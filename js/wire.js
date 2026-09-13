@@ -92,61 +92,67 @@
       return;
     }
 
-    watchCheckBack(picks);
     render(entries);
+    watchWhen();
     stampScores(await fetchLastScored());
   }
 
-  // ===== WHEN TO COME BACK =====
+  // What the strip says when there is nothing to say yet, or nothing to say at
+  // all. A blank black band reads as broken; a band saying "Radio is down."
+  // reads as a radio that is down.
+  function runMessage(text) {
+    const track = document.getElementById('wireTrack');
+    if (!track) return;
+
+    const item = `<span class="wire-item"><span class="wire-pending">${escapeHtml(text)}</span></span>`;
+    const perHalf = Math.max(6, Math.ceil((window.innerWidth || 1200) / 140) + 2);
+
+    track.innerHTML = item.repeat(perHalf * 2);
+    // The note under the wire says the same thing the wire is saying. It is
+    // the line that will carry the scoreboard's age once there is a scoreboard
+    // to be old, and leaving it blank until then made the page shift.
+    setStamp(text);
+
+    const list = document.getElementById('wireList');
+    if (list) list.innerHTML = '';
+
+    // Matched to the speed the real entries travel at, so the strip does not
+    // visibly change gear when the data lands.
+    runWire(track, Math.max(8, (track.scrollWidth / 2) / MESSAGE_PIXELS_PER_SECOND));
+  }
+
+  // When SCORE THE WEEK was last run, which is when these sentences last
+  // changed. _2026_score_runs and not _2026_picks.scored_at: the column on the
+  // pick row was backfilled from created_at for everything already judged, so
+  // for those rows it holds the moment the PICK WAS FILED - which produced a
+  // wire dated an hour before the week's first kickoff. The runs table is only
+  // ever written by a commit actually happening, so it has nothing to be wrong
+  // about. Forgiving, because the table arrives with ff_score_week.sql and
+  // asking for one that is not there yet fails the request.
+  async function fetchLastScored() {
+    const { data, error } = await wireDb
+      .from(RUNS_TABLE)
+      .select('last_run_at')
+      .order('last_run_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.warn('No scoring runs on file; dating the wire from the scoreboard instead:', error);
+      return null;
+    }
+
+    const at = data?.[0]?.last_run_at ? new Date(data[0].last_run_at) : null;
+    return at && !Number.isNaN(at.getTime()) ? at : null;
+  }
+
+  // ===== SAYING WHEN =====
 
   // A football game runs about three hours. Nothing in the schedule says when a
   // game ENDS - only when it starts - so three hours after kickoff is the
-  // estimate, and the line says "approximately" because that is what it is.
+  // estimate, and every line built on it says "approx" because that is what it
+  // is. The scheduled scorer in supabase/sql/ff_auto_score.sql uses the same
+  // three hours, so the page and the job agree about when the news is due.
   const GAME_LENGTH_MS = 3 * 60 * 60 * 1000;
-
-  // Every kickoff somebody has money on, as a time the game is expected to end.
-  // Only games with a pick against them: a Sunday full of fixtures nobody named
-  // changes nothing on this wire, and telling a reader to come back for one
-  // would be telling them to come back for nothing.
-  function relevantEndTimes(picks) {
-    const season = String(window.SEASON || '');
-    const ends = [];
-
-    for (const row of picks || []) {
-      const week = Number(row?.week);
-      const team = String(row?.team || '').trim();
-      if (!week || !team || team === NO_PICK_TEAM) continue;
-      if (season && String(row.season || season) !== season) continue;
-      if (String(row.result || '').trim().toUpperCase() === SKIP_RESULT) continue;
-
-      const game = window.NFL_SCHEDULE_HELPERS?.getTeamGame?.(team, week);
-      const kickoff = game?.kickoffUtc ? new Date(game.kickoffUtc) : null;
-      if (!kickoff || Number.isNaN(kickoff.getTime())) continue;
-
-      ends.push(kickoff.getTime() + GAME_LENGTH_MS);
-    }
-
-    // Sorted, deduplicated: two suspects on the same game is one game.
-    return [...new Set(ends)].sort((a, b) => a - b);
-  }
-
-  // The next one of those still ahead of us. A game already under way counts -
-  // it has not finished, so its result is still to come and it is still the
-  // thing worth waiting for.
-  function nextEnd(ends, now = Date.now()) {
-    return ends.find((at) => at > now) ?? null;
-  }
-
-  // "Check back at approximately 10:20 pm central time today."
-  //
-  // The day is said in the reader's own words rather than as a date, because
-  // "today" and "tomorrow" are what somebody glancing at this actually wants -
-  // and it has to be worked out in Central, not locally, or a reader on the west
-  // coast at 11pm gets told "tomorrow" about a game that for them is tonight.
-  function checkBackText(at) {
-    const when = new Date(at);
-    return `Check back at approximately ${centralTime(when)} central time ${dayWord(when)}.`;
-  }
 
   function centralTime(when) {
     return new Intl.DateTimeFormat('en-US', {
@@ -154,33 +160,9 @@
     }).format(when).toLowerCase();
   }
 
-  // The same sentence set the way every other entry on the strip is set: the
-  // thing that is not yet a fact in the pending yellow, the connectives in
-  // white, the when in the colour the strip uses for a time.
-  function checkBackHtml(at) {
-    if (!at) return '';
-
-    const when = new Date(at);
-    return `<span class="wire-pending">Check back</span>
-      <span class="wire-because">at approximately</span>
-      <span class="wire-when">${escapeHtml(centralTime(when))}</span>
-      <span class="wire-because">central time</span>
-      <span class="wire-when">${escapeHtml(dayWord(when))}</span>${STOP}`;
-  }
-
-  // First on the strip, and printed in both copies of the track, so it comes
-  // round as often as the loop does. It is the one entry that is about the
-  // reader rather than about a suspect - the reason to come back - so it leads.
-  function checkBackItemHtml(at) {
-    if (!at) return '';
-
-    return `
-      <span class="wire-item wire-item-checkback">${checkBackHtml(at)}</span>
-      <span class="wire-sep" aria-hidden="true">&#9670;</span>`;
-  }
-
   // today / tomorrow / the date itself, all measured against the Central
-  // calendar day rather than the browser's.
+  // calendar day rather than the browser's - or a reader on the west coast at
+  // 11pm is told "tomorrow" about a game that for them is tonight.
   function dayWord(when) {
     const days = centralDayNumber(when) - centralDayNumber(new Date());
     if (days === 0) return 'today';
@@ -208,94 +190,27 @@
     return ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
   }
 
-  // Live, because the whole value of it is that it is current: it has to roll
-  // from "today" to "tomorrow" at midnight and from one game to the next as each
-  // finishes, on a page somebody left open. A minute is fine - the number it
-  // prints only changes on the hour and the half.
+  // Live, because the day word has to roll from "today" to "tomorrow" at
+  // midnight on a page somebody left open. A minute is fine - nothing else on
+  // the strip changes without a reload.
   //
-  // Rewritten in place rather than by re-rendering the strip, because the strip
-  // is a moving object: rebuilding it would jump the travel back to wherever the
-  // new track happened to start, once a minute, forever.
-  let checkBackEnds = [];
-  let checkBackTimer = null;
+  // Rewritten in place rather than by re-rendering, because the strip is a
+  // moving object: rebuilding it would jump the travel back to wherever the new
+  // track happened to start, once a minute, forever.
+  let whenTimer = null;
 
-  function watchCheckBack(picks) {
-    checkBackEnds = relevantEndTimes(picks);
-    clearInterval(checkBackTimer);
-    checkBackTimer = setInterval(repaintCheckBack, 60 * 1000);
+  function watchWhen() {
+    clearInterval(whenTimer);
+    whenTimer = setInterval(repaintWhen, 60 * 1000);
   }
 
-  function repaintCheckBack() {
-    const at = nextEnd(checkBackEnds);
-
-    // Both copies of the track carry one, and both have to say the same thing.
-    for (const el of document.querySelectorAll('.wire-item-checkback')) {
-      // Nothing anybody picked is still to be played - end of the week, or end
-      // of the season. Silence beats inventing a time.
-      el.innerHTML = checkBackHtml(at);
-      el.hidden = !at;
+  function repaintWhen() {
+    for (const el of document.querySelectorAll('[data-wire-at]')) {
+      const at = Number(el.dataset.wireAt);
+      if (!at) continue;
+      const when = new Date(at);
+      el.textContent = el.dataset.wirePart === 'time' ? centralTime(when) : dayWord(when);
     }
-
-    const spoken = document.getElementById('wireCheckBackSpoken');
-    if (spoken) {
-      spoken.textContent = at ? checkBackText(at) : '';
-      spoken.hidden = !at;
-    }
-  }
-
-  // When SCORE THE WEEK was last run, which is when the sentences on this strip
-  // last changed.
-  //
-  // _2026_score_runs and not _2026_picks.scored_at. The column on the pick row
-  // records when that row's verdict was written, which sounds like the same
-  // thing and is not: ff_scored_at.sql backfilled it from created_at for
-  // everything already judged, so for those rows it holds the moment the PICK
-  // WAS FILED. That produced a wire dated an hour before the week's first
-  // kickoff - a scoring time that could not possibly have been one. The runs
-  // table is only ever written by a commit actually happening, so it has
-  // nothing to be wrong about.
-  //
-  // Forgiving, because the table arrives with supabase/sql/ff_score_week.sql and
-  // asking for one that is not there yet fails the request. A failure just means
-  // the wire dates itself from the scoreboard file instead.
-  async function fetchLastScored() {
-    const { data, error } = await wireDb
-      .from(RUNS_TABLE)
-      .select('last_run_at')
-      .order('last_run_at', { ascending: false })
-      .limit(1);
-
-    if (error) {
-      console.warn('No scoring runs on file; dating the wire from the scoreboard instead:', error);
-      return null;
-    }
-
-    const at = data?.[0]?.last_run_at ? new Date(data[0].last_run_at) : null;
-    return at && !Number.isNaN(at.getTime()) ? at : null;
-  }
-
-  // One phrase, repeated enough times to fill the strip and go on filling it as
-  // it travels. Sized off the viewport rather than a fixed count, because half
-  // the track has to be at least a screen wide or the loop shows its seam.
-  function runMessage(text) {
-    const track = document.getElementById('wireTrack');
-    if (!track) return;
-
-    const item = `<span class="wire-item"><span class="wire-pending">${escapeHtml(text)}</span></span>`;
-    const perHalf = Math.max(6, Math.ceil((window.innerWidth || 1200) / 140) + 2);
-
-    track.innerHTML = item.repeat(perHalf * 2);
-    // The note under the wire says the same thing the wire is saying. It is
-    // the line that will carry the scoreboard's age once there is a scoreboard
-    // to be old, and leaving it blank until then made the page shift.
-    setStamp(text);
-
-    const list = document.getElementById('wireList');
-    if (list) list.innerHTML = '';
-
-    // Matched to the speed the real entries travel at, so the strip does not
-    // visibly change gear when the data lands.
-    runWire(track, Math.max(8, (track.scrollWidth / 2) / MESSAGE_PIXELS_PER_SECOND));
   }
 
   async function fetchSuspects() {
@@ -498,9 +413,20 @@
   // different facts about two different weeks, and running them together as one
   // clause made the line read as though the pick and the result were the same
   // thing.
+  // "(SEAHAWKS 13 OVER PATRIOTS 10)" - the result that let them through, said as
+  // the scoreline rather than as a sentence about it. Winner first, because that
+  // is the way a score is read out loud.
+  //
+  // Only shown when they have not filed for the open week. Somebody who has
+  // survived and already named their next victim gets the fixture parenthetical
+  // instead: two brackets in one line reads as a typo, and the newer of the two
+  // facts is the one worth the space.
   function survivalHtml(entry) {
     const prior = entry.prior;
-    if (!prior) return STOP;
+    // Nothing at all, not even a full stop: with a pick filed, the fixture
+    // clause continues this sentence and closes it, and a stop here landed in
+    // the middle of the line - "IS STILL A SUSPECT . (CHARGERS OVER CARDINALS)".
+    if (!prior || entry.pick) return '';
 
     const victim = prior.pick.team;
     const f = prior.fixture;
@@ -509,67 +435,51 @@
     // Marked as having survived with no final on file for the game: the
     // scoreboard is behind. Say only what is known.
     if (!f || !score) {
-      return `<span class="wire-because">because they survived Week ${prior.week}</span>${STOP}`;
+      return ` <span class="wire-paren">(survived Week ${prior.week})</span>`;
     }
 
     const opponent = f.away === victim ? f.home : f.away;
     const victimScore = Number(f.away === victim ? score.awayScore : score.homeScore);
     const opponentScore = Number(f.away === victim ? score.homeScore : score.awayScore);
 
-    return `<span class="wire-because">because their pick, the</span>
-      <strong>${escapeHtml(shortName(victim))}</strong>${COMMA}
-      <span class="wire-because">scored only</span>
-      <span class="wire-state-final">${victimScore}</span>
-      <span class="wire-because">points and</span>
-      <span class="wire-verdict-good">did in fact lose</span>
-      <span class="wire-because">to the</span>
-      <span class="wire-side">${escapeHtml(shortName(opponent))}</span>
-      <span class="wire-because">who scored</span>
-      <span class="wire-state-final">${opponentScore}</span>${STOP}`;
+    return ` <span class="wire-paren">(<span class="wire-side">${escapeHtml(shortName(opponent))}</span>
+      <span class="wire-state-final">${opponentScore}</span> over
+      <span class="wire-victim">${escapeHtml(shortName(victim))}</span>
+      <span class="wire-state-final">${victimScore}</span>)</span>`;
   }
 
   // The second sentence: the week in front of them. Filed, it names the accused,
   // who they have to lose to, and when the game is - the whole fixture said as a
   // sentence, which is what replaced the boxed-off scoreboard line that used to
   // sit at the end of every entry saying the same thing twice.
+  // Nothing about an unfiled week here. A suspect who owes one and has no result
+  // to report gets no entry at all - thirty lines saying the same sentence with
+  // a different name was thirty laps of the strip to learn one fact.
   function nextPickHtml(entry) {
-    if (!entry.pick) {
-      return `<span class="wire-because">They have</span>
-        <span class="wire-pick-none">not named a victim</span>
-        <span class="wire-because">for Week ${entry.week} yet</span>`;
-    }
+    if (!entry.pick) return '';
 
     const f = entry.fixture;
     const victim = entry.pick.team;
     const opponent = f ? (f.away === victim ? f.home : f.away) : '';
 
-    let head = `<span class="wire-because">They picked the</span>
-      <strong>${escapeHtml(victim)}</strong>
-      <span class="wire-because">to lose</span>`;
+    // "(CHARGERS OVER CARDINALS)" - who has to beat their pick, in the same
+    // shape the finished result is given in, so a line before the game and the
+    // same line after it read as the same statement with the numbers filled in.
+    const fixture = opponent
+      ? ` <span class="wire-paren">(<span class="wire-side">${escapeHtml(shortName(opponent))}</span>
+          over <span class="wire-victim">${escapeHtml(shortName(victim))}</span>)</span>`
+      : ` <span class="wire-paren">(<span class="wire-victim">${escapeHtml(shortName(victim))}</span>
+          on a bye)</span>`;
 
-    if (opponent) {
-      head += ` <span class="wire-because">to the</span>
-        <span class="wire-side">${escapeHtml(opponent)}</span>`;
-    }
+    let head = fixture;
 
-    head += ` <span class="wire-because">in Week ${entry.week}</span>${STOP}`;
-
-    // Its own sentence, because it is the only unsettled thing on the line: the
-    // accusation is filed and everything after this is the game being played.
-    // A flex-scheduled week arrives with no announced time, so there is a
-    // version of it with nothing to point at yet.
-    // When the verdict lands, not when the game starts. A kickoff time tells a
-    // reader when to stop being able to change their pick; this tells them when
-    // they will know, which is the thing the strip is actually about.
     if (f?.endsAt) {
-      const when = new Date(f.endsAt);
-      head += ` <span class="wire-pending">We'll find out</span>
-        <span class="wire-because">at approximately</span>
-        <span class="wire-when">${escapeHtml(centralTime(when))}</span>
-        <span class="wire-because">central time</span>
-        <span class="wire-when">${escapeHtml(dayWord(when))}</span>`;
+      head += ` <span class="wire-pending">Check back approx</span>
+        ${whenSpan(f.endsAt, 'time')}
+        <span class="wire-because">central</span>
+        ${whenSpan(f.endsAt, 'day')}`;
     } else if (f) {
-      head += ` <span class="wire-pending">We'll find out</span>
+      head += ` <span class="wire-pending">Check back</span>
         <span class="wire-because">once the game has a time</span>`;
     }
 
@@ -579,18 +489,33 @@
     // reporting a decided game as pending.
     const result = String(entry.pick.result || '').trim().toUpperCase();
     if (result.includes('SURVIVED')) {
-      head += '<span class="wire-verdict wire-verdict-good">Survived</span>';
+      head += '<span class="wire-verdict-good">Survived</span>';
     } else if (result.includes('DUN DUN')) {
-      head += '<span class="wire-verdict wire-verdict-bad">Dun Dun</span>';
+      head += '<span class="wire-verdict-bad">Dun Dun</span>';
     }
 
     return head;
   }
 
-  // Punctuation, which is not a word - see .wire-stop for why it needs
-  // saying. Both close up against whatever they follow.
-  const STOP = '<span class="wire-stop">.</span>';
-  const COMMA = '<span class="wire-stop">,</span>';
+  // A time or a day carried on the element that prints it, so the minute tick
+  // can rewrite it without rebuilding the strip. The time never changes; the day
+  // does, at midnight, on a page somebody left open.
+  function whenSpan(at, part) {
+    const when = new Date(at);
+    const text = part === 'time' ? centralTime(when) : dayWord(when);
+    return `<span class="wire-when" data-wire-at="${at}" data-wire-part="${part}">` +
+      `${escapeHtml(text)}</span>`;
+  }
+
+
+  // ===== THE LINE =====
+
+
+  // No full stops on the strip. Each entry is one statement with a wide gap
+  // either side of it, and a running feed is not prose - the mark was doing
+  // nothing the space was not already doing. The roll call under the strip
+  // keeps its sentences: that one is read aloud, where the punctuation is what
+  // tells a screen reader where to breathe.
 
   // A closed case, told from the suspect's own pick outwards rather than from
   // the winner in: the team they accused of losing put up a score and did not
@@ -616,42 +541,43 @@
     </span>`;
   }
 
+  // "CASE CLOSED KATNOLA (BECAUSE 49ERS WON)." The long version spelled out both
+  // scores and read like a match report; a closed case is a headline, and the
+  // board and the legal pad both carry the detail for anybody who wants it.
+  // "CASE CLOSED KATNOLA (49ERS OVER RAMS)." The same bracketed matchup the rest
+  // of the strip uses, so a result reads the same shape whichever way it went -
+  // the only difference is whose name is in front of "over".
+  //
+  // Their pick is always the one on the left: a case closes precisely because
+  // the team they accused did not lose.
   function closedHtml(entry) {
-    const head = `${mugHtml(entry)}
-      <span class="wire-is">is</span>
-      <span class="wire-gone">no longer a suspect</span>
-      <span class="wire-because">as of Week ${entry.week} because</span>`;
+    const head = `<span class="wire-gone">Case closed</span> ${mugHtml(entry)}`;
 
     if (entry.neverFiled || !entry.pick) {
-      return `${head} <span class="wire-pick-none">no victim was ever named</span>`;
+      return `${head} <span class="wire-paren">(<span class="wire-pick-none">no victim named</span>)</span>`;
     }
 
-    const victim = entry.pick.team;
+    const victim = shortName(entry.pick.team);
     const f = entry.fixture;
+    const opponent = f ? shortName(f.away === entry.pick.team ? f.home : f.away) : '';
     const score = f?.score?.final ? f.score : null;
 
-    if (!f || !score) {
-      // No final on file for the game that ended them - the scoreboard file is
-      // behind. Say what is known instead of inventing a result.
-      return `${head} <span class="wire-because">their pick, the</span>
-        <strong>${escapeHtml(shortName(victim))}</strong>${COMMA}
-        <span class="wire-verdict-bad">did not lose</span>`;
+    // No opponent on file at all, or no final for the game - the scoreboard is
+    // behind. Say the one thing that is known rather than inventing a matchup.
+    if (!opponent || !score) {
+      return `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
+        <span class="wire-verdict-bad">did not lose</span>)</span>`;
     }
 
-    const opponent = f.away === victim ? f.home : f.away;
-    const victimScore = Number(f.away === victim ? score.awayScore : score.homeScore);
-    const opponentScore = Number(f.away === victim ? score.homeScore : score.awayScore);
+    // A tie closes a case the same as a win, and "over" would be wrong about the
+    // one fact this line carries.
+    const mine = Number(f.away === entry.pick.team ? score.awayScore : score.homeScore);
+    const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
+    const verb = mine === theirs ? 'tied' : 'over';
 
-    return `${head} <span class="wire-because">their pick, the</span>
-      <strong>${escapeHtml(shortName(victim))}</strong>${COMMA}
-      <span class="wire-because">scored</span>
-      <span class="wire-state-final">${victimScore}</span>
-      <span class="wire-because">points and</span>
-      <span class="wire-verdict-bad">did not lose</span>
-      <span class="wire-because">to the</span>
-      <span class="wire-side">${escapeHtml(shortName(opponent))}</span>
-      <span class="wire-because">who ${victimScore === opponentScore ? 'also' : 'only'} scored</span>
-      <span class="wire-state-final">${opponentScore}</span>`;
+    return `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
+      <span class="wire-verdict-bad">${verb}</span>
+      <span class="wire-side">${escapeHtml(opponent)}</span>)</span>`;
   }
 
   function itemHtml(entry) {
@@ -663,9 +589,9 @@
          ${survivalHtml(entry)}
          ${nextPickHtml(entry)}`;
 
-    return `
-      <span class="wire-item${entry.isOut ? ' wire-item-out' : ''}">${body}${STOP}</span>
-      <span class="wire-sep" aria-hidden="true">///</span>`;
+    // Nothing between entries and nothing closing them. The gap either side is
+    // the break.
+    return `<span class="wire-item${entry.isOut ? ' wire-item-out' : ''}">${body}</span>`;
   }
 
   // The same entry as a sentence, for the static list under the strip. A
@@ -674,23 +600,22 @@
   function lineText(entry) {
     if (entry.isOut) return closedText(entry);
 
-    const head = `${entry.username} is Still A Suspect${priorText(entry)}`;
-    if (!entry.pick) {
-      return `${head} They have not named a victim for Week ${entry.week} yet.`;
-    }
+    const head = `${entry.username} is Still A Suspect`;
+    if (!entry.pick) return `${head}${priorText(entry)}`;
 
     const f = entry.fixture;
-    const victim = entry.pick.team;
-    const opponent = f ? (f.away === victim ? f.home : f.away) : '';
+    const victim = shortName(entry.pick.team);
+    const opponent = f ? shortName(f.away === entry.pick.team ? f.home : f.away) : '';
 
-    let line = `${head} They picked the ${victim} to lose`;
-    if (opponent) line += ` to the ${opponent}`;
-    line += ` in Week ${entry.week}.`;
+    let line = opponent
+      ? `${head} (${opponent} over ${victim}).`
+      : `${head} (${victim} on a bye).`;
+
     if (f?.endsAt) {
       const when = new Date(f.endsAt);
-      line += ` We'll find out at approximately ${centralTime(when)} central time ${dayWord(when)}.`;
+      line += ` Check back approx ${centralTime(when)} central ${dayWord(when)}.`;
     } else if (f) {
-      line += " We'll find out once the game has a time.";
+      line += ' Check back once the game has a time.';
     }
 
     const result = String(entry.pick.result || '').trim().toUpperCase();
@@ -703,47 +628,51 @@
     const prior = entry.prior;
     if (!prior) return '.';
 
-    const victim = prior.pick.team;
+    const victim = shortName(prior.pick.team);
     const f = prior.fixture;
     const score = f?.score?.final ? f.score : null;
-    if (!f || !score) return ` because they survived Week ${prior.week}.`;
+    if (!f || !score) return ` (survived Week ${prior.week}).`;
 
-    const opponent = f.away === victim ? f.home : f.away;
-    const victimScore = Number(f.away === victim ? score.awayScore : score.homeScore);
-    const opponentScore = Number(f.away === victim ? score.homeScore : score.awayScore);
+    const opponent = shortName(f.away === prior.pick.team ? f.home : f.away);
+    const victimScore = Number(f.away === prior.pick.team ? score.awayScore : score.homeScore);
+    const opponentScore = Number(f.away === prior.pick.team ? score.homeScore : score.awayScore);
 
-    return ` because their pick, the ${shortName(victim)}, scored only ${victimScore} points ` +
-      `and did in fact lose to the ${shortName(opponent)} who scored ${opponentScore}.`;
+    return ` (${opponent} ${opponentScore} over ${victim} ${victimScore}).`;
   }
 
   function closedText(entry) {
-    const head = `${entry.username} is no longer a suspect as of Week ${entry.week} because`;
+    const head = 'Case closed, ' + entry.username;
 
-    if (entry.neverFiled || !entry.pick) return `${head} no victim was ever named.`;
+    if (entry.neverFiled || !entry.pick) return `${head}: no victim named.`;
 
-    const victim = entry.pick.team;
+    const victim = shortName(entry.pick.team);
     const f = entry.fixture;
+    const opponent = f ? shortName(f.away === entry.pick.team ? f.home : f.away) : '';
     const score = f?.score?.final ? f.score : null;
-    if (!f || !score) return `${head} their pick, the ${shortName(victim)}, did not lose.`;
+    if (!opponent || !score) return `${head}: the ${victim} did not lose.`;
 
-    const opponent = f.away === victim ? f.home : f.away;
-    const victimScore = Number(f.away === victim ? score.awayScore : score.homeScore);
-    const opponentScore = Number(f.away === victim ? score.homeScore : score.awayScore);
-
-    return `${head} their pick, the ${shortName(victim)}, scored ${victimScore} points and ` +
-      `did not lose to the ${shortName(opponent)} who ` +
-      `${victimScore === opponentScore ? 'also' : 'only'} scored ${opponentScore}.`;
+    const mine = Number(f.away === entry.pick.team ? score.awayScore : score.homeScore);
+    const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
+    return `${head} (${victim} ${mine === theirs ? 'tied' : 'over'} ${opponent}).`;
   }
-
   function render(entries) {
     const track = document.getElementById('wireTrack');
     const list = document.getElementById('wireList');
     if (!track) return;
 
-    // The check-back entry leads, and is part of the repeated block, so it comes
-    // round once per lap rather than only at the top of the hour.
-    const lead = checkBackItemHtml(nextEnd(checkBackEnds));
-    const items = lead + entries.map(itemHtml).join('');
+    // Reading order, and all of it inside the repeated block so every lap says
+    // the same things in the same order: the cases that closed, then the picks
+    // filed and waiting, then last week's survivors who have not filed again
+    // yet. A suspect with neither a pick nor a result gets no entry - there is
+    // nothing to report about them.
+    const closed = entries.filter((entry) => entry.isOut);
+    const rest = entries.filter((entry) => !entry.isOut && entry.pick);
+
+    const items =
+      closed.map(itemHtml).join('') +
+      rest.map(itemHtml).join('') +
+      entries.filter((entry) => !entry.isOut && !entry.pick && entry.prior)
+        .map(itemHtml).join('');
 
     // Printed twice. The strip runs from 0 to -50% of the track, so the second
     // copy is what is on screen as the first one leaves and the loop has no
@@ -756,10 +685,10 @@
     runWire(track, Math.max(20, entries.length * SECONDS_PER_ITEM));
 
     if (list) {
-      const at = nextEnd(checkBackEnds);
       list.innerHTML =
-        `<li id="wireCheckBackSpoken"${at ? '' : ' hidden'}>${escapeHtml(at ? checkBackText(at) : '')}</li>` +
-        entries.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('');
+        closed.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('') +
+        entries.filter((entry) => !entry.isOut && (entry.pick || entry.prior))
+          .map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('');
     }
   }
 

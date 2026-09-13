@@ -194,5 +194,23 @@
   <script src="js/welcome.js?v=20260913n"></script>
   <script src="js/suspect-colors.js?v=20260913n"></script>
   <script src="js/wire.js?v=20260913n"></script>
+<script>
+(function(){
+  setTimeout(function(){
+    var track = document.getElementById('wireTrack');
+    track.style.animation = 'none';
+    var items = track.querySelectorAll('.wire-item');
+    var half = items.length / 2;
+    var out = [], i;
+    for (i = 0; i < half; i++) {
+      out.push((i + 1) + '. ' + items[i].textContent.split(/\s+/).join(' ').trim().toUpperCase());
+    }
+    var pre = document.createElement('pre');
+    pre.id = 'sp';
+    pre.textContent = out.join(String.fromCharCode(10));
+    document.body.appendChild(pre);
+  }, 5500);
+})();
+</script>
 </body>
 </html>

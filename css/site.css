@@ -5791,17 +5791,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   align-items: center;
   --wire-gap: 10px;
   gap: var(--wire-gap);
-  padding: 0 18px;
+  /* Wider than it was: with no mark between entries this space is the only
+     thing telling one sentence from the next. */
+  padding: 0 34px;
   white-space: nowrap;
   color: var(--paper-raised);
 }
-
-/* Punctuation inside a line - the full stop between its two sentences, and the
-   comma after the club that was accused. The item is a flex row with a gap
-   between every child, so a mark given its own box lands a clear space away
-   from the word it belongs to - "10-13 ." - and the negative margin takes that
-   space back. The gap after it stays, which is what the break wants. */
-.wire-stop{ margin-left: calc(-1 * var(--wire-gap)); }
 
 /* The suspect's mugshot in front of their name, marked the way the Suspect
    Tracker marks every row: a framed photograph carrying the placard stripe in
@@ -5878,6 +5873,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* The two clubs in the game that ended it, or that the open week turns on. */
 .wire-side{ color: var(--paper-raised); }
 
+/* A parenthetical, set as one flex child so the brackets close up against the
+   words inside them - as separate children the row gap would push them apart
+   into "( CHARGERS OVER CARDINALS )". */
+.wire-paren{ white-space: nowrap; }
+
+/* The team the suspect accused, wherever it appears. */
+.wire-victim{ color: var(--accent-yellow); }
+
 /* When the game is, and the one sentence on the line that is not yet a fact. */
 .wire-when,
 .wire-pending{ color: var(--accent-yellow); }
@@ -5913,17 +5916,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .wire-state{ opacity: 0.85; }
 .wire-state-final{ color: var(--accent-yellow); opacity: 1; }
 
-/* Three strokes between entries, the way a teletype feed breaks one message
-   from the next. A diamond was a typeset ornament sitting in a line of printed
-   type; this is the same machine. */
-.wire-sep{
-  padding: 0 10px;
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-red);
-}
-
 /* A provenance note for the scores in the strip above it - a stale file
    otherwise looks exactly like "no games have finished yet" - so it sits on the
    paper with the rest of the page's own writing rather than inside the black
@@ -5956,7 +5948,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 @media (max-width: 767px){
   .wire-item,
-  .wire-item *,
-  .wire-sep{ font-size: 1.25rem; }
-  .wire-item{ --wire-gap: 8px; padding: 0 12px; }
+  .wire-item *{ font-size: 1.25rem; }
+  .wire-item{ --wire-gap: 8px; padding: 0 18px; }
 }
