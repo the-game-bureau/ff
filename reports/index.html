@@ -17,9 +17,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260913p"></script>
+  <script src="../js/supabase-config.js?v=20260913r"></script>
 
-<link rel="stylesheet" href="../css/site.css?v=20260913p"/>
+<link rel="stylesheet" href="../css/site.css?v=20260913r"/>
 </head>
 
 <body>
@@ -50,6 +50,25 @@
         <div class="scoreboard-cell scoreboard-cell-out" id="docketEliminated">
           <span class="scoreboard-count" id="docketOutCount" aria-live="polite">-</span>
           <span class="scoreboard-label" id="docketOutLabel">Dun Dun</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- What the board adds up to. Every other section here states a fact about
+         one suspect or one week; this is the one place that says what those
+         facts mean together. Written by js/sergeants-notes.js from the same
+         data, never by hand - a typed observation is true on Sunday and quietly
+         wrong by Tuesday. -->
+    <section class="sergeants-notes" id="sergeantsNotes" aria-labelledby="sergeantsNotesTitle">
+      <div class="sergeants-pad">
+        <!-- The wire binding. Drawn rather than imaged: a row of rings punched
+             through the board above the first line. -->
+        <div class="sergeants-spiral" aria-hidden="true"></div>
+        <div class="sergeants-paper">
+          <h2 id="sergeantsNotesTitle" class="sergeants-heading">Sergeant's Notes</h2>
+          <ul class="sergeants-list" id="sergeantsNotesList" aria-live="polite">
+            <li class="sergeants-note">Reading the board&hellip;</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -155,24 +174,25 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260913p"></script>
-  <script src="../js/nfl-scores.js?v=20260913p"></script>
-  <script src="../js/season.js?v=20260913p"></script>
-  <script src="../js/teams.js?v=20260913p"></script>
-  <script src="../js/nav.js?v=20260913p"></script>
-  <script src="../js/docket.js?v=20260913p"></script>
-  <script src="../js/pick-clipboard.js?v=20260913p"></script>
-  <script src="../js/mugshot-lightbox.js?v=20260913p"></script>
-  <script src="../js/suspect-colors.js?v=20260913p"></script>
-  <script src="../js/suspect-lineup-chart.js?v=20260913p"></script>
-  <script src="../js/toast.js?v=20260913p"></script>
-  <script src="../js/auth-corner.js?v=20260913p"></script>
-  <script src="../js/join-form.js?v=20260913p"></script>
-  <script src="../js/join-modal.js?v=20260913p"></script>
-  <script src="../js/join.js?v=20260913p"></script>
-  <script src="../js/username-gate.js?v=20260913p"></script>
-  <script src="../js/password-reset.js?v=20260913p"></script>
-  <script src="../js/join-prefill.js?v=20260913p"></script>
-  <script src="../js/welcome.js?v=20260913p"></script>
+  <script src="../js/nfl-schedule.js?v=20260913r"></script>
+  <script src="../js/nfl-scores.js?v=20260913r"></script>
+  <script src="../js/season.js?v=20260913r"></script>
+  <script src="../js/teams.js?v=20260913r"></script>
+  <script src="../js/nav.js?v=20260913r"></script>
+  <script src="../js/docket.js?v=20260913r"></script>
+  <script src="../js/pick-clipboard.js?v=20260913r"></script>
+  <script src="../js/sergeants-notes.js?v=20260913r"></script>
+  <script src="../js/mugshot-lightbox.js?v=20260913r"></script>
+  <script src="../js/suspect-colors.js?v=20260913r"></script>
+  <script src="../js/suspect-lineup-chart.js?v=20260913r"></script>
+  <script src="../js/toast.js?v=20260913r"></script>
+  <script src="../js/auth-corner.js?v=20260913r"></script>
+  <script src="../js/join-form.js?v=20260913r"></script>
+  <script src="../js/join-modal.js?v=20260913r"></script>
+  <script src="../js/join.js?v=20260913r"></script>
+  <script src="../js/username-gate.js?v=20260913r"></script>
+  <script src="../js/password-reset.js?v=20260913r"></script>
+  <script src="../js/join-prefill.js?v=20260913r"></script>
+  <script src="../js/welcome.js?v=20260913r"></script>
 </body>
 </html>
