@@ -1487,6 +1487,49 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* Two across, fixed. auto-fit put three on a wide screen and left the fourth
    stranded on a line of its own, and the bulletins pair up anyway: who has
    filed against who has not, then who is still walking against who is out. */
+/* ===== UNBOOKED ===== */
+
+.admin-audit-list{
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+/* One account per row: the address that identifies them, the handle they asked
+   for, when they tried, and which kind of stuck they are. */
+.admin-audit-row{
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 4px 14px;
+  align-items: baseline;
+  background: var(--paper-raised);
+  border: var(--rule);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-audit-chose,
+.admin-audit-when{ color: var(--text-secondary); }
+
+.admin-audit-state{
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--success);
+}
+
+/* Never clicked the link in the signup email. Nothing will fix this by itself -
+   they have to be invited again. */
+.admin-audit-state-cold{ color: var(--primary-red); }
+
+@media (max-width: 767px){
+  .admin-audit-row{ grid-template-columns: minmax(0, 1fr); }
+}
+
 .apb-grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

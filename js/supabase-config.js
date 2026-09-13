@@ -42,6 +42,10 @@
       emailRegistered: '_2026_email_registered',
       adminSetSuspectColors: '_2026_admin_set_suspect_colors',
       adminScoreWeek: '_2026_admin_score_week',
+      // Accounts with no profile row - see supabase/sql/ff_account_audit.sql.
+      // auth.users is not readable by any browser role, so the Unbooked panel
+      // on the admin screen asks through this instead.
+      adminAccountAudit: '_2026_admin_account_audit',
       // A suspect's own record, read and written by js/rap-sheet.js. Functions
       // rather than table access because last_name, sms and email are not
       // selectable by a browser role at all - see

@@ -22,6 +22,11 @@
     },
   });
 
+  // Not in supabase-config.js with the rest: this one arrives with
+  // supabase/sql/ff_account_audit.sql, and the panel is written to say so when
+  // the function is not there yet rather than to fall back to another name.
+  const AUDIT_RPC = ADMIN_RPCS.adminAccountAudit || '_2026_admin_account_audit';
+
   const els = {};
   // The roster as last loaded, kept whole so the APB can address it. Suspect
   // Records only keeps the editable fields.
@@ -34,6 +39,11 @@
   document.addEventListener('DOMContentLoaded', () => {
     els.databasePanel = document.getElementById('adminDatabasePanel');
     els.todoPanel = document.getElementById('adminTodoPanel');
+    els.auditPanel = document.getElementById('adminAuditPanel');
+    els.auditCount = document.getElementById('adminAuditCount');
+    els.auditTally = document.getElementById('adminAuditTally');
+    els.auditBody = document.getElementById('adminAuditBody');
+    els.auditRefresh = document.getElementById('btnAdminAudit');
     els.scorePanel = document.getElementById('adminScorePanel');
 
     els.databaseLink = document.getElementById('adminDatabaseLink');
@@ -80,6 +90,7 @@
     els.refreshRecords?.addEventListener('click', loadRecords);
     els.saveAllRecords?.addEventListener('click', saveAllRecords);
 
+    els.auditRefresh?.addEventListener('click', loadAudit);
     els.apbAllEmail?.addEventListener('click', () => drawUpApb());
     // Delegated: the list is rebuilt on every load.
     els.apbSend?.addEventListener('click', openApbMail);
@@ -219,6 +230,8 @@
 
     if (els.databasePanel) els.databasePanel.hidden = false;
     if (els.todoPanel) els.todoPanel.hidden = false;
+    if (els.auditPanel) els.auditPanel.hidden = false;
+    loadAudit();
     if (els.scorePanel) els.scorePanel.hidden = false;
     // The list reads itself, but only the admin is allowed any rows, so this is
     // the moment it is worth asking for them.
@@ -1066,6 +1079,98 @@
   // this; the check is here so that if it ever is, the page says so instead of
   // quietly mailing half the league.
   const APB_URL_LIMIT = 7000;
+
+  // ===== UNBOOKED =====
+
+  // Accounts that exist in Supabase auth but have no profile row. Invisible on
+  // every page of this site, because every page reads profiles - which is what
+  // "I signed up and I am not on the board" always turns out to be.
+  //
+  // auth.users is not readable by any browser role, so this comes through
+  // _2026_admin_account_audit, which checks the admin first
+  // (supabase/sql/ff_account_audit.sql).
+  async function loadAudit() {
+    if (!els.auditBody || !adminDb) return;
+
+    setAuditCount('');
+    els.auditTally.textContent = 'Checking the register...';
+    els.auditBody.innerHTML = '';
+
+    const { data, error } = await adminDb.rpc(AUDIT_RPC);
+
+    if (error) {
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      els.auditTally.textContent = missing
+        ? 'Not switched on yet: run supabase/sql/ff_account_audit.sql.'
+        : `Could not read the register: ${error.message}`;
+      els.auditTally.classList.add('admin-score-stale');
+      return;
+    }
+
+    els.auditTally.classList.remove('admin-score-stale');
+    renderAudit(data || {});
+  }
+
+  function renderAudit(report) {
+    const unbooked = Array.isArray(report.unbooked) ? report.unbooked : [];
+    const ghosts = Array.isArray(report.ghosts) ? report.ghosts : [];
+
+    setAuditCount(unbooked.length ? String(unbooked.length) : '');
+
+    // The three numbers that have to reconcile. Said plainly, because the
+    // useful check is arithmetic: accounts minus profiles is the gap.
+    els.auditTally.textContent =
+      `${report.accounts} account${report.accounts === 1 ? '' : 's'}, ` +
+      `${report.profiles} booked, ${report.on_the_board} on the board.`;
+
+    if (!unbooked.length && !ghosts.length) {
+      els.auditBody.innerHTML =
+        '<p class="gate-help">Everybody who signed up is on the board. Nothing to chase.</p>';
+      return;
+    }
+
+    let html = '';
+
+    if (unbooked.length) {
+      html += '<ul class="admin-audit-list">' + unbooked.map((row) => {
+        // Which kind of stuck they are. Never confirmed means the account is
+        // half made and they may not know; confirmed but unbooked means one
+        // sign-in fixes it, because js/username-gate.js rebuilds the profile
+        // from the very metadata shown here.
+        const confirmed = Boolean(row.confirmed_at);
+        const chose = String(row.chose || '').trim();
+
+        return '<li class="admin-audit-row">' +
+          '<b>' + escapeAdminHtml(row.email || '(no address)') + '</b>' +
+          (chose ? '<span class="admin-audit-chose">wanted ' + escapeAdminHtml(chose) + '</span>' : '') +
+          '<span class="admin-audit-when">signed up ' + escapeAdminHtml(auditWhen(row.signed_up)) + '</span>' +
+          '<span class="admin-audit-state' + (confirmed ? '' : ' admin-audit-state-cold') + '">' +
+            (confirmed ? 'confirmed - one sign-in fixes it' : 'never confirmed their email') +
+          '</span>' +
+          '</li>';
+      }).join('') + '</ul>';
+    }
+
+    if (ghosts.length) {
+      html += '<p class="gate-help admin-score-stale">' +
+        escapeAdminHtml(ghosts.map((g) => g.username).join(', ')) +
+        ' ' + (ghosts.length === 1 ? 'has a profile but no' : 'have profiles but no') +
+        ' account - removed from Authentication without their profile. ' +
+        'They are on the board and can never sign in.</p>';
+    }
+
+    els.auditBody.innerHTML = html;
+  }
+
+  function setAuditCount(text) {
+    if (els.auditCount) els.auditCount.textContent = text;
+  }
+
+  function auditWhen(value) {
+    if (!value) return 'at an unknown time';
+    return window.ffLongWhen?.(value) || String(value);
+  }
 
   function apbAddress(row) {
     // The profile copy is the one the league is reached at; login_email is the
