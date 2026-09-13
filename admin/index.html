@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260912j"></script>
+  <script src="../js/supabase-config.js?v=20260913b"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260912j"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260913b"/>
 </head>
 
 <body>
@@ -77,53 +77,23 @@
           it looks stale.
         </p>
 
-        <div class="apb-grid">
+        <!-- One bulletin, one list. It used to be four cards - victim named,
+             no victim, survived, case closed - each with its own send. Four
+             sends is four chances to forget one, and a member in a group that
+             happened not to be mailed heard nothing at all that week. The
+             states are paragraphs in the single message now; the counts under
+             the draft still show who is in which. -->
+        <div class="apb-grid apb-grid-single">
           <article class="apb-card">
-            <h3 class="apb-card-title" id="apbAllTitle">Victim Named</h3>
+            <h3 class="apb-card-title" id="apbAllTitle">All Suspects</h3>
             <p class="apb-count" id="apbAllCount">-</p>
             <ul class="apb-names" id="apbAllNames"></ul>
             <div class="apb-actions">
-              <button id="btnApbAllEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
+              <button id="btnApbAllEmail" class="btn btn-primary" type="button" disabled>Draw Up The Bulletin</button>
               <button id="btnApbAllCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
             </div>
           </article>
-
-          <article class="apb-card">
-            <h3 class="apb-card-title" id="apbNoPickTitle">No Victim Named</h3>
-            <p class="apb-count" id="apbNoPickCount">-</p>
-            <ul class="apb-names" id="apbNoPickNames"></ul>
-            <div class="apb-actions">
-              <button id="btnApbNoPickEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
-              <button id="btnApbNoPickCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
-            </div>
-          </article>
-
-          <!-- Everyone the last scored week let through. Not the same as
-               "has not been eliminated": somebody whose pick is still pending
-               has not been judged yet, and telling them they survived would be
-               getting ahead of the result. -->
-          <article class="apb-card apb-card-survived">
-            <h3 class="apb-card-title" id="apbSurvivedTitle">Still A Suspect</h3>
-            <p class="apb-count" id="apbSurvivedCount">-</p>
-            <ul class="apb-names" id="apbSurvivedNames"></ul>
-            <div class="apb-actions">
-              <button id="btnApbSurvivedEmail" class="btn btn-primary" type="button" disabled>Email Them</button>
-              <button id="btnApbSurvivedCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
-            </div>
-          </article>
-
-          <!-- The one bulletin that is not about this week. It goes to everyone
-               the game has already finished with, and it is the only group that
-               grows rather than turning over. -->
-          <article class="apb-card apb-card-closed">
-            <h3 class="apb-card-title" id="apbClosedTitle">Case Closed</h3>
-            <p class="apb-count" id="apbClosedCount">-</p>
-            <ul class="apb-names" id="apbClosedNames"></ul>
-            <p class="apb-card-note">One at a time: each of these names its own team,
-              so there is an Email button per suspect rather than one for the group.</p>
-            <div class="apb-actions">
-              <button id="btnApbClosedCopy" class="btn btn-secondary" type="button" disabled>Copy Addresses</button>
-            </div>
+        </div>
           </article>
         </div>
 
@@ -375,21 +345,21 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260912j"></script>
-  <script src="../js/toast.js?v=20260912j"></script>
-  <script src="../js/nfl-scores.js?v=20260912j"></script>
-  <script src="../js/season.js?v=20260912j"></script>
-  <script src="../js/teams.js?v=20260912j"></script>
-  <script src="../js/nav.js?v=20260912j"></script>
-  <script src="../js/auth-corner.js?v=20260912j"></script>
-  <script src="../js/nfl-live-scores.js?v=20260912j"></script>
-  <script src="../js/admin-score.js?v=20260912j"></script>
-  <script src="../js/admin-todo.js?v=20260912j"></script>
-  <script src="../js/admin.js?v=20260912j"></script>
-  <script src="../js/join-form.js?v=20260912j"></script>
-  <script src="../js/join-modal.js?v=20260912j"></script>
-  <script src="../js/join.js?v=20260912j"></script>
-  <script src="../js/username-gate.js?v=20260912j"></script>
-  <script src="../js/password-reset.js?v=20260912j"></script>
+  <script src="../js/nfl-schedule.js?v=20260913b"></script>
+  <script src="../js/toast.js?v=20260913b"></script>
+  <script src="../js/nfl-scores.js?v=20260913b"></script>
+  <script src="../js/season.js?v=20260913b"></script>
+  <script src="../js/teams.js?v=20260913b"></script>
+  <script src="../js/nav.js?v=20260913b"></script>
+  <script src="../js/auth-corner.js?v=20260913b"></script>
+  <script src="../js/nfl-live-scores.js?v=20260913b"></script>
+  <script src="../js/admin-score.js?v=20260913b"></script>
+  <script src="../js/admin-todo.js?v=20260913b"></script>
+  <script src="../js/admin.js?v=20260913b"></script>
+  <script src="../js/join-form.js?v=20260913b"></script>
+  <script src="../js/join-modal.js?v=20260913b"></script>
+  <script src="../js/join.js?v=20260913b"></script>
+  <script src="../js/username-gate.js?v=20260913b"></script>
+  <script src="../js/password-reset.js?v=20260913b"></script>
 </body>
 </html>

@@ -29,6 +29,11 @@
   // The scorer's row for a week nobody filed. It is a verdict, not a pick, and
   // must never be read out as one.
   const NO_PICK_TEAM = 'NO PICK';
+
+  // Every time this site says out loud is said in Central, the zone the
+  // kickoffs are given in, so two times on one page can never be an hour apart
+  // for no visible reason.
+  const CENTRAL = 'America/Chicago';
   const SKIP_RESULT = 'SKIP';
 
   // Written by js/admin-score.js when a week is committed. The value is only a
@@ -88,8 +93,118 @@
     }
 
     render(entries);
+    watchCheckBack(picks);
     stampScores(await fetchLastScored());
   }
+
+  // ===== WHEN TO COME BACK =====
+
+  // A football game runs about three hours. Nothing in the schedule says when a
+  // game ENDS - only when it starts - so three hours after kickoff is the
+  // estimate, and the line says "approximately" because that is what it is.
+  const GAME_LENGTH_MS = 3 * 60 * 60 * 1000;
+
+  // Every kickoff somebody has money on, as a time the game is expected to end.
+  // Only games with a pick against them: a Sunday full of fixtures nobody named
+  // changes nothing on this wire, and telling a reader to come back for one
+  // would be telling them to come back for nothing.
+  function relevantEndTimes(picks) {
+    const season = String(window.SEASON || '');
+    const ends = [];
+
+    for (const row of picks || []) {
+      const week = Number(row?.week);
+      const team = String(row?.team || '').trim();
+      if (!week || !team || team === NO_PICK_TEAM) continue;
+      if (season && String(row.season || season) !== season) continue;
+      if (String(row.result || '').trim().toUpperCase() === SKIP_RESULT) continue;
+
+      const game = window.NFL_SCHEDULE_HELPERS?.getTeamGame?.(team, week);
+      const kickoff = game?.kickoffUtc ? new Date(game.kickoffUtc) : null;
+      if (!kickoff || Number.isNaN(kickoff.getTime())) continue;
+
+      ends.push(kickoff.getTime() + GAME_LENGTH_MS);
+    }
+
+    // Sorted, deduplicated: two suspects on the same game is one game.
+    return [...new Set(ends)].sort((a, b) => a - b);
+  }
+
+  // The next one of those still ahead of us. A game already under way counts -
+  // it has not finished, so its result is still to come and it is still the
+  // thing worth waiting for.
+  function nextEnd(ends, now = Date.now()) {
+    return ends.find((at) => at > now) ?? null;
+  }
+
+  // "Check back at approximately 10:20 pm central time today."
+  //
+  // The day is said in the reader's own words rather than as a date, because
+  // "today" and "tomorrow" are what somebody glancing at this actually wants -
+  // and it has to be worked out in Central, not locally, or a reader on the west
+  // coast at 11pm gets told "tomorrow" about a game that for them is tonight.
+  function checkBackText(at) {
+    const when = new Date(at);
+    const time = new Intl.DateTimeFormat('en-US', {
+      timeZone: CENTRAL, hour: 'numeric', minute: '2-digit'
+    }).format(when).toLowerCase();
+
+    return `Check back at approximately ${time} central time ${dayWord(when)}.`;
+  }
+
+  // today / tomorrow / the date itself, all measured against the Central
+  // calendar day rather than the browser's.
+  function dayWord(when) {
+    const days = centralDayNumber(when) - centralDayNumber(new Date());
+    if (days === 0) return 'today';
+    if (days === 1) return 'tomorrow';
+
+    const part = (options) =>
+      new Intl.DateTimeFormat('en-US', { timeZone: CENTRAL, ...options }).format(when);
+    const day = Number(part({ day: 'numeric' }));
+    return `on ${part({ weekday: 'long' })}, ${part({ month: 'long' })} ${day}${ordinal(day)}`;
+  }
+
+  // Days since epoch on the Central calendar. Comparing the date PARTS is the
+  // point: "tomorrow" means the next calendar day there, which is not the same
+  // as "in 24 hours" and is not the same as the next calendar day here.
+  function centralDayNumber(when) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: CENTRAL, year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(when);
+    return Math.floor(Date.parse(parts + 'T00:00:00Z') / 86400000);
+  }
+
+  function ordinal(day) {
+    const teens = day % 100;
+    if (teens >= 11 && teens <= 13) return 'th';
+    return ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
+  }
+
+  // Live, because the whole value of the line is that it is current: it has to
+  // roll from "today" to "tomorrow" at midnight and from one game to the next
+  // as each finishes, on a page somebody left open. A minute is fine - the
+  // number it prints only changes on the hour and the half.
+  function watchCheckBack(picks) {
+    const el = document.getElementById('wireCheckBack');
+    if (!el) return;
+
+    const ends = relevantEndTimes(picks);
+
+    const paint = () => {
+      const at = nextEnd(ends);
+      // Nothing anybody picked is still to be played - end of the week, or end
+      // of the season. Silence beats inventing a time.
+      el.textContent = at ? checkBackText(at) : '';
+      el.hidden = !at;
+    };
+
+    paint();
+    clearInterval(checkBackTimer);
+    checkBackTimer = setInterval(paint, 60 * 1000);
+  }
+
+  let checkBackTimer = null;
 
   // When SCORE THE WEEK was last run, which is when the sentences on this strip
   // last changed.

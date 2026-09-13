@@ -213,6 +213,58 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
+-- WHEN THERE IS ANY POINT RUNNING.
+--
+-- A game runs about three hours, and nothing in the schedule says when one
+-- ENDS - only when it starts - so kickoff plus three hours is the estimate. The
+-- same estimate the Precinct prints to tell people when to come back, computed
+-- the same way, so the page and the job cannot disagree about when the news is
+-- expected.
+--
+-- Only games somebody has a pick against. A Sunday full of fixtures nobody
+-- named changes nothing in this league, and waking to score them is waking for
+-- nothing.
+--
+-- WHY THE CRON STILL TICKS OFTEN
+-- pg_cron takes a fixed expression; it cannot be told "fifteen minutes after
+-- whenever the Falcons finish". So the job wakes on a plain schedule and this
+-- decides whether there is anything to do - outside a window it costs one index
+-- lookup and returns. The ticks in between the edges are not waste either: the
+-- fetch and the scoring are two different runs (pg_net does not block), so a
+-- window has to contain at least two of them for a score to land inside it.
+-- ---------------------------------------------------------------------------
+create or replace function public._2026_scoring_window(
+  p_before_minutes integer default 15,
+  p_after_minutes  integer default 15
+)
+returns boolean
+language sql
+stable
+set search_path = public, pg_temp
+as $$
+  select exists (
+    select 1
+    from public._2026_nfl_schedule s
+    where s.season = 2026
+      and s.kickoff_at_utc is not null
+      and now() >= s.kickoff_at_utc + interval '3 hours'
+                 - make_interval(mins => p_before_minutes)
+      and now() <= s.kickoff_at_utc + interval '3 hours'
+                 + make_interval(mins => p_after_minutes)
+      and exists (
+        select 1
+        from public._2026_active_picks ap
+        where ap.season = s.season
+          and ap.week = s.week
+          and ap.team = s.team
+          and coalesce(upper(btrim(ap.result)), '') <> 'SKIP'
+          and ap.team <> public._2026_no_pick_team()
+      )
+  );
+$$;
+
+
+-- ---------------------------------------------------------------------------
 -- THE RUN. Consume the previous request, score it, queue the next one.
 -- ---------------------------------------------------------------------------
 create or replace function public._2026_auto_score()
@@ -233,6 +285,12 @@ declare
   v_queued      bigint;
   v_url         text;
 begin
+  -- Nothing anybody picked is finishing around now. Not logged: a row every
+  -- five minutes saying nothing happened would bury the rows that matter.
+  if not public._2026_scoring_window() then
+    return jsonb_build_object('week', v_week, 'outcome', 'outside the window');
+  end if;
+
   -- ---- 1. the reply to whatever the last run asked for ----
   select l.queued_id, l.week
     into v_previous
@@ -304,19 +362,27 @@ revoke all on function public._2026_auto_score() from public;
 
 
 -- ---------------------------------------------------------------------------
--- THE SCHEDULE. Every fifteen minutes, all week.
+-- THE SCHEDULE. Every five minutes, gated by _2026_scoring_window above, so the
+-- work only happens either side of a game somebody picked finishing.
 --
--- Not narrowed to game days on purpose: a run on a quiet Wednesday costs one
--- HTTP request and writes one log row saying nothing was final, and the cost of
--- getting the window wrong - a Thursday night game in a week the cron does not
--- cover - is a week that silently never scores.
+-- Five and not fifteen because the window is thirty minutes wide and needs to
+-- hold two runs, not one: the first queues the question and the second reads
+-- the answer. At fifteen a window would contain two ticks exactly, and one
+-- slow HTTP reply would push the answer past the edge.
+--
+-- A game that runs long - overtime, a long review - can finish after its own
+-- window has closed. On a normal Sunday the next window along picks it up,
+-- because the afternoon and evening games are still to come and the week is
+-- rescored from scratch every time. The one to watch is a lone late game with
+-- nothing after it; the button on the admin page covers that, and widening
+-- p_after_minutes in the call below covers it permanently.
 -- ---------------------------------------------------------------------------
 select cron.unschedule('2026-auto-score')
 where exists (select 1 from cron.job where jobname = '2026-auto-score');
 
 select cron.schedule(
   '2026-auto-score',
-  '*/15 * * * *',
+  '*/5 * * * *',
   $cron$ select public._2026_auto_score(); $cron$
 );
 
@@ -329,7 +395,27 @@ select cron.schedule(
 select jobname, schedule, active from cron.job where jobname = '2026-auto-score';
 
 select public._2026_open_week() as open_week,
-       public._2026_picks_closed(public._2026_open_week()) as picks_closed;
+       public._2026_picks_closed(public._2026_open_week()) as picks_closed,
+       public._2026_scoring_window() as in_window_now;
+
+-- The next few times the job will actually do something: three hours after each
+-- kickoff somebody picked, give or take a quarter of an hour.
+select s.week,
+       min(s.kickoff_at_utc + interval '3 hours') at time zone 'America/Chicago'
+         as next_scoring_at_central
+  from public._2026_nfl_schedule s
+ where s.season = 2026
+   and s.kickoff_at_utc is not null
+   and s.kickoff_at_utc + interval '3 hours' > now()
+   and exists (
+     select 1 from public._2026_active_picks ap
+     where ap.season = s.season and ap.week = s.week and ap.team = s.team
+       and coalesce(upper(btrim(ap.result)), '') <> 'SKIP'
+       and ap.team <> public._2026_no_pick_team()
+   )
+ group by s.week, s.kickoff_at_utc
+ order by s.kickoff_at_utc
+ limit 5;
 
 -- After a few minutes:
 --   select ran_at, week, outcome, finals_count, http_status

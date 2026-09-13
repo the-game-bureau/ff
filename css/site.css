@@ -1494,6 +1494,10 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   margin-top: 18px;
 }
 
+/* One card now, so it takes the width rather than sitting in half of it with a
+   hole beside it. */
+.apb-grid-single{ grid-template-columns: minmax(0, 1fr); }
+
 /* One across once two would be narrower than the names they have to list. */
 @media (max-width: 700px){
   .apb-grid{ grid-template-columns: minmax(0, 1fr); }
@@ -1556,22 +1560,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* Case Closed sends one bulletin per suspect, so the button lives on the row
    rather than under the card. Baseline alignment is for text; a button sits on
    the line it belongs to. */
-.apb-name-row:has(.apb-name-send){ align-items: center; }
 
-.apb-name-send{
-  width: auto;
-  padding: 4px 12px;
-  font-size: 0.6875rem;
-}
 
-/* Why this card has no single send button of its own. */
-.apb-card-note{
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
 
 .apb-name-real{
   font-weight: 400;
@@ -5932,12 +5922,30 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   color: var(--primary-red);
 }
 
+/* When the next game somebody picked is expected to be over, and therefore when
+   this wire will next say something different. Louder than the provenance line
+   under it: that one is a footnote about the past, this is the reason to come
+   back. */
+.wire-checkback{
+  margin: 12px 0 0;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.wire-checkback[hidden]{ display: none; }
+
 /* A provenance note for the scores in the strip above it - a stale file
    otherwise looks exactly like "no games have finished yet" - so it sits on the
    paper with the rest of the page's own writing rather than inside the black
    band with the equipment. */
 .wire-stamp{
-  margin: 10px 0 0;
+  margin: 4px 0 0;
   padding: 0 16px;
   /* Its line is held open from the first paint, so that the wire finishing
      loading does not shove the page down. */

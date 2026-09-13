@@ -27,13 +27,9 @@
   // Records only keeps the editable fields.
   let recordRows = [];
   let adminEmail = '';
-  // Which group the draft below the cards was written for, or '' for none.
-  let apbKind = '';
-  // Set when the draft on screen belongs to one named suspect rather than to a
-  // group. Case Closed works that way: an email telling somebody their season is
-  // over should say which team ended it, and a single message in BCC cannot say
-  // that to thirty people at once.
-  let apbSoloId = '';
+  // Whether a bulletin has been drawn up yet. There is one now, so this is a
+  // yes or a no rather than which of four.
+  let apbDrafted = false;
 
   document.addEventListener('DOMContentLoaded', () => {
     els.databasePanel = document.getElementById('adminDatabasePanel');
@@ -44,24 +40,10 @@
     els.schedulePanel = document.getElementById('adminSchedulePanel');
     els.weekLinks = document.getElementById('adminWeekLinks');
     els.apbPanel = document.getElementById('adminApbPanel');
-    els.apbNoPickTitle = document.getElementById('apbNoPickTitle');
     els.apbAllCount = document.getElementById('apbAllCount');
     els.apbAllNames = document.getElementById('apbAllNames');
-    els.apbNoPickCount = document.getElementById('apbNoPickCount');
-    els.apbNoPickNames = document.getElementById('apbNoPickNames');
     els.apbAllEmail = document.getElementById('btnApbAllEmail');
     els.apbAllCopy = document.getElementById('btnApbAllCopy');
-    els.apbNoPickEmail = document.getElementById('btnApbNoPickEmail');
-    els.apbNoPickCopy = document.getElementById('btnApbNoPickCopy');
-    els.apbClosedTitle = document.getElementById('apbClosedTitle');
-    els.apbClosedCount = document.getElementById('apbClosedCount');
-    els.apbClosedNames = document.getElementById('apbClosedNames');
-    els.apbClosedCopy = document.getElementById('btnApbClosedCopy');
-    els.apbSurvivedTitle = document.getElementById('apbSurvivedTitle');
-    els.apbSurvivedCount = document.getElementById('apbSurvivedCount');
-    els.apbSurvivedNames = document.getElementById('apbSurvivedNames');
-    els.apbSurvivedEmail = document.getElementById('btnApbSurvivedEmail');
-    els.apbSurvivedCopy = document.getElementById('btnApbSurvivedCopy');
     els.apbAllTitle = document.getElementById('apbAllTitle');
     els.apbSubject = document.getElementById('apbSubject');
     els.apbBody = document.getElementById('apbBody');
@@ -98,20 +80,11 @@
     els.refreshRecords?.addEventListener('click', loadRecords);
     els.saveAllRecords?.addEventListener('click', saveAllRecords);
 
-    els.apbAllEmail?.addEventListener('click', () => drawUpApb('named'));
-    els.apbNoPickEmail?.addEventListener('click', () => drawUpApb('nopick'));
+    els.apbAllEmail?.addEventListener('click', () => drawUpApb());
     // Delegated: the list is rebuilt on every load.
-    els.apbClosedNames?.addEventListener('click', (event) => {
-      const trigger = event.target.closest('[data-apb-solo]');
-      if (trigger) drawUpApb('closed', trigger.dataset.apbSolo);
-    });
-    els.apbSurvivedEmail?.addEventListener('click', () => drawUpApb('survived'));
     els.apbSend?.addEventListener('click', openApbMail);
     els.apbCopyMessage?.addEventListener('click', (event) => copyApbMessageClicked(event.currentTarget));
-    els.apbAllCopy?.addEventListener('click', (event) => copyApbAddresses('named', event.currentTarget));
-    els.apbNoPickCopy?.addEventListener('click', (event) => copyApbAddresses('nopick', event.currentTarget));
-    els.apbClosedCopy?.addEventListener('click', (event) => copyApbAddresses('closed', event.currentTarget));
-    els.apbSurvivedCopy?.addEventListener('click', (event) => copyApbAddresses('survived', event.currentTarget));
+    els.apbAllCopy?.addEventListener('click', (event) => copyApbAddresses(event.currentTarget));
 
     // Delegated: the archive rows are rebuilt on every load.
     els.archiveBody?.addEventListener('click', (event) => {
@@ -1108,28 +1081,22 @@
 
   // Came through the last week that was scored. Deliberately not "has not been
   // eliminated": a suspect whose latest pick is still PICK IS IN has not been
-  // judged yet, and telling them they survived would be getting ahead of the
-  // result.
+  // judged yet, and counting them as survivors would be getting ahead of the
+  // result. Read by loadEliminations to build the survivals map.
   function apbSurvived(row) {
     return /survived/i.test(String(row.game_status || ''));
   }
 
-  // Two halves of the same question - who has named a victim this week and who
-  // has not - and then the people the question no longer applies to.
+  // Everybody the league can reach. One bulletin now, so there is one list.
   //
-  // Eliminated suspects are in neither of the first two, because their season is
-  // over and chasing them for a pick would be telling them to do something they
-  // cannot. They get their own bulletin instead.
-  function apbRecipients(kind) {
-    const reachable = recordRows.filter(apbAddress);
-
-    if (kind === 'closed') return reachable.filter(apbEliminated);
-    if (kind === 'survived') return reachable.filter(apbSurvived);
-
-    const live = reachable.filter((row) => !apbEliminated(row));
-    return kind === 'named'
-      ? live.filter((row) => row.week_pick)
-      : live.filter((row) => !row.week_pick);
+  // It used to be four - victim named, no victim, survived, case closed - each
+  // with its own card and its own send. Four sends is four chances to forget
+  // one, and a member in a group that happened not to be mailed heard nothing
+  // at all that week. The states have not gone anywhere; they are paragraphs in
+  // the one message instead of separate messages, and the counts below still
+  // show who is in which.
+  function apbRecipients() {
+    return recordRows.filter(apbAddress);
   }
 
   // Small numbers read better spelled out in running prose. Past twelve this
@@ -1152,176 +1119,140 @@
   // apart. Plain ASCII inside them all the same - this goes out to thirty
   // different mail clients, and the ones that mangle a character mangle it in
   // someone else's inbox where nobody here will see it.
-  function apbDraft(kind, targets) {
+  function apbDraft() {
     const week = Number(window.CURRENT_WEEK) || 0;
 
-    // The tally the bulletin quotes. Everyone still in the game counts, whether
-    // or not they have an email on file - "14 out of 30 picks are in" is a fact
-    // about the league, not about who this particular bulletin reaches.
-    // Eliminated suspects are out of both halves: they cannot pick, so counting
-    // them would make the league look permanently behind.
+    // Everyone still in the game, whether or not they can be reached. "14 out
+    // of 30 picks are in" is a fact about the league, not about who this
+    // bulletin lands on. Eliminated suspects are out of both halves: they
+    // cannot pick, so counting them would make the league look permanently
+    // behind.
     const live = recordRows.filter((row) => !apbEliminated(row));
-    const picksIn = live.filter((row) => row.week_pick).length;
+    const picksIn = live.filter((row) => row.week_pick);
+    const outstanding = live.filter((row) => !row.week_pick);
+    const closed = recordRows.filter(apbEliminated);
 
     // The house rule, read from js/season.js rather than typed in, so the
     // number in the email cannot drift from the one the site enforces.
     const lockMinutes = Number(window.PICK_LOCK_MINUTES) || 5;
 
-    const subject = "(Fantasy Football) Week " + week +
-      " All Points Bulletin: Law & Order: Special Victory Unit";
+    const paragraphs = [];
 
-    // Week 1 only, and first, on both bulletins. The league is still open until
-    // the last kickoff of the opening week, and that is the one week where the
-    // most useful thing a member can do is bring somebody else in. From Week 2
-    // the door is shut and the paragraph would be a lie, so it does not appear.
-    const recruiting = week === 1
-      ? ["It's not too late to get your friends to play! They have until " +
-         spellNumber(lockMinutes) + " minutes before kickoff of the LAST game of week " + week +
-         ". Of course they will only have two teams to choose from if they wait that " +
-         "late, so sooner is better. Finger fellow suspects here: " +
-         apbLink('https://thegamebureau.com/ff')]
-      : [];
+    // Where the league stands, first, because it is the one line that is worth
+    // reading whichever of the states below applies to you.
+    paragraphs.push(
+      "All units, be advised. Week " + week + " of Law &amp; Order: Special Victory Unit. " +
+      "As of this bulletin, " + picksIn.length + " out of " + live.length +
+      " picks are in and " + spellNumber(live.length) + " of you are still walking. " +
+      "The last one still free wins.");
 
-    const rules = "You can make your picks for the whole season right now and change " +
-      "them week by week if you'd like.";
-
-    const tally = "As of this email, " + picksIn + " out of " + live.length +
-      " picks are in. ";
-
-    // The two bulletins that are not about this week's pick. Their own subject
-    // lines, because a member who is out should not get another mail headed
-    // "Week 4 All Points Bulletin" as though nothing had happened.
-    if (kind === 'closed') {
-      const out = targets || apbRecipients('closed');
-
-      // One recipient can be told what happened to them. Several cannot: this
-      // is one message in BCC, so "your victim" would be a different team for
-      // each of them. They get the roll call instead, which is a fair trade -
-      // the board is public and they can all see it anyway.
-      const personal = out.length === 1 ? eliminationPhrase(out[0]) : '';
-
-      // Somebody whose season ended because they filed nothing has no victim
-      // that won, so the joke about losing by winning is not about them. Said
-      // plainly instead rather than told something that did not happen.
-      const solo = out.length === 1 ? eliminations.get(String(out[0].id || '')) : null;
-      const soloNeverFiled = Boolean(solo && (!solo.team || solo.team === 'NO PICK'));
-      const roll = out.length > 1
-        ? ['Taken down this time: ' + out.map(eliminationRoll).join('; ') + '.']
-        : [];
-
-      // The week their season ended, not the week the league is on. Same shape
-      // as the weekly bulletins above, so all four read as one family in an
-      // inbox.
-      const outWeek = apbWeekFor('closed', out);
-
-      return {
-        subject: "(Fantasy Football) Week " + outWeek +
-          " Case Closed: Law & Order: Special Victory Unit",
-        paragraphs: [
-          // &amp; and not a bare ampersand: these paragraphs are set as HTML so
-          // the links survive the paste into Gmail, and the copy-to-clipboard
-          // path reads the text back out, which turns it into "&" again.
-          soloNeverFiled
-            ? "You never named a victim for Week " + solo.week + ", so the case closed on " +
-              "you by default. No team, no verdict, no appeal. Your Law &amp; Order: " +
-              "Special Victory Unit season has ended."
-            : (personal ? personal + ' ' : '') +
-              "Your victim won so you lose. So you're NOT GUILTY of losing. So you lost by " +
-              "winning. OK, even I'm confused. Your Law &amp; Order: Special Victory Unit " +
-              "season has ended."
-        ].concat(roll).concat([
-          "The board stays up and you are still on it. Watch the rest of them go down " +
-            "one by one here: " +
-            apbLink('https://thegamebureau.com/ff/reports/index.html'),
-          "I'll leave you alone until next August. Sincerely, thank you for putting up " +
-            "with this."
-        ])
-      };
+    // Who went down, and when - the week that was last scored, not the one the
+    // league is on now.
+    //
+    // Only that week's casualties. Rolling every suspect eliminated all season
+    // would grow the list every bulletin and read as though a dozen people had
+    // just gone down, when most of them went out in September.
+    const outWeek = apbWeekFor('closed', closed);
+    const justOut = closed.filter((row) => {
+      const record = eliminations.get(String(row.id || ''));
+      return record && Number(record.week) === Number(outWeek);
+    });
+    const roll = justOut.map(eliminationRoll).filter(Boolean).join('; ');
+    if (roll) {
+      paragraphs.push("Taken down in Week " + outWeek + ": " + roll + ".");
     }
 
-    if (kind === 'survived') {
-      const stillIn = live.filter((row) => !apbEliminated(row)).length;
-      // The week they came through, which is the week that was last scored -
-      // not the open week they are being sent off to pick for.
-      const clearedWeek = apbWeekFor('survived', targets || apbRecipients('survived'));
-
-      return {
-        subject: "(Fantasy Football) Week " + clearedWeek +
-          " Still A Suspect: Law & Order: Special Victory Unit",
-        paragraphs: [
-          "Your Week " + clearedWeek + " victim went down. You walk - for now. You are " +
-            "still a suspect.",
-          spellNumber(stillIn).charAt(0).toUpperCase() + spellNumber(stillIn).slice(1) +
-            " of you are still walking. The last one still free wins.",
-          "Name your Week " + week + " victim here: " +
-            apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
-            ". Remember you can only name each team once all season, so the easy ones " +
-            "run out.",
-          rules,
-          "Live league info: " +
-            apbLink('https://thegamebureau.com/ff/reports/index.html')
-        ]
-      };
+    // Week 1 only. The league is open until the last kickoff of the opening
+    // week, and that is the one week where the most useful thing a member can
+    // do is bring somebody else in. From Week 2 the door is shut and the
+    // paragraph would be a lie, so it does not appear.
+    if (week === 1) {
+      paragraphs.push(
+        "It's not too late to get your friends to play! They have until " +
+        spellNumber(lockMinutes) + " minutes before kickoff of the LAST game of week " +
+        week + ". Of course they will only have two teams to choose from if they wait " +
+        "that late, so sooner is better. Finger fellow suspects here: " +
+        apbLink('https://thegamebureau.com/ff'));
     }
 
-    if (kind === 'named') {
-      return {
-        subject: subject,
-        paragraphs: recruiting.concat([
-          "Your victim for Week " + week + " is named and on the record. You can change " +
-            "your choice up to " + lockMinutes + " minutes before your current victim's " +
-            "game kicks off. You can only change it to a team that has not kicked off. " +
-            "Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
-            " for all of the rules.",
-          rules,
-          tally + "See live league info here: " +
-            apbLink('https://thegamebureau.com/ff/reports/index.html')
-        ])
-      };
-    }
+    // The three states, labelled, because one message going to everybody has to
+    // let each reader find their own paragraph without reading the other two.
+    paragraphs.push(
+      "<b>IF YOUR VICTIM IS NAMED</b> - you are on the record for Week " + week + ". " +
+      "You can change your choice up to " + lockMinutes + " minutes before your current " +
+      "victim's game kicks off, and only to a team that has not kicked off yet.");
+
+    // Named, because the nudge is the entire point of this paragraph and the
+    // board is public anyway. Left out when there is nobody to nudge, rather
+    // than printing an empty list.
+    const chase = outstanding.length
+      ? " Still outstanding: " + outstanding.map((row) => row.username || '(no handle)').join(', ') + "."
+      : " Nobody is outstanding right now, which has never happened before.";
+
+    paragraphs.push(
+      "<b>IF YOU HAVE NOT NAMED A VICTIM</b> - name a team you expect to lose in Week " +
+      week + ", before their game kicks off. Miss it and the case closes on you. Name " +
+      "yours here: " + apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
+      "." + chase);
+
+    paragraphs.push(
+      "<b>IF YOUR CASE IS CLOSED</b> - your victim won, so you lose. So you are NOT " +
+      "GUILTY of losing. So you lost by winning. OK, even I'm confused. Your season has " +
+      "ended, but the board stays up and you are still on it - watch the rest of them go " +
+      "down one by one.");
+
+    paragraphs.push(
+      "You can make your picks for the whole season right now and change them week by " +
+      "week if you'd like. All of the rules: " +
+      apbLink('https://thegamebureau.com/ff/law/index.html') + ".");
+
+    paragraphs.push(
+      "Live league info, the board and every verdict so far: " +
+      apbLink('https://thegamebureau.com/ff/reports/index.html'));
 
     return {
-      subject: subject,
-      paragraphs: recruiting.concat([
-        "You have not named a victim for Week " + week + ". Name a team you expect to " +
-          "lose, before their game kicks off. Miss it and the case closes on you. You " +
-          "can change your choice up to " + lockMinutes + " minutes before your current " +
-          "victim's game kicks off. You can only change it to a team that has not kicked " +
-          "off. Visit " + apbLink('https://thegamebureau.com/ff/law/index.html') +
-          " for all of the rules.",
-        rules,
-        tally + "Name yours here: " +
-          apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week)
-      ])
+      // A bare ampersand: this goes into a plain-text input and then into
+      // Gmail's subject line. The paragraphs below are HTML and do use the
+      // entity; the subject is the one string here that is not.
+      subject: "(Fantasy Football) Week " + week +
+        " All Points Bulletin: Law & Order: Special Victory Unit",
+      paragraphs: paragraphs,
+      // Only used by the note under the draft, so the admin can see at a glance
+      // that the one message really does cover everybody.
+      breakdown: {
+        named: picksIn.length,
+        outstanding: outstanding.length,
+        closed: closed.length,
+        outWeek: outWeek
+      }
     };
   }
 
-  function drawUpApb(kind, soloId = '') {
-    const everyone = apbRecipients(kind);
-    const rows = soloId
-      ? everyone.filter((row) => String(row.id || '') === String(soloId))
-      : everyone;
+  function drawUpApb() {
+    const rows = apbRecipients();
 
     if (!rows.length) {
       setApbStatus('Nobody to send to.', 'note');
       return;
     }
 
-    const draft = apbDraft(kind, rows);
-    apbKind = kind;
-    apbSoloId = soloId ? String(soloId) : '';
+    const draft = apbDraft();
     els.apbSubject.value = draft.subject;
     // contenteditable, so the admin can still change the wording, and still
     // rich text when it is copied out.
     els.apbBody.innerHTML = draft.paragraphs.map((p) => '<p>' + p + '</p>').join('');
+    apbDrafted = true;
     els.apbSend.disabled = false;
     els.apbCopyMessage.disabled = false;
 
-    els.apbDraftNote.textContent = apbSoloId
-      ? 'To ' + (rows[0].username || 'this suspect') + ' at ' + apbAddress(rows[0]) +
-        '. Edit it, then open it in Gmail.'
-      : rows.length + ' recipient' + (rows.length === 1 ? '' : 's') +
-        ', all in BCC. Edit it, then open it in Gmail.';
+    // Spelled out, because the whole claim of a single bulletin is that nobody
+    // is left out of it - and the way to check that claim is to see the three
+    // groups add up to the number of people it is going to.
+    const b = draft.breakdown;
+    els.apbDraftNote.textContent =
+      rows.length + ' recipient' + (rows.length === 1 ? '' : 's') + ', all in BCC - ' +
+      b.named + ' named, ' + b.outstanding + ' outstanding, ' + b.closed + ' closed. ' +
+      'Edit it, then open it in Gmail.';
 
     setApbStatus('Bulletin drawn up. Nothing is sent until you send it.', 'good');
     els.apbSubject.focus();
@@ -1408,9 +1339,9 @@
   }
 
   async function openApbMail() {
-    if (!apbKind) return;
+    if (!apbDrafted) return;
 
-    const rows = apbTargets();
+    const rows = apbRecipients();
     if (!rows.length) {
       setApbStatus('Nobody to send to any more. Reload Records and try again.', 'bad');
       return;
@@ -1422,17 +1353,13 @@
     // the compose window with its links and paragraphs intact.
     const copied = await copyApbMessage();
 
-    // One suspect gets a plain To:. A group gets the admin on To: - a compose
-    // window wants one - and every actual recipient in BCC, so no member ever
-    // sees another's address. Either way the sender keeps a copy in Sent.
-    const href = apbSoloId
-      ? GMAIL_COMPOSE +
-        '&to=' + encodeURIComponent(apbAddress(rows[0])) +
-        '&su=' + encodeURIComponent(els.apbSubject.value)
-      : GMAIL_COMPOSE +
-        '&to=' + encodeURIComponent(adminEmail) +
-        '&bcc=' + encodeURIComponent(rows.map(apbAddress).join(',')) +
-        '&su=' + encodeURIComponent(els.apbSubject.value);
+    // The admin on To: - a compose window wants one - and every actual recipient
+    // in BCC, so no member ever sees another's address. The sender keeps a copy
+    // in Sent.
+    const href = GMAIL_COMPOSE +
+      '&to=' + encodeURIComponent(adminEmail) +
+      '&bcc=' + encodeURIComponent(rows.map(apbAddress).join(',')) +
+      '&su=' + encodeURIComponent(els.apbSubject.value);
 
     if (href.length > APB_URL_LIMIT) {
       setApbStatus(
@@ -1440,9 +1367,6 @@
         'enough that it may get cut short. Check the BCC line in Gmail before sending.',
         'bad'
       );
-    } else if (copied && apbSoloId) {
-      setApbStatus('Gmail opened for ' + (rows[0].username || 'this suspect') +
-        '. The message is on your clipboard - paste it into the compose window.', 'good');
     } else if (copied) {
       setApbStatus('Gmail opened for ' + rows.length + ' recipient' +
         (rows.length === 1 ? '' : 's') + ', all in BCC. The message is on your ' +
@@ -1459,50 +1383,31 @@
 
   function renderApb() {
     const week = Number(window.CURRENT_WEEK) || 0;
+    const everyone = apbRecipients();
 
     if (els.apbAllTitle) {
-      els.apbAllTitle.textContent = week ? 'Victim Named - Week ' + week : 'Victim Named';
-    }
-    if (els.apbNoPickTitle) {
-      els.apbNoPickTitle.textContent = week ? 'No Victim Named - Week ' + week : 'No Victim Named';
+      els.apbAllTitle.textContent = week ? 'All Suspects - Week ' + week : 'All Suspects';
     }
 
-    const named = apbRecipients('named');
-    const noPick = apbRecipients('nopick');
-    const survived = apbRecipients('survived');
-    const closed = apbRecipients('closed');
+    apbFill(els.apbAllCount, els.apbAllNames, everyone, 'nobody has an email on file');
 
-    apbFill(els.apbAllCount, els.apbAllNames, named, 'nobody has named a victim yet');
-    apbFill(els.apbNoPickCount, els.apbNoPickNames, noPick, 'everyone still in has named one');
-    apbFill(els.apbSurvivedCount, els.apbSurvivedNames, survived, 'no week has been scored yet');
-    apbFill(els.apbClosedCount, els.apbClosedNames, closed, 'nobody is out yet', 'closed');
-
-    const pairs = [
-      [els.apbAllEmail, named], [els.apbAllCopy, named],
-      [els.apbNoPickEmail, noPick], [els.apbNoPickCopy, noPick],
-      [els.apbSurvivedEmail, survived], [els.apbSurvivedCopy, survived],
-      [els.apbClosedCopy, closed]
-    ];
-    for (const pair of pairs) {
-      if (pair[0]) pair[0].disabled = !pair[1].length;
+    for (const button of [els.apbAllEmail, els.apbAllCopy]) {
+      if (button) button.disabled = !everyone.length;
     }
 
-    // A group - or one suspect - that has gone from the list since the draft was
-    // written should not still have a live send button pointed at it.
-    if (apbKind && !apbTargets().length) {
+    if (!everyone.length) {
       if (els.apbSend) els.apbSend.disabled = true;
       if (els.apbCopyMessage) els.apbCopyMessage.disabled = true;
     }
-
-    // What the counts do not show: who cannot be reached at all. Eliminated
-    // members have their own card now, so they are no longer worth calling out
-    // as missing from the others.
-    const unreachable = recordRows.filter((row) => !apbAddress(row)).length;
 
     if (!recordRows.length) {
       setApbStatus('No roster loaded.', 'note');
       return;
     }
+
+    // The one number the count above cannot show: who this bulletin will not
+    // reach at all, however many bases it covers.
+    const unreachable = recordRows.length - everyone.length;
 
     const notes = [recordRows.length + ' on the roster.'];
     if (unreachable) notes.push(unreachable + ' with no email on file, unreachable.');
@@ -1514,9 +1419,9 @@
   // not to check the list before sending it - the address is the thing that
   // actually receives the bulletin, and the team is what the message is about.
   //
-  // The no-pick card leaves the team column empty, which is the whole reason
-  // that card exists.
-  function apbFill(countEl, namesEl, rows, emptyLabel, perRowKind = '') {
+  // Somebody with no pick this week shows an empty team column, which is how
+  // the outstanding list reads at a glance.
+  function apbFill(countEl, namesEl, rows, emptyLabel) {
     if (countEl) {
       countEl.textContent = rows.length + ' recipient' + (rows.length === 1 ? '' : 's');
     }
@@ -1533,13 +1438,8 @@
       // A real name if there is one, because the admin panel is the one place
       // the league's actual names live.
       const real = [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
-      // A group card shows what they picked this week. A per-suspect card shows
-      // its own button instead, because the team that matters there is the one
-      // that ended them and it is already in the bulletin.
-      const tail = perRowKind
-        ? '<button class="btn btn-primary btn-mini apb-name-send" type="button" ' +
-            'data-apb-solo="' + escapeAdminHtml(row.id || '') + '">Email</button>'
-        : '<span class="apb-name-team">' + escapeAdminHtml(row.week_pick || '') + '</span>';
+      const tail = '<span class="apb-name-team">' +
+        escapeAdminHtml(row.week_pick || '') + '</span>';
 
       return '<li class="apb-name-row">' +
         '<b>' + escapeAdminHtml(row.username || '(no handle)') +
@@ -1550,15 +1450,8 @@
     }).join('');
   }
 
-  // The rows the draft on screen goes to, which is not always the whole group.
-  function apbTargets() {
-    const rows = apbRecipients(apbKind);
-    if (!apbSoloId) return rows;
-    return rows.filter((row) => String(row.id || '') === apbSoloId);
-  }
-
-  async function copyApbAddresses(kind, button) {
-    const rows = apbRecipients(kind);
+  async function copyApbAddresses(button) {
+    const rows = apbRecipients();
     if (!rows.length || !button) return;
 
     const copied = await copyToClipboard(rows.map(apbAddress).join(', '));

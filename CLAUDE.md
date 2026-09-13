@@ -400,11 +400,21 @@ Tables in use:
 ### The league scores itself
 
 [supabase/sql/ff_auto_score.sql](supabase/sql/ff_auto_score.sql) schedules a
-`pg_cron` job every fifteen minutes that fetches the open week's ESPN scoreboard
-with `pg_net` and runs the same scoring the button runs. Nobody has to be
-present, and nothing has to be deployed.
+`pg_cron` job that fetches the open week's ESPN scoreboard with `pg_net` and
+runs the same scoring the button runs. Nobody has to be present, and nothing has
+to be deployed.
 
-Two things to know before touching it:
+Three things to know before touching it:
+
+- **It only works around a game finishing.** The job ticks every five minutes
+  but `_2026_scoring_window()` returns false unless now is within fifteen
+  minutes either side of kickoff-plus-three-hours for a game somebody actually
+  picked — the same estimate [js/wire.js](js/wire.js) prints on the Precinct as
+  "check back at approximately…", so the page and the job never disagree about
+  when the news is due. `pg_cron` takes a fixed expression and cannot be told
+  "when the Falcons finish", so the gate lives in the function, not the
+  schedule. Five minutes and not fifteen because a thirty-minute window has to
+  hold **two** runs — see the next point.
 
 - **The fetch and the scoring are different runs.** `pg_net` does not block:
   `net.http_get` queues a request and the reply lands in `net._http_response`
