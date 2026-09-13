@@ -86,13 +86,16 @@
       return;
     }
 
+    // Needs the picks first, to know which games are anybody's business here.
+    const snapshot = await fetchSnapshot(picks);
+
     const entries = buildEntries(suspects, picks);
     if (!entries.length) {
       runMessage('Nobody on the board yet.');
       return;
     }
 
-    render(entries);
+    render(entries, snapshot);
     watchWhen();
     stampScores(await fetchLastScored());
   }
@@ -655,13 +658,98 @@
     const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
     return `${head} (${victim} ${mine === theirs ? 'tied' : 'over'} ${opponent}).`;
   }
-  function render(entries) {
+  // The NFL scoreboard for the open week, straight from ESPN in the browser -
+  // the same source and the same module the admin's SCORE THE WEEK uses. Best
+  // effort by design: no scoreboard just means no snapshot entries, and the rest
+  // of the strip is about the league rather than about the games.
+  async function fetchSnapshot(picks) {
+    const week = Number(window.CURRENT_WEEK) || 1;
+    const season = Number(window.SEASON) || 2026;
+    if (!window.ffLiveScores?.fetchWeek) return [];
+
+    // Only games somebody in this league has a pick in. The NFL plays sixteen
+    // on a Sunday and most of them decide nothing here; a scoreboard of games
+    // nobody named would be thirteen entries of noise in front of the ones that
+    // matter.
+    const named = new Set();
+    const seasonKey = String(window.SEASON || '');
+    for (const row of picks || []) {
+      if (Number(row?.week) !== week) continue;
+      if (seasonKey && String(row.season || seasonKey) !== seasonKey) continue;
+      if (String(row.result || '').trim().toUpperCase() === SKIP_RESULT) continue;
+      const team = String(row.team || '').trim();
+      if (team && team !== NO_PICK_TEAM) named.add(team);
+    }
+
+    try {
+      const games = await window.ffLiveScores.fetchWeek(season, week);
+      // Started, and one of the two sides is under accusation. A fixture that
+      // has not kicked off says nothing the pick entries do not already say.
+      return (games || []).filter((game) =>
+        game.started && (named.has(game.away) || named.has(game.home)));
+    } catch (error) {
+      console.warn('Wire: no live scoreboard, running without snapshots:', error);
+      return [];
+    }
+  }
+
+  // "LIONS 24 SAINTS 21 3RD 10:33". Leader first, which is how a score is read
+  // out loud, then where the game is. No brackets and no "over": the rest of
+  // the strip uses those to say a case turned on a result, and a game at half
+  // time has not turned anything.
+  function snapshotParts(game) {
+    const away = Number(game.awayPoints) || 0;
+    const home = Number(game.homePoints) || 0;
+    const leaderFirst = home > away;
+
+    return {
+      first: shortName(leaderFirst ? game.home : game.away),
+      second: shortName(leaderFirst ? game.away : game.home),
+      firstScore: leaderFirst ? home : away,
+      secondScore: leaderFirst ? away : home,
+      state: gameState(game)
+    };
+  }
+
+  // ESPN gives "5:21 - 4th", which reads backwards on a ticker. Built from the
+  // period and the clock instead so it comes out "4TH 5:21" - and a finished
+  // game just says how it finished, overtime included.
+  function gameState(game) {
+    if (game.final) return String(game.status || 'Final').trim();
+
+    const period = Number(game.period) || 0;
+    const clock = String(game.displayClock || '').trim();
+    if (!period) return String(game.status || 'In progress').trim();
+
+    const label = period > 4 ? 'OT' : ['1st', '2nd', '3rd', '4th'][period - 1];
+    return clock ? label + ' ' + clock : label;
+  }
+
+  function snapshotItemHtml(game) {
+    const g = snapshotParts(game);
+
+    return `<span class="wire-item wire-item-score">
+      <span class="wire-side">${escapeHtml(g.first)}</span>
+      <span class="wire-state-final">${g.firstScore}</span>
+      <span class="wire-side">${escapeHtml(g.second)}</span>
+      <span class="wire-state-final">${g.secondScore}</span>
+      <span class="wire-when">${escapeHtml(g.state)}</span>
+    </span>`;
+  }
+
+  function snapshotText(game) {
+    const g = snapshotParts(game);
+    return `${g.first} ${g.firstScore} ${g.second} ${g.secondScore}, ${g.state}.`;
+  }
+
+  function render(entries, snapshot = []) {
     const track = document.getElementById('wireTrack');
     const list = document.getElementById('wireList');
     if (!track) return;
 
     // Reading order, and all of it inside the repeated block so every lap says
-    // the same things in the same order: the cases that closed, then the picks
+    // the same things in the same order: the scoreboard first - it is the news
+    // everything else is a consequence of - then the cases that closed, then the picks
     // filed and waiting, then last week's survivors who have not filed again
     // yet. A suspect with neither a pick nor a result gets no entry - there is
     // nothing to report about them.
@@ -669,6 +757,7 @@
     const rest = entries.filter((entry) => !entry.isOut && entry.pick);
 
     const items =
+      snapshot.map(snapshotItemHtml).join('') +
       closed.map(itemHtml).join('') +
       rest.map(itemHtml).join('') +
       entries.filter((entry) => !entry.isOut && !entry.pick && entry.prior)
@@ -686,6 +775,7 @@
 
     if (list) {
       list.innerHTML =
+        snapshot.map((game) => `<li>${escapeHtml(snapshotText(game))}</li>`).join('') +
         closed.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('') +
         entries.filter((entry) => !entry.isOut && (entry.pick || entry.prior))
           .map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('');

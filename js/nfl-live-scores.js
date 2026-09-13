@@ -52,7 +52,11 @@
       const awayName = away?.team?.displayName || '';
       if (!homeName || !awayName) continue;
 
-      const status = game?.status?.type || {};
+      // Two different objects: `status` carries the clock and the period, and
+      // `status.type` carries what kind of state it is. The scorer only needs
+      // the type; the wire's snapshot line needs the clock.
+      const clock = game?.status || {};
+      const status = clock.type || {};
       // `completed` and not the STATUS_FINAL name: a game can end as
       // STATUS_FINAL_OVERTIME, and matching on the name alone would drop it.
       const final = Boolean(status.completed);
@@ -62,10 +66,21 @@
         week: Number(week),
         away: awayName,
         awayAbbr: away?.team?.abbreviation || '',
+        // Final-only, deliberately: this is what the scorer is handed, and a
+        // half-time score must never be able to close a case.
         awayScore: final ? Number(away?.score) : null,
         home: homeName,
         homeAbbr: home?.team?.abbreviation || '',
         homeScore: final ? Number(home?.score) : null,
+        // The score on the board right now, finished or not. Separate keys, so
+        // reading them can never be mistaken for reading a result: the wire's
+        // snapshot entries want a game in progress, the scorer must not have
+        // one.
+        awayPoints: Number(away?.score),
+        homePoints: Number(home?.score),
+        started: Boolean(status.completed) || String(status.state || '') === 'in',
+        period: Number(clock.period) || 0,
+        displayClock: String(clock.displayClock || ''),
         status: status.shortDetail || status.description || status.name || '',
         final,
         sourceUrl: urlFor(season, week)
