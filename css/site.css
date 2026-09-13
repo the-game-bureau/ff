@@ -5861,6 +5861,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   mask-image: none;
 }
 
+.wire-item-checkback[hidden]{ display: none; }
+
 .wire-name{ color: var(--accent-yellow); }
 
 /* The copula, and the joining words of a closed case's sentence. Quiet, because
@@ -5921,24 +5923,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-weight: 700;
   color: var(--primary-red);
 }
-
-/* When the next game somebody picked is expected to be over, and therefore when
-   this wire will next say something different. Louder than the provenance line
-   under it: that one is a footnote about the past, this is the reason to come
-   back. */
-.wire-checkback{
-  margin: 12px 0 0;
-  padding: 0 16px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--text-primary);
-}
-
-.wire-checkback[hidden]{ display: none; }
 
 /* A provenance note for the scores in the strip above it - a stale file
    otherwise looks exactly like "no games have finished yet" - so it sits on the

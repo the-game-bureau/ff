@@ -92,8 +92,8 @@
       return;
     }
 
-    render(entries);
     watchCheckBack(picks);
+    render(entries);
     stampScores(await fetchLastScored());
   }
 
@@ -145,11 +145,38 @@
   // coast at 11pm gets told "tomorrow" about a game that for them is tonight.
   function checkBackText(at) {
     const when = new Date(at);
-    const time = new Intl.DateTimeFormat('en-US', {
+    return `Check back at approximately ${centralTime(when)} central time ${dayWord(when)}.`;
+  }
+
+  function centralTime(when) {
+    return new Intl.DateTimeFormat('en-US', {
       timeZone: CENTRAL, hour: 'numeric', minute: '2-digit'
     }).format(when).toLowerCase();
+  }
 
-    return `Check back at approximately ${time} central time ${dayWord(when)}.`;
+  // The same sentence set the way every other entry on the strip is set: the
+  // thing that is not yet a fact in the pending yellow, the connectives in
+  // white, the when in the colour the strip uses for a time.
+  function checkBackHtml(at) {
+    if (!at) return '';
+
+    const when = new Date(at);
+    return `<span class="wire-pending">Check back</span>
+      <span class="wire-because">at approximately</span>
+      <span class="wire-when">${escapeHtml(centralTime(when))}</span>
+      <span class="wire-because">central time</span>
+      <span class="wire-when">${escapeHtml(dayWord(when))}</span>${STOP}`;
+  }
+
+  // First on the strip, and printed in both copies of the track, so it comes
+  // round as often as the loop does. It is the one entry that is about the
+  // reader rather than about a suspect - the reason to come back - so it leads.
+  function checkBackItemHtml(at) {
+    if (!at) return '';
+
+    return `
+      <span class="wire-item wire-item-checkback">${checkBackHtml(at)}</span>
+      <span class="wire-sep" aria-hidden="true">&#9670;</span>`;
   }
 
   // today / tomorrow / the date itself, all measured against the Central
@@ -181,30 +208,40 @@
     return ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
   }
 
-  // Live, because the whole value of the line is that it is current: it has to
-  // roll from "today" to "tomorrow" at midnight and from one game to the next
-  // as each finishes, on a page somebody left open. A minute is fine - the
-  // number it prints only changes on the hour and the half.
+  // Live, because the whole value of it is that it is current: it has to roll
+  // from "today" to "tomorrow" at midnight and from one game to the next as each
+  // finishes, on a page somebody left open. A minute is fine - the number it
+  // prints only changes on the hour and the half.
+  //
+  // Rewritten in place rather than by re-rendering the strip, because the strip
+  // is a moving object: rebuilding it would jump the travel back to wherever the
+  // new track happened to start, once a minute, forever.
+  let checkBackEnds = [];
+  let checkBackTimer = null;
+
   function watchCheckBack(picks) {
-    const el = document.getElementById('wireCheckBack');
-    if (!el) return;
-
-    const ends = relevantEndTimes(picks);
-
-    const paint = () => {
-      const at = nextEnd(ends);
-      // Nothing anybody picked is still to be played - end of the week, or end
-      // of the season. Silence beats inventing a time.
-      el.textContent = at ? checkBackText(at) : '';
-      el.hidden = !at;
-    };
-
-    paint();
+    checkBackEnds = relevantEndTimes(picks);
     clearInterval(checkBackTimer);
-    checkBackTimer = setInterval(paint, 60 * 1000);
+    checkBackTimer = setInterval(repaintCheckBack, 60 * 1000);
   }
 
-  let checkBackTimer = null;
+  function repaintCheckBack() {
+    const at = nextEnd(checkBackEnds);
+
+    // Both copies of the track carry one, and both have to say the same thing.
+    for (const el of document.querySelectorAll('.wire-item-checkback')) {
+      // Nothing anybody picked is still to be played - end of the week, or end
+      // of the season. Silence beats inventing a time.
+      el.innerHTML = checkBackHtml(at);
+      el.hidden = !at;
+    }
+
+    const spoken = document.getElementById('wireCheckBackSpoken');
+    if (spoken) {
+      spoken.textContent = at ? checkBackText(at) : '';
+      spoken.hidden = !at;
+    }
+  }
 
   // When SCORE THE WEEK was last run, which is when the sentences on this strip
   // last changed.
@@ -422,26 +459,22 @@
       away,
       home,
       score,
-      kickoff: kickoffParts(game?.kickoffUtc),
+      // When the game is expected to be OVER, which is what the strip says.
+      // Null for a flex-scheduled week with no announced kickoff yet.
+      endsAt: endOfGame(game?.kickoffUtc),
       isTbd: Boolean(info.isTbd)
     };
   }
 
-  // Day and time apart, because the line says them apart: "on Sun at 3:25 PM".
-  // Central, the same zone js/nfl-schedule.js formats every other kickoff in, so
-  // a time read here matches the one read on the victims page.
-  function kickoffParts(kickoffUtc) {
-    if (!kickoffUtc) return null;
-
-    const at = new Date(kickoffUtc);
-    if (Number.isNaN(at.getTime())) return null;
-
-    const zone = { timeZone: 'America/Chicago' };
-    return {
-      day: new Intl.DateTimeFormat('en-US', { ...zone, weekday: 'short' }).format(at),
-      time: new Intl.DateTimeFormat('en-US', { ...zone, hour: 'numeric', minute: '2-digit' }).format(at)
-    };
+  // Kickoff plus the three hours a game runs. The same arithmetic the check-back
+  // entry does, deliberately: the strip should not tell one suspect their game
+  // is settled at 6:25 and then tell the room to come back at 6:20.
+  function endOfGame(kickoffUtc) {
+    const at = kickoffUtc ? new Date(kickoffUtc) : null;
+    if (!at || Number.isNaN(at.getTime())) return null;
+    return at.getTime() + GAME_LENGTH_MS;
   }
+
 
   // Last word of the name: San Francisco 49ers -> 49ers. The closed-case line
   // names both clubs twice over in one breath, and the full names made it read
@@ -525,15 +558,19 @@
     // accusation is filed and everything after this is the game being played.
     // A flex-scheduled week arrives with no announced time, so there is a
     // version of it with nothing to point at yet.
-    if (f?.kickoff) {
-      head += ` <span class="wire-pending">We'll see</span>
-        <span class="wire-because">on</span>
-        <span class="wire-when">${escapeHtml(f.kickoff.day)}</span>
-        <span class="wire-because">at</span>
-        <span class="wire-when">${escapeHtml(f.kickoff.time)}</span>`;
+    // When the verdict lands, not when the game starts. A kickoff time tells a
+    // reader when to stop being able to change their pick; this tells them when
+    // they will know, which is the thing the strip is actually about.
+    if (f?.endsAt) {
+      const when = new Date(f.endsAt);
+      head += ` <span class="wire-pending">We'll find out</span>
+        <span class="wire-because">at approximately</span>
+        <span class="wire-when">${escapeHtml(centralTime(when))}</span>
+        <span class="wire-because">central time</span>
+        <span class="wire-when">${escapeHtml(dayWord(when))}</span>`;
     } else if (f) {
-      head += ` <span class="wire-pending">We'll see</span>
-        <span class="wire-because">once the time is announced</span>`;
+      head += ` <span class="wire-pending">We'll find out</span>
+        <span class="wire-because">once the game has a time</span>`;
     }
 
     // Only ever reached out of order: a survived week rolls the suspect on to
@@ -649,8 +686,12 @@
     let line = `${head} They picked the ${victim} to lose`;
     if (opponent) line += ` to the ${opponent}`;
     line += ` in Week ${entry.week}.`;
-    if (f?.kickoff) line += ` We'll see on ${f.kickoff.day} at ${f.kickoff.time}.`;
-    else if (f) line += " We'll see once the time is announced.";
+    if (f?.endsAt) {
+      const when = new Date(f.endsAt);
+      line += ` We'll find out at approximately ${centralTime(when)} central time ${dayWord(when)}.`;
+    } else if (f) {
+      line += " We'll find out once the game has a time.";
+    }
 
     const result = String(entry.pick.result || '').trim().toUpperCase();
     if (result.includes('SURVIVED')) return `${line} Survived.`;
@@ -699,7 +740,10 @@
     const list = document.getElementById('wireList');
     if (!track) return;
 
-    const items = entries.map(itemHtml).join('');
+    // The check-back entry leads, and is part of the repeated block, so it comes
+    // round once per lap rather than only at the top of the hour.
+    const lead = checkBackItemHtml(nextEnd(checkBackEnds));
+    const items = lead + entries.map(itemHtml).join('');
 
     // Printed twice. The strip runs from 0 to -50% of the track, so the second
     // copy is what is on screen as the first one leaves and the loop has no
@@ -712,7 +756,10 @@
     runWire(track, Math.max(20, entries.length * SECONDS_PER_ITEM));
 
     if (list) {
-      list.innerHTML = entries.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('');
+      const at = nextEnd(checkBackEnds);
+      list.innerHTML =
+        `<li id="wireCheckBackSpoken"${at ? '' : ' hidden'}>${escapeHtml(at ? checkBackText(at) : '')}</li>` +
+        entries.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('');
     }
   }
 
