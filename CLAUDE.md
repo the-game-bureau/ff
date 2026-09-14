@@ -304,6 +304,9 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   the public pages read, so it cannot disagree with the board. Exhibition picks
   (a closed case still filing) are reported under the table and kept out of
   every column — counting them would make a dead suspect look live.
+  **Week 0 is a baseline, not a week of football**: it carries the roster the
+  season started from and dashes every other cell, because "0 waiting" would
+  claim nobody owed a pick when there was nothing to owe.
 
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).
@@ -400,6 +403,14 @@ hotlink; nothing is copied into the repo.
   not merely look old, it fails silently. `js/app.js` calling `window.renderHeaderUser?.()`
   against a cached `js/season.js` that predates that function makes the signed-in
   username disappear with nothing in the console — which is exactly what happened.
+- **`tbody tr:nth-child(even)` outweighs a bare class.** The site stripes every
+  table, and that selector (one pseudo-class, two types) beats a single class —
+  so a row highlight written as `.my-row{ background: … }` works only while that
+  row lands on an odd position, and silently stops the day a row is inserted
+  above it. That is exactly what adding Week 0 did to the open-week highlight in
+  the admin Week Results table. Match the stripe's shape and add the class:
+  `.admin-weeks tbody tr.admin-weeks-row-this-week`.
+
 - **An asset path in `js/` must be resolved from the nav prefix, never written
   as `../src/…`.** The site is served from `/ff/`, so from `/ff/index.html` a
   `../` climbs out of the site to `/src/…` and the asset 404s; from

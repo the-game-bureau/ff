@@ -117,6 +117,18 @@
     let exhibition = 0;
     const rows = [];
 
+    // WEEK 0 IS THE BASELINE, not a week of football. There are no games in it
+    // and nothing to file for, so it carries the one fact that is true before
+    // any of this started - how many suspects there were - and every other cell
+    // is dashed. "0 waiting" would be a claim that nobody owed a pick, when the
+    // truth is there was nothing to owe.
+    //
+    // In is the roster as it stands now, not as it stood in August: a late
+    // joiner counts here. Every other row already works that way - a suspect
+    // booked in week 5 is In for week 1 too - so this is consistent with the
+    // table rather than a wrinkle of its own.
+    rows.push({ week: 0, baseline: true, tally: { in: ids.length, out: 0 } });
+
     for (let week = 1; week <= TOTAL_WEEKS; week += 1) {
       const tally = { in: 0, out: 0, picked: 0, waiting: 0, survived: 0, dunDun: 0, noPick: 0 };
 
@@ -161,9 +173,15 @@
   }
 
   function paint(rows, thisWeek, exhibition) {
-    const html = rows.map(({ week, tally }) => {
-      const state = week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming');
-      const judged = week <= thisWeek;
+    const html = rows.map(({ week, tally, baseline }) => {
+      const state = baseline
+        ? 'preseason'
+        : (week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming'));
+
+      // Nothing was filed for a week with no games, and nothing was decided in
+      // a week that has not been played.
+      const filed = !baseline;
+      const judged = !baseline && week <= thisWeek;
 
       return `
         <tr class="admin-weeks-row admin-weeks-row-${state.replace(' ', '-')}">
@@ -171,8 +189,8 @@
           <td class="admin-weeks-state">${state}</td>
           ${cell(tally.in, true)}
           ${cell(tally.out, true)}
-          ${cell(tally.picked, true)}
-          ${cell(tally.waiting, true)}
+          ${cell(tally.picked, filed)}
+          ${cell(tally.waiting, filed)}
           ${cell(tally.survived, judged)}
           ${cell(tally.dunDun, judged)}
           ${cell(tally.noPick, judged)}
