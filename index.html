@@ -29,9 +29,9 @@
   <!-- Pinned: @2 floats, and a release that declares a global `var supabase`
        collides with our client and kills the whole script at parse time. -->
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="js/supabase-config.js?v=20260914ac"></script>
+  <script src="js/supabase-config.js?v=20260914ae"></script>
 
-<link rel="stylesheet" href="css/site.css?v=20260914ac"/>
+<link rel="stylesheet" href="css/site.css?v=20260914ae"/>
 </head>
 
 <!-- data-page drives the tighter desktop spacing in site.css: this page is one
@@ -153,15 +153,21 @@
          Placed here on purpose - the count above says how many are left, the
          notes say what that means, and this is who they are. The picks they
          filed come after. -->
-    <section class="lineup-section" aria-labelledby="currentSuspectsTitle">
-      <!-- The count is folded in by suspects.js once the lineup loads; this is
-           the pre-load placeholder, so it carries no number to be wrong. -->
-      <h2 id="currentSuspectsTitle" class="section-heading">Suspects</h2>
+    <!-- The board itself IS the section now. It used to sit inside a white
+         panel with the heading above it, which framed a wall as a document -
+         two borders, two backgrounds, and a title that belonged to the page
+         rather than to the board. The corkboard is the page here. -->
+    <section class="corkboard" aria-labelledby="currentSuspectsTitle">
+      <!-- The heading, pinned up like everything else on the board. The count
+           is folded in by suspects.js once the lineup loads; this is the
+           pre-load placeholder, so it carries no number to be wrong. -->
+      <div class="corkboard-placard">
+        <h2 id="currentSuspectsTitle" class="corkboard-placard-title">Suspects</h2>
+      </div>
+
       <div id="suspectsStatus" class="suspects-status" role="status" aria-live="polite"></div>
 
-      <div class="corkboard" aria-label="Investigation board">
-        <ul id="suspectGrid" class="suspect-grid" aria-label="Current suspects"></ul>
-      </div>
+      <ul id="suspectGrid" class="suspect-grid" aria-label="Current suspects"></ul>
     </section>
 
     <section class="pick-clipboard" id="pickClipboard" aria-labelledby="pickClipboardTitle">
@@ -265,33 +271,33 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="js/nfl-schedule.js?v=20260914ac"></script>
-  <script src="js/nfl-scores.js?v=20260914ac"></script>
-  <script src="js/nfl-live-scores.js?v=20260914ac"></script>
-  <script src="js/season.js?v=20260914ac"></script>
-  <script src="js/teams.js?v=20260914ac"></script>
-  <script src="js/nav.js?v=20260914ac"></script>
-  <script src="js/toast.js?v=20260914ac"></script>
-  <script src="js/auth-corner.js?v=20260914ac"></script>
-  <script src="js/app.js?v=20260914ac"></script>
+  <script src="js/nfl-schedule.js?v=20260914ae"></script>
+  <script src="js/nfl-scores.js?v=20260914ae"></script>
+  <script src="js/nfl-live-scores.js?v=20260914ae"></script>
+  <script src="js/season.js?v=20260914ae"></script>
+  <script src="js/teams.js?v=20260914ae"></script>
+  <script src="js/nav.js?v=20260914ae"></script>
+  <script src="js/toast.js?v=20260914ae"></script>
+  <script src="js/auth-corner.js?v=20260914ae"></script>
+  <script src="js/app.js?v=20260914ae"></script>
 
-  <script src="js/share.js?v=20260914ac"></script>
-  <script src="js/summons.js?v=20260914ac"></script>
-  <script src="js/join-form.js?v=20260914ac"></script>
-  <script src="js/join-modal.js?v=20260914ac"></script>
-  <script src="js/join.js?v=20260914ac"></script>
-  <script src="js/password-reset.js?v=20260914ac"></script>
-  <script src="js/username-gate.js?v=20260914ac"></script>
-  <script src="js/join-prefill.js?v=20260914ac"></script>
-  <script src="js/welcome.js?v=20260914ac"></script>
-  <script src="js/suspect-colors.js?v=20260914ac"></script>
-  <script src="js/scoreboard.js?v=20260914ac"></script>
-  <script src="js/pick-clipboard.js?v=20260914ac"></script>
-  <script src="js/sergeants-notes.js?v=20260914ac"></script>
-  <script src="js/mugshot-lightbox.js?v=20260914ac"></script>
-  <script src="js/suspect-lineup-chart.js?v=20260914ac"></script>
-  <script src="js/suspects.js?v=20260914ac"></script>
-  <script src="js/rap-sheet.js?v=20260914ac"></script>
-  <script src="js/wire.js?v=20260914ac"></script>
+  <script src="js/share.js?v=20260914ae"></script>
+  <script src="js/summons.js?v=20260914ae"></script>
+  <script src="js/join-form.js?v=20260914ae"></script>
+  <script src="js/join-modal.js?v=20260914ae"></script>
+  <script src="js/join.js?v=20260914ae"></script>
+  <script src="js/password-reset.js?v=20260914ae"></script>
+  <script src="js/username-gate.js?v=20260914ae"></script>
+  <script src="js/join-prefill.js?v=20260914ae"></script>
+  <script src="js/welcome.js?v=20260914ae"></script>
+  <script src="js/suspect-colors.js?v=20260914ae"></script>
+  <script src="js/scoreboard.js?v=20260914ae"></script>
+  <script src="js/pick-clipboard.js?v=20260914ae"></script>
+  <script src="js/sergeants-notes.js?v=20260914ae"></script>
+  <script src="js/mugshot-lightbox.js?v=20260914ae"></script>
+  <script src="js/suspect-lineup-chart.js?v=20260914ae"></script>
+  <script src="js/suspects.js?v=20260914ae"></script>
+  <script src="js/rap-sheet.js?v=20260914ae"></script>
+  <script src="js/wire.js?v=20260914ae"></script>
 </body>
 </html>

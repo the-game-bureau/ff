@@ -375,7 +375,12 @@ The house rules, all enforced in [css/site.css](css/site.css) via tokens:
   rather than lifting.
 - Loud type: `--font-display` (Friz Quadrata) for headings and buttons,
   `--font-mono` for anything data-shaped, uppercase with wide tracking.
-- Yellow (`--accent-yellow`) is the interaction colour — hover, focus, highlights.
+- **Red (`--primary-red`) is what a button does when you point at it** — it
+  fills, and its type flips to `--paper-raised`. Dark type on that red is
+  3.80:1 and fails AA, so the light colour travels with the fill.
+  Yellow (`--accent-yellow`) is now the **focus** colour only: the wash on a
+  text field, the ring on a victim card. Keeping them apart means hover and
+  focus no longer look like the same thing.
 
 Team colours are passed in as `--victim-primary` / `--team-primary` custom
 properties rather than inline style strings.

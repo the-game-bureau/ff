@@ -38,6 +38,12 @@
   --primary-red-dark: #A70400;
   --primary-blue: #0033CC;
   --primary-blue-mid: #002288;
+  /* Yellow is still the FOCUS colour - the wash on a text field, the ring on a
+     victim card - but it is no longer what a button does when you point at it.
+     Buttons fill with --primary-red and flip their type to --paper-raised,
+     which is 4.97:1 and passes AA; leaving the type dark on that red would have
+     been 3.80:1, so the light colour is part of the change and not a flourish.
+     Keeping the two apart also means hover and focus no longer look identical. */
   --accent-yellow: #FFD400;
   /* The amber a real dot-matrix board burns. Defined here rather than inside
      the Scoreboard, because the wire uses it too - the two are the same piece
@@ -275,8 +281,8 @@ body{
 
 #btnSummons:hover,
 #btnSummons:focus-visible{
-  background: var(--accent-yellow);
-  color: var(--ink);
+  background: var(--primary-red);
+  color: var(--paper-raised);
   outline: none;
 }
 
@@ -314,8 +320,8 @@ body{
 
 #btnColdCases:hover,
 #btnColdCases:focus-visible{
-  background: var(--accent-yellow);
-  color: var(--ink);
+  background: var(--primary-red);
+  color: var(--paper-raised);
   outline: none;
 }
 
@@ -408,7 +414,9 @@ body{
 
 .header-id-action:hover,
 .header-id-action:focus-visible{
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+
+  background: var(--primary-red);
   outline: none;
 }
 
@@ -514,8 +522,8 @@ body{
 
 .week-badge-admin:hover,
 .week-badge-admin:focus-visible{
-  background: var(--accent-yellow);
-  color: var(--ink);
+  background: var(--primary-red);
+  color: var(--paper-raised);
 }
 
 .week-badge-user{
@@ -636,7 +644,9 @@ body[data-page="home"] .main-nav{ padding-bottom: 0; }
 /* Press the button into the page instead of lifting it off. */
 .nav-btn:hover,
 .nav-btn:focus-visible{
-  --nav-btn-bg: var(--accent-yellow);
+  color: var(--paper-raised);
+
+  --nav-btn-bg: var(--primary-red);
   transform: translate(4px, 4px);
   box-shadow: 0 0 0 var(--ink);
   outline: none;
@@ -736,8 +746,8 @@ body[data-page="home"] .main-nav{ padding-bottom: 0; }
 
 .nav-toggle:focus-visible{
   outline: none;
-  background: var(--accent-yellow);
-  color: var(--ink);
+  background: var(--primary-red);
+  color: var(--paper-raised);
 }
 
 /* The three bars, drawn as one element: two are backgrounds on the box, the
@@ -1842,7 +1852,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-mugshot:hover,
 .admin-mugshot:focus-visible{
   outline: none;
-  background: var(--accent-yellow);
+  background: var(--primary-red);
   box-shadow: 3px 3px 0 var(--ink);
 }
 
@@ -2020,8 +2030,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .status-link:hover,
 .status-link:focus-visible{
-  background: var(--accent-yellow);
-  color: var(--ink);
+  background: var(--primary-red);
+  color: var(--paper-raised);
   outline: none;
 }
 
@@ -2254,8 +2264,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .alt-action-link:hover,
 .alt-action-link:focus-visible{
   outline: none;
-  color: var(--ink);
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+  background: var(--primary-red);
 }
 
 @media (max-width: 480px){
@@ -2391,7 +2401,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .week-step:hover:not(:disabled),
 .week-step:focus-visible{
   outline: none;
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+  background: var(--primary-red);
 }
 
 /* At Week 1 and Week 18 there is nowhere to go, so the arrow says so rather
@@ -2424,7 +2435,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .schedule-link:hover,
 .schedule-link:focus-visible{
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+
+  background: var(--primary-red);
   transform: translate(4px, 4px);
   box-shadow: 0 0 0 var(--ink);
   outline: none;
@@ -2629,8 +2642,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 .victim-investigate-link:hover,
 .victim-investigate-link:focus-visible{
-  color: var(--ink);
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+  background: var(--primary-red);
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -4562,7 +4575,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   flex: none;
 }
 
-.week-nav-btn:hover:not(:disabled){ background: var(--accent-yellow); }
+.week-nav-btn:hover:not(:disabled){ color: var(--paper-raised);
+ background: var(--primary-red); }
 
 .week-nav-btn:disabled{
   color: var(--text-tertiary);
@@ -4582,23 +4596,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* ===== SUSPECT LINEUP ===== */
-.lineup-section{
-  position: relative;
-  background: var(--paper-raised);
-  border: var(--rule);
-  border-top: 10px solid var(--ink);
-  box-shadow: var(--shadow);
-  padding: 24px 20px;
-  margin: 0 0 28px;
-}
-
+/* Only ever says anything while the board is loading or when it could not.
+   It sits ON the cork now rather than on a white panel, so it is written in
+   paper rather than ink - dark type on timber is a smudge. Centred, because
+   there is no left edge to hang off any more. */
 .suspects-status{
+  position: relative;
+  z-index: 2;
   min-height: 1.5em;
-  margin: -4px 0 16px;
+  margin: -10px 0 14px;
   font-family: var(--font-mono);
   font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
+  color: var(--paper-raised);
+  text-shadow: 1px 1px 0 rgba(50, 25, 5, 0.75);
 }
+
+/* Empty is the normal state: no gap held open for a line that is not there. */
+.suspects-status:empty{ min-height: 0; margin: 0; }
 
 .suspects-status-good{ color: var(--success); }
 .suspects-status-bad{ color: var(--error); }
@@ -4626,6 +4644,43 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
     radial-gradient(circle at 85% 15%, rgba(90, 55, 20, 0.12) 0 4px, transparent 5px);
   background-size: 37px 37px, 61px 61px, 43px 43px, 89px 89px;
   padding: 34px 24px 30px;
+  margin: 0 0 28px;
+}
+
+/* THE HEADING, PINNED UP. A torn-off sheet tacked to the board rather than a
+   title printed above it: on a wall, the label is another thing somebody put
+   there. Off-square by a degree and a half, because nothing pinned by hand is
+   straight - and the same tack the cards wear, from the one rule that draws it.
+   width:max-content so the paper is only as wide as what is written on it; a
+   full-width sheet would read as a banner rather than a note. */
+.corkboard-placard{
+  position: relative;
+  z-index: 2;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto 26px;
+  /* Top padding clears the tack. The cards can let theirs overlap because it
+     lands on a polaroid's blank border; here it would sit on a letter. */
+  padding: 22px 26px 12px;
+  background: var(--paper-raised);
+  box-shadow: 3px 4px 0 rgba(60, 35, 10, 0.34);
+  transform: rotate(-1.5deg);
+}
+
+.corkboard-placard-title{
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+}
+
+/* The tack straddles the paper's top edge, the way it straddles a mugshot's. */
+.corkboard-placard::before{
+  top: -11px;
 }
 
 .suspect-grid{
@@ -4656,7 +4711,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* The tack. A small domed head plus a metal shank reads as a real thumbtack
    without adding another image request. */
-.suspect-card::before{
+.suspect-card::before,
+.corkboard-placard::before{
   content: "";
   position: absolute;
   top: 0;
@@ -5293,11 +5349,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .team-selection,
   .game-over,
   .used-teams,
-  .lineup-section{
-    padding: 18px 14px;
-    box-shadow: var(--shadow-sm);
-  }
-
   .corkboard{
     padding: 26px 14px 22px;
   }
@@ -5659,7 +5710,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-todo-remove:hover,
 .admin-todo-remove:focus-visible{
   outline: none;
-  background: var(--accent-yellow);
+  color: var(--paper-raised);
+  background: var(--primary-red);
 }
 
 /* A finished row steps back: the paper greys off and the text is struck
