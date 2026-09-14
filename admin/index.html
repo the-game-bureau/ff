@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260914t"></script>
+  <script src="../js/supabase-config.js?v=20260914u"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260914t"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260914u"/>
 </head>
 
 <body>
@@ -66,12 +66,14 @@
 
         <p class="gate-help">
           The season, a row per week. <strong>Picks</strong> reads
-          <em>named/missed</em> and then the share of the suspects still in that
-          week who named somebody - so <em>42/0 100%</em> is a full house.
-          <strong>In Play</strong> is how many of those the game has not
-          answered yet, so the first number always equals In Play plus Survived
-          plus Dun Dun. Every figure is counted from the picks, so nothing here
-          can disagree with the board.
+          <em>pick in/no pick</em> - victims named, then weeks scored as never
+          having been filed - and then the share of the suspects still in that
+          week who named somebody, so <em>42/0 100%</em> is a full house.
+          <strong>In Play</strong> counts, <strong>for the open week only</strong>,
+          the picks whose game is still being played; it is zero everywhere else,
+          because a week nobody has reached has nothing in play however much has
+          been filed ahead for it. Every figure is counted from the picks, so
+          nothing here can disagree with the board.
         </p>
 
         <div class="table-wrap">
@@ -80,7 +82,7 @@
               <tr>
                 <th scope="col">Week</th>
                 <th scope="col">State</th>
-                <th scope="col" title="Victims named for this week, then weeks scored as never having been filed">Picks</th>
+                <th scope="col" title="Victims named for this week, then weeks scored as never having been filed">Picks<span class="admin-weeks-sub">Pick In/No Pick</span></th>
                 <th scope="col" title="Named, and the game has not said yet">In Play</th>
                 <th scope="col">Survived</th>
                 <th scope="col">Dun Dun</th>
@@ -401,24 +403,24 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260914t"></script>
-  <script src="../js/toast.js?v=20260914t"></script>
-  <script src="../js/nfl-scores.js?v=20260914t"></script>
-  <script src="../js/season.js?v=20260914t"></script>
-  <script src="../js/teams.js?v=20260914t"></script>
-  <script src="../js/nav.js?v=20260914t"></script>
-  <script src="../js/auth-corner.js?v=20260914t"></script>
-  <script src="../js/nfl-live-scores.js?v=20260914t"></script>
-  <script src="../js/admin-score.js?v=20260914t"></script>
-  <script src="../js/admin-todo.js?v=20260914t"></script>
-  <script src="../js/admin-weeks.js?v=20260914t"></script>
-  <script src="../js/admin.js?v=20260914t"></script>
-  <script src="../js/join-form.js?v=20260914t"></script>
-  <script src="../js/join-modal.js?v=20260914t"></script>
-  <script src="../js/join.js?v=20260914t"></script>
-  <script src="../js/username-gate.js?v=20260914t"></script>
-  <script src="../js/password-reset.js?v=20260914t"></script>
-  <script src="../js/share.js?v=20260914t"></script>
-  <script src="../js/summons.js?v=20260914t"></script>
+  <script src="../js/nfl-schedule.js?v=20260914u"></script>
+  <script src="../js/toast.js?v=20260914u"></script>
+  <script src="../js/nfl-scores.js?v=20260914u"></script>
+  <script src="../js/season.js?v=20260914u"></script>
+  <script src="../js/teams.js?v=20260914u"></script>
+  <script src="../js/nav.js?v=20260914u"></script>
+  <script src="../js/auth-corner.js?v=20260914u"></script>
+  <script src="../js/nfl-live-scores.js?v=20260914u"></script>
+  <script src="../js/admin-score.js?v=20260914u"></script>
+  <script src="../js/admin-todo.js?v=20260914u"></script>
+  <script src="../js/admin-weeks.js?v=20260914u"></script>
+  <script src="../js/admin.js?v=20260914u"></script>
+  <script src="../js/join-form.js?v=20260914u"></script>
+  <script src="../js/join-modal.js?v=20260914u"></script>
+  <script src="../js/join.js?v=20260914u"></script>
+  <script src="../js/username-gate.js?v=20260914u"></script>
+  <script src="../js/password-reset.js?v=20260914u"></script>
+  <script src="../js/share.js?v=20260914u"></script>
+  <script src="../js/summons.js?v=20260914u"></script>
 </body>
 </html>

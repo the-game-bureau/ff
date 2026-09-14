@@ -309,9 +309,14 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   The missed count rides in the same cell because it is almost always zero and a
   column of zeros earns less than its width; the share is out of who could still
   file that week rather than the whole roster, so an upcoming week reads against
-  the people it is actually waiting on. Only the first number is in the sum: **Picks = In Play + Survived + Dun Dun** on every row,
-  so each line checks itself. A `NO PICK` row is the opposite of a pick and
-  already carries a `DUN DUN` verdict that would otherwise count somebody twice.
+  the people it is actually waiting on. A `NO PICK` row is the opposite of a pick
+  and stays out of the first number — it already carries a `DUN DUN` verdict that
+  would otherwise count somebody twice.
+  **`In Play` is the open week only** — picks whose game is still being played,
+  which takes the scoreboard and not just the absence of a verdict, so a game
+  that has ended and has not been scored yet is not in play. Zero on every other
+  row by definition: a week nobody has reached has nothing in play, however much
+  has been filed ahead for it.
 
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).

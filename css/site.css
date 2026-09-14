@@ -2902,6 +2902,18 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-weeks .admin-weeks-nopick{ color: var(--text-secondary); }
 .admin-weeks .admin-weeks-slash{ padding: 0 1px; }
 
+/* The legend for the two numbers in the cell below, under the column's name.
+   Its own line, because the header is the only place there is room to say which
+   number is which. */
+.admin-weeks th .admin-weeks-sub{
+  display: block;
+  margin-top: 3px;
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
 /* The share of the league, trailing the two counts it is drawn from. Muted and
    set a size down: it is the gloss on the numbers beside it, not a third one. */
 .admin-weeks .admin-weeks-share{

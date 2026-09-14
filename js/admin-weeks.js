@@ -20,7 +20,10 @@
 // WHAT THE COLUMNS MEAN
 //   Picks     victims named that week, then weeks scored as never filed, then
 //             what share of the suspects still in it that is
-//   In Play   named, and the game has not said yet
+//   In Play   THE OPEN WEEK ONLY: live suspects whose pick's game is still
+//             being played. Zero everywhere else on purpose - a week nobody has
+//             reached has nothing in play, however much has been filed ahead
+//             for it, and a week already behind us is over
 //   Survived / Dun Dun   the verdicts written
 // Picks reads as two numbers, 42/0, because the second is the count of the
 // first not happening: the scorer writes a row carrying the team NO PICK for
@@ -28,10 +31,9 @@
 // own because it is almost always zero, and a whole column of zeros earns less
 // than the width it takes.
 //
-// Only the left number is in the sum. Picks = In Play + Survived + Dun Dun on
-// every row, which makes each line check itself; a NO PICK row is the opposite
-// of a pick and would make a missed week look like a named victim, and it
-// already carries a DUN DUN verdict that would count one person twice.
+// A NO PICK row is the opposite of a pick and stays out of the first number: it
+// would make a missed week look like a named victim, and it already carries a
+// DUN DUN verdict that would count one person twice.
 //
 // EXHIBITION PICKS ARE NOT IN THE TABLE. A closed case may keep filing and is
 // still told whether the pick won or lost, but none of it counts - see
@@ -44,6 +46,13 @@
   const ACTIVE_PICKS_VIEW = WEEKS_CONFIG.views?.activePicks || 'ff_active_picks';
   const TOTAL_WEEKS = 18;
   const NO_PICK_TEAM = 'NO PICK';
+
+  // ESPN's scoreboard for the open week, so In Play can tell a game still being
+  // played from one that finished and has not been scored yet. Empty when the
+  // fetch fails, and In Play then falls back to "no verdict written", which is
+  // the same answer for every game that has not kicked off and wrong only for
+  // the minutes between a whistle and the scorer catching up.
+  let liveGames = [];
 
   const els = {};
 
@@ -65,6 +74,39 @@
     window.addEventListener('ff-week-scored', load);
   });
 
+  // Shared with the Legal Pad and the Sergeant's Notes through fetchWeekCached,
+  // so one scoreboard serves whoever asks first.
+  async function fetchLiveScores() {
+    const season = Number(window.SEASON) || 2026;
+    const week = Number(window.CURRENT_WEEK) || 1;
+    if (!window.ffLiveScores?.fetchWeekCached) return [];
+
+    try {
+      return (await window.ffLiveScores.fetchWeekCached(season, week)) || [];
+    } catch (error) {
+      console.warn('Week Results: no live scoreboard, counting from the file:', error);
+      return [];
+    }
+  }
+
+  // Has this pick's game finished? The generated file first, then the live
+  // scoreboard - the file is only as fresh as the last deploy, and a week can
+  // finish between two of them. Same order and same sources as isDecided() in
+  // js/pick-clipboard.js.
+  //
+  // Unknown counts as NOT finished, which is the safe direction here: a game
+  // nobody can find is one nobody has seen end.
+  function gameIsOver(team, week) {
+    const opponent = window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(team, week)?.opponent;
+    if (!opponent) return false;
+
+    if (window.NFL_SCORE_HELPERS?.getGameForTeams?.(team, opponent, week)?.final) return true;
+
+    return liveGames.some((row) => row.final &&
+      (row.away === team || row.home === team) &&
+      (row.away === opponent || row.home === opponent));
+  }
+
   function result(row) {
     return String(row?.result || '').trim().toUpperCase();
   }
@@ -82,6 +124,8 @@
     }
 
     setMessage('Reading the season...');
+
+    liveGames = await fetchLiveScores();
 
     const [suspects, picks] = await Promise.all([
       weeksDb.from(SUSPECTS_VIEW).select('id, username, game_status'),
@@ -155,7 +199,7 @@
         const verdict = result(pick);
         if (verdict === 'SURVIVED') tally.survived += 1;
         else if (verdict === 'DUN DUN') tally.dunDun += 1;
-        else tally.inPlay += 1;
+        else if (week === thisWeek && !gameIsOver(String(pick.team || ''), week)) tally.inPlay += 1;
       }
 
       rows.push({ week, tally });
