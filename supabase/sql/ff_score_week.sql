@@ -485,7 +485,12 @@ begin
 end;
 $score$;
 
-revoke all on function public._2026_score_week_core(integer, jsonb, boolean, boolean) from public;
+-- Both browser roles BY NAME. `from public` alone is the pseudo-role, and
+-- Supabase's default privileges grant EXECUTE to anon and authenticated
+-- explicitly at creation - so revoking only from `public` left this wide open
+-- and looked locked. See supabase/sql/ff_lock_scoring_core.sql.
+revoke all on function public._2026_score_week_core(integer, jsonb, boolean, boolean)
+  from public, anon, authenticated;
 
 
 -- ---------------------------------------------------------------------------

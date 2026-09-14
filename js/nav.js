@@ -3,23 +3,33 @@
 //   <div id="siteNav" data-current="victims"></div>
 
 // Ordered by how often a player needs them, which is also the order they come
-// up in a season: start here, make this week's pick, check how it went, see who
-// else is playing, look up a rule, then last year's file.
+// up in a season: start here, make this week's pick, look up a rule, then last
+// year's file. Suspects is not in the list any more - the board of mugshots is
+// a section of the Precinct now, so the button pointed at a page that no longer
+// exists.
+//
+// `corner: true` moves an item out of the button bar and into the header
+// cluster instead - see renderCornerNav below. It still lives in this list,
+// because this is still the only place a destination is written down; the flag
+// says where it is drawn, not what it is.
 const NAV_ITEMS = [
   { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'Home' },
   // Land on the open week so the page and the header badge agree.
   { label: 'Victims',    key: 'victims',
     href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,
     sublabel: 'Make Your Pick' },
-  { label: 'Case File',  key: 'report',  href: 'reports/index.html', sublabel: 'Stats & Picks' },
-  { label: 'Suspects',   key: 'suspects', href: 'suspects/index.html', sublabel: 'FF Players' },
   // Sublabel instead of a title: the gloss shows without needing a hover.
   { label: 'The Law',    key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
   // New tab: the archive is a different season with its own gate, and leaving
   // it in place means you come back to the live site rather than back through
   // it. external drives target="_blank" in the renderer below.
+  //
+  // In the corner rather than the bar: the other four are this season and this
+  // one is not, and standing it in the same row of buttons made a closed season
+  // look like a fifth place to go and play. The bar is now four pages that are
+  // all live. On a phone the corner is hidden, so it comes back here.
   { label: 'Cold Cases', key: 'archive', href: '2025/index.html',
-    sublabel: 'League Archive', external: true }];
+    sublabel: 'League Archive', external: true, corner: true }];
 
 function renderSiteNav(){
   const mount = document.getElementById('siteNav');
@@ -64,7 +74,11 @@ function renderSiteNav(){
         aria-disabled="true">${item.label}</span>${sublabel}</li>`;
     }
 
-    return `<li><a class="nav-btn${isCurrent ? ' nav-btn-current' : ''}"
+    // A corner item is still built and still in the DOM - the stylesheet
+    // decides which of the two copies is on screen at this width.
+    const liClass = item.corner ? ' class="nav-item-corner"' : '';
+
+    return `<li${liClass}><a class="nav-btn${isCurrent ? ' nav-btn-current' : ''}"
       href="${isCurrent ? '#' : href}"
       ${item.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
       ${item.title ? `title="${item.title}"` : ''}
@@ -88,6 +102,66 @@ function renderSiteNav(){
 
   wireNavToggle(mount);
   renderNavAuth(mount);
+  renderCornerNav(mount);
+}
+
+// ===== COLD CASES IN THE HEADER CORNER =====
+// The bottom row of the top-right cluster, under Summons and Escape / Login -
+// the same block the week badge opposite is: two cells on top, one full-width
+// strip beneath them, divided by a shared black rule. Not a third cell in the
+// top row; that made a line of three unrelated things, where this reads as one
+// block with a strip under it, which is the shape on the left.
+//
+// The frame has to move for that. It sits on .header-user-row today, and a
+// wrapper is added here to carry it instead, because the row is built in two
+// different places (js/auth-corner.js and index.html's own markup) and neither
+// should have to know about this. If this function never runs, the row keeps
+// its own frame and the corner looks exactly as it did - see the pair of rules
+// in css/site.css.
+//
+// Rendered here rather than in js/summons.js or js/auth-corner.js because the
+// destination belongs to NAV_ITEMS and this file owns that list. Neither of the
+// other two knows the prefix a page needs to reach 2025/.
+function renderCornerNav(mount, tries){
+  const item = NAV_ITEMS.find((entry) => entry.corner);
+  if(!item || document.getElementById('btnColdCases')) return;
+
+  // Three different modules build this corner between them and any of them can
+  // run second, so wait for the row rather than assume it. Bounded: a page with
+  // no header corner at all must give up rather than spin - the item is still
+  // in the menu, which is the fallback that matters.
+  const row = document.querySelector('.header-corner .header-user-row');
+  if(!row){
+    const left = typeof tries === 'number' ? tries : 20;
+    if(left > 0) window.setTimeout(() => renderCornerNav(mount, left - 1), 25);
+    return;
+  }
+
+  const prefix = mount.dataset.prefix || '';
+  const rawHref = typeof item.href === 'function' ? item.href() : item.href;
+  const href = /^https?:\/\//.test(rawHref) ? rawHref : prefix + rawHref;
+
+  // The wrapper that takes over the frame, so the two rows sit inside one
+  // border rather than each carrying their own.
+  let block = row.parentElement;
+  if(!block || !block.classList.contains('header-user-block')){
+    block = document.createElement('div');
+    block.className = 'header-user-block';
+    row.parentNode.insertBefore(block, row);
+    block.appendChild(row);
+  }
+
+  const link = document.createElement('a');
+  link.id = 'btnColdCases';
+  link.href = href;
+  link.textContent = item.label;
+  link.title = item.sublabel;
+  if(item.external){
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+  }
+
+  block.appendChild(link);
 }
 
 // ===== ESCAPE / LOGIN-JOIN IN THE PHONE MENU =====

@@ -927,7 +927,7 @@
 
     els.mugshotPicker.value = shot.armed === 'secondary' ? secondary : primary;
 
-    // The placard stripe down the mugshot, exactly as suspects/ draws it.
+    // The placard stripe down the mugshot, exactly as the corkboard draws it.
     els.mugshotFrame.style.setProperty('--stripe-a', primary);
     els.mugshotFrame.style.setProperty('--stripe-b', secondary);
 

@@ -580,7 +580,11 @@
   // Their pick is always the one on the left: a case closes precisely because
   // the team they accused did not lose.
   function closedHtml(entry) {
-    const head = `<span class="wire-gone">Case closed</span> ${mugHtml(entry)}`;
+    // The suspect leads, the way every other entry on the strip does. CASE
+    // CLOSED used to come first, which read as a stamp but meant a reader
+    // scanning for a name found a label on one line in five and had to look
+    // past it. One shape for every line that is about a person.
+    const head = `${mugHtml(entry)} <span class="wire-gone">case closed</span>`;
 
     if (entry.neverFiled || !entry.pick) {
       return `${head} <span class="wire-paren">(<span class="wire-pick-none">no victim named</span>)</span>`;
@@ -682,7 +686,7 @@
   }
 
   function closedText(entry) {
-    const head = 'Case closed, ' + entry.username;
+    const head = entry.username + ' case closed';
 
     if (entry.neverFiled || !entry.pick) return `${head}: no victim named.`;
 

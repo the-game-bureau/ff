@@ -1,5 +1,5 @@
 // ===== PICK CLIPBOARD =====
-// The sheet under the docket: current-week picks first, with a week control for
+// The sheet under the scoreboard: current-week picks first, with a week control for
 // looking backward or ahead through filed picks.
 (function () {
   const PICKBOARD_CONFIG = window.FF_SUPABASE_CONFIG || {};

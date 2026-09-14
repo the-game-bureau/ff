@@ -1,4 +1,4 @@
-// ===== THE DOCKET =====
+// ===== THE SCOREBOARD =====
 // How many are still a suspect, how many are case closed, and the way through
 // to their faces.
 // Deliberately one number: the Case File goes deep further down, and the top of
@@ -71,7 +71,7 @@
   // so changing the wording cannot leave the sizing behind.
   const DOT_SCOREBOARD_LABEL_WIDTH = getDotTextWidth('Still A Suspect');
 
-  const docketDb = window.supabase
+  const scoreboardDb = window.supabase
     ? window.supabase.createClient(DOCKET_SUPABASE_URL, DOCKET_SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
@@ -86,7 +86,7 @@
     : null;
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (!document.getElementById('docketCount')) return;
+    if (!document.getElementById('scoreboardCount')) return;
     renderDocketText();
     loadDocket();
     // Someone joining or leaving changes the number under everyone's feet.
@@ -94,10 +94,10 @@
   });
 
   async function loadDocket() {
-    const countEl = document.getElementById('docketCount');
-    const labelEl = document.getElementById('docketLabel');
-    const outEl = document.getElementById('docketOutCount');
-    const outLabelEl = document.getElementById('docketOutLabel');
+    const countEl = document.getElementById('scoreboardCount');
+    const labelEl = document.getElementById('scoreboardLabel');
+    const outEl = document.getElementById('scoreboardOutCount');
+    const outLabelEl = document.getElementById('scoreboardOutLabel');
     if (!countEl) return;
 
     const setScore = (standing, out) => {
@@ -109,7 +109,7 @@
       if (el) renderDotText(el, value);
     };
 
-    if (!docketDb) {
+    if (!scoreboardDb) {
       setScore('-', '-');
       setLabel(labelEl, 'Records Unavailable');
       return;
@@ -117,7 +117,7 @@
 
     // Two columns, no mugshots: the view carries avatar_data_url and pulling it
     // would be a megabyte fetched to produce one integer.
-    let { data, error } = await docketDb
+    let { data, error } = await scoreboardDb
       .from(SUSPECTS_VIEW)
       .select('username, game_status');
 
@@ -128,7 +128,7 @@
     // reporting a bigger number.
     if (error) {
       console.warn('Docket: suspects view failed, falling back to the roster:', error);
-      const fallback = await docketDb
+      const fallback = await scoreboardDb
         .from(PROFILES_TABLE)
         .select('id', { count: 'exact', head: true });
 
@@ -160,7 +160,7 @@
   }
 
   function renderDocketText() {
-    ['docketCount', 'docketLabel', 'docketOutCount', 'docketOutLabel']
+    ['scoreboardCount', 'scoreboardLabel', 'scoreboardOutCount', 'scoreboardOutLabel']
       .map((id) => document.getElementById(id))
       .filter(Boolean)
       .forEach((el) => renderDotText(el, el.textContent));

@@ -358,7 +358,10 @@ exception when others then
 end;
 $auto$;
 
-revoke all on function public._2026_auto_score() from public;
+-- Both browser roles BY NAME - see the note on _2026_score_week_core in
+-- supabase/sql/ff_score_week.sql. `from public` alone does not lock it.
+revoke all on function public._2026_auto_score()
+  from public, anon, authenticated;
 
 
 -- ---------------------------------------------------------------------------

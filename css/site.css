@@ -39,6 +39,11 @@
   --primary-blue: #0033CC;
   --primary-blue-mid: #002288;
   --accent-yellow: #FFD400;
+  /* The amber a real dot-matrix board burns. Defined here rather than inside
+     the Scoreboard, because the wire uses it too - the two are the same piece
+     of equipment on the same page, and #FFD400 beside #F2A11B read as one of
+     them being slightly wrong. */
+  --score-amber: #F2A11B;
 
   --text-primary: #000000;
   --text-secondary: #2A2A2A;
@@ -201,17 +206,117 @@ body{
   gap: 8px;
 }
 
-/* Signed in, the week badge opposite grows a third cell for the username and
-   stands 68px to this corner's 43. Hanging both from the same top then leaves
-   ESCAPE floating above the badge's centre line rather than opposite it, so
-   drop it by half the difference. Signed out the two are within a few pixels
-   of each other and this does not apply. */
-.header:has(#headerUser:not([hidden])) .header-corner{ top: 28px; }
+/* This corner used to be a single row and had to be dropped 12px when the week
+   badge opposite grew a third cell, or ESCAPE floated above that badge's centre
+   line. Both are two-row blocks now, so they hang from the same top and line up
+   on their own. */
 
-.header-user-row{
-  display: flex;
+/* One cluster, built exactly like the week badge in the opposite corner: a
+   single bordered box, cells divided by a shared black rule. The frame is on
+   the box rather than on each control, because two separately framed buttons
+   eight pixels apart read as two unrelated things - and this corner holds one
+   idea, which is "you, and what you can do from here".
+   Top row: Summons, then Escape or Login / Join. Bottom strip: Cold Cases,
+   spanning both, the way the signed-in handle spans week and season opposite. */
+.header-user-block{
+  display: inline-flex;
+  flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The row carries the frame only when it is on its own. renderCornerNav in
+   js/nav.js wraps it in the block above and the frame moves there; if that
+   never runs - no header corner on the page, or the script blocked - this is
+   what the corner falls back to, which is what it looked like before the strip
+   existed. */
+.header-user-row{
+  display: inline-flex;
+  align-items: stretch;
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-user-block > .header-user-row{
+  border: none;
+  box-shadow: none;
+}
+
+/* The frames come off the halves; the cluster carries the only one. */
+.header-user-row .header-id-badge{
+  border: none;
+  box-shadow: none;
+  /* Fill the stack rather than the text. .header-id is a column flex, so a
+     badge left to its own height is as tall as whatever is written in it -
+     which made the Summons cell 29px beside Login / Join's 32 purely because
+     its type is three pixels smaller. The divider between them then stopped
+     short of the frame. */
+  flex: 1;
+}
+
+/* The shared rule, on the later segment so it only exists between two of them.
+   Escape and Login / Join are never both showing, so whichever is visible is
+   the one that gets the divider. */
+.header-user-row .header-id + .header-id .header-id-badge{
+  border-left: var(--rule);
+}
+
+/* Summons wears the paper half, the way the season cell does under the week
+   cell opposite. Two red segments side by side would be one red block with a
+   line through it. */
+#btnSummons{
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+#btnSummons:hover,
+#btnSummons:focus-visible{
+  background: var(--accent-yellow);
+  color: var(--ink);
+  outline: none;
+}
+
+/* Cold Cases: the strip under the pair, built like .week-badge-user opposite -
+   blue, its own rule along the top, spanning the full width of the row above
+   whatever that row currently says. Blue so it reads as a third thing rather
+   than more of the two cells above it, which is the job the same colour does on
+   the left.
+   width:0 + min-width:100% for the same reason as the week badge: it keeps this
+   strip out of the block's intrinsic width, so the label can never widen the
+   cluster - it only ever stretches to the row above. */
+#btnColdCases{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  /* Padding and type copied off .week-badge-user rather than chosen, so the
+     two corners stand the same height instead of within four pixels of it. */
+  padding: 8px 12px;
+  border-top: var(--rule);
+  background: var(--primary-blue);
+  color: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#btnColdCases:hover,
+#btnColdCases:focus-visible{
+  background: var(--accent-yellow);
+  color: var(--ink);
+  outline: none;
 }
 
 /* Username + Escape, built exactly like the week badge above it: one bordered
@@ -267,6 +372,11 @@ body{
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: inherit;
+  /* Stated, not inherited. A button does not take line-height from its parent
+     the way a span does, so these cells were running at the UA's `normal`
+     while the week badge's cells - which are spans - sat at 1. That is the
+     whole of why this cluster stood 43px tall against the other one's 38. */
+  line-height: 1;
   text-transform: inherit;
   border: none;
   cursor: pointer;
@@ -463,6 +573,13 @@ body{
   padding: 14px 12px;
 }
 
+/* On the Precinct the wire starts the instant the nav ends, so the nav's own
+   bottom padding shows as a white band between the captions and the black -
+   14px of nothing, in the one place on the site where the two surfaces meet.
+   Only here: every other page has the paper below the nav, where that space is
+   the gap before the content rather than a seam. */
+body[data-page="home"] .main-nav{ padding-bottom: 0; }
+
 .main-nav-list{
   list-style: none;
   margin: 0 auto;
@@ -576,6 +693,14 @@ body{
   --nav-btn-bg: var(--primary-blue);
   color: var(--paper-raised);
 }
+
+/* Cold Cases, which renders in both places and shows in one. Above the phone
+   breakpoint it is the third cell of the header cluster (renderCornerNav in
+   js/nav.js) and has no business also standing in the button bar; below it the
+   whole corner is hidden, so the hamburger is the only menu there is and the
+   rule below hands it back. Same two-class weight as the auth pair, and for the
+   same reason - see the note under it. */
+.main-nav-list .nav-item-corner{ display: none; }
 
 /* Escape / Login-Join, appended to the list by js/auth-corner.js. They belong to
    the phone menu only: at desktop widths the same controls sit in the header
@@ -2580,23 +2705,33 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* ===== DOCKET TOTALS =====
    One black board: dim SVG dots for the field, amber SVG dots for the type. */
-.docket{
+.scoreboard{
+  /* Three quarters of the column, centred. It is one fact about the league, not
+     the page - at full width it was the widest thing on the Precinct and read
+     as a banner. Everything inside comes down by the same quarter below, or the
+     dots rattle around in a frame that shrank without them. */
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
   background: #050505;
   border: var(--rule-fat);
   box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.28);
 }
 
-.scoreboard{
-  --score-amber: #F2A11B;
+.scoreboard-grid{
   --score-gray: #111111;
   --score-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='1.45' fill='%230D0D0D'/%3E%3C/svg%3E");
   --score-divider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='20' viewBox='0 0 8 20'%3E%3Ccircle cx='4' cy='10' r='2.15' fill='%23483209'/%3E%3C/svg%3E");
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 28px;
-  min-height: 270px;
-  padding: 32px 28px;
+  /* Trimmed about a fifth. The board is the first thing on the Precinct now,
+     and at full size it filled a screen before anything else got a word in.
+     Height, padding, gap and the glyph widths below all come down together, or
+     the dots end up swimming in a box that did not shrink with them. */
+  gap: 12px;
+  min-height: 117px;
+  padding: 12px;
   margin: 0;
   overflow: hidden;
   background-color: #050505;
@@ -2604,12 +2739,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background-size: 12px 12px;
 }
 
-.scoreboard::after{
+.scoreboard-grid::after{
   content: "";
   position: absolute;
   left: 50%;
-  top: 32px;
-  bottom: 32px;
+  top: 12px;
+  bottom: 12px;
   width: 8px;
   transform: translateX(-50%);
   background-image: var(--score-divider);
@@ -2630,9 +2765,9 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   display: grid;
   justify-items: center;
   align-content: end;
-  gap: 22px;
-  min-height: 210px;
-  padding: 8px 18px;
+  gap: 16px;
+  min-height: 158px;
+  padding: 6px 14px;
   background: transparent;
 }
 
@@ -2652,12 +2787,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 .scoreboard-count .scoreboard-dot-svg{
-  width: min(100%, 420px);
+  width: min(100%, 188px);
   height: auto;
 }
 
 .scoreboard-label .scoreboard-dot-svg{
-  width: min(100%, 340px);
+  width: min(100%, 150px);
   height: auto;
 }
 
@@ -2665,18 +2800,22 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .scoreboard-dot-on{ fill: var(--score-amber); }
 
 @media (max-width: 767px){
-  .game-info.docket{
-    padding: 14px 10px;
+  /* Three quarters of a phone is a slot, not a board. The width above is for
+     a screen wide enough to have room to give away. */
+  .scoreboard{ width: 100%; }
+
+  .game-info.scoreboard{
+    padding: 11px 8px;
   }
 
-  .scoreboard{
+  .scoreboard-grid{
     grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
+    gap: 18px;
     min-height: 0;
-    padding: 24px 16px;
+    padding: 18px 12px;
   }
 
-  .scoreboard::after{
+  .scoreboard-grid::after{
     left: 30px;
     right: 30px;
     top: 50%;
@@ -2689,25 +2828,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   }
 
   .scoreboard-cell{
-    min-height: 150px;
-    gap: 16px;
-    padding: 8px;
+    min-height: 113px;
+    gap: 12px;
+    padding: 6px;
   }
 
-  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 300px); }
-  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 260px); }
+  /* Below the desktop pair above, not above it: these used to be the smaller
+     numbers and stopped being so when the board came down. */
+  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 165px); }
+  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 135px); }
 }
 
 @media (max-width: 480px){
-  .game-info.docket{
+  .game-info.scoreboard{
     padding: 12px 8px;
     box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
   }
 
-  .scoreboard{ padding: 22px 12px; }
-  .scoreboard-cell{ min-height: 132px; }
-  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 280px); }
-  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 220px); }
+  .scoreboard-grid{ padding: 17px 9px; }
+  .scoreboard-cell{ min-height: 99px; }
+  .scoreboard-count .scoreboard-dot-svg{ width: min(100%, 143px); }
+  .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 116px); }
 }
 
 /* ===== PICK CLIPBOARD ===== */
@@ -4649,6 +4790,78 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    of photographs, not a call to action. */
 
 
+/* ===== SUMMONS ===== */
+
+/* The header's third control, left of Escape / Login. It wears the same badge
+   as they do rather than a colour of its own: three differently-styled buttons
+   in one corner reads as three unrelated things. */
+/* No spacing of its own: it is a segment of the cluster now, not a neighbour
+   of one. */
+
+/* The Precinct's body, in a dialog: the code to point a camera at, then the
+   ways to send the same link to somebody who is not in the room. */
+.summons-card{
+  /* 384 and not 360: at 360 the caption needed 342px of a 318px line and broke
+     over two rows. Widening the card beats shrinking the type - the QR is
+     200px and the buttons are full width, so there is room to give. */
+  max-width: 400px;
+  /* Centred outright, and every child told the same thing. The pieces in here
+     are borrowed from the Precinct's body, where several of them are set left
+     for a two-column layout that does not exist in a dialog. */
+  text-align: center;
+}
+
+.summons-card > *{ text-align: center; }
+
+/* The address, directly under the title. Its own line rather than a chip on the
+   code, because it is the thing somebody reads out loud over the phone. */
+.summons-card .share-url{
+  margin: 10px auto 0;
+  display: inline-block;
+}
+
+.summons-qr{
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 16px 0 12px;
+}
+
+.summons-card .qr-code img{
+  display: block;
+  width: min(200px, 60vw);
+  height: auto;
+}
+
+.summons-card .qr-caption{
+  margin: 0 auto 14px;
+  /* The base rule caps this at 22ch, which is right for the Precinct's display
+     headline and wrong here: at mono size it clamped a 42-character line into a
+     168px box and broke it over three lines inside 328px of room. */
+  max-width: none;
+  /* The Precinct sets this at display size for a headline under the code. In
+     here it is a line of instruction above three buttons, and at 1.75rem it was
+     wrapping into a ragged two-line block that looked left-aligned. */
+  font-family: var(--font-mono);
+  font-weight: 700;
+  /* Tighter than the site's usual 0.04em, to keep ~20px of slack on that one
+     line. A platform substituting a slightly wider mono should not be able to
+     wrap it again. */
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* One column, so the lineup js/share.js builds reads top to bottom in the
+   order it chose rather than wrapping into a grid that loses it. */
+.summons-card .share-actions{
+  display: grid;
+  gap: 10px;
+}
+
 .mugshot-lightbox{
   position: fixed;
   inset: 0;
@@ -4891,6 +5104,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   box-shadow: 0 0 0 2px var(--success);
 }
 
+/* Filed for the week being played, nothing decided yet. Amber rather than a
+   third shade of yellow: it is the colour the wire and the scoreboard already
+   use for something live, and the site should not have two meanings for
+   --accent-yellow six pixels apart - that one means "you still owe a pick",
+   this one means "it is in and the game is on". */
+.suspect-week-pending{
+  background: var(--score-amber);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--score-amber);
+}
+
 .suspect-empty,
 .suspect-notice{
   grid-column: 1 / -1;
@@ -5076,7 +5300,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
      The items themselves are the SAME buttons as the desktop row - hard rule,
      offset shadow, sublabel underneath, blue for the current page. They were
-     briefly restyled into flat docket rows, which made the menu a different
+     briefly restyled into flat scoreboard rows, which made the menu a different
      component depending on the width you opened it at. One nav, one look. */
   .main-nav{ padding: 12px; }
 
@@ -5114,6 +5338,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   }
 
   /* Same two-class weight as the desktop hide, or it would not win here. */
+  .main-nav-list .nav-item-corner{ display: flex; }
   .main-nav-list .nav-auth-item{ display: flex; }
   .main-nav-list .nav-auth-item[hidden]{ display: none; }
 
@@ -5931,6 +6156,201 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .sergeants-note{ font-size: 0.9375rem; }
 }
 
+/* ===== SERGEANT'S NOTES ===== */
+
+/* A cop's top-spiral pocket notebook, flipped open on the desk. The Legal Pad
+   above it is the record - ruled, filed, kept; this is the thing somebody
+   scribbled on while watching the board. */
+.sergeants-notes{
+  --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  /* White stock. Three shades, not one: the sheet, the edge the next page down
+     shows at, and the shadow under the stack - flatten them to a single white
+     and the pad stops looking like paper and starts looking like a div. */
+  --notebook-paper: #FFFFFF;
+  --notebook-paper-edge: #EDEAE3;
+  --notebook-paper-shadow: #D9D5CC;
+  /* The blue rule was set against yellow stock. On white it needs to carry a
+     little more, or the lines vanish and the writing floats. */
+  --notebook-rule: rgba(62, 103, 164, 0.26);
+  --notebook-margin: rgba(196, 43, 56, 0.42);
+  --notebook-blue: #163B89;
+  --notebook-line: 31px;
+  --notebook-margin-x: 56px;
+  --notebook-ring-step: 47px;
+  display: flex;
+  justify-content: center;
+  margin: 2px 0 36px;
+}
+
+.sergeants-pad{
+  isolation: isolate;
+  position: relative;
+  /* Narrow, so the 2:3 sheet below lands at notebook size rather than poster
+     size. Was 420px, which at that ratio would have been 630px tall. */
+  width: min(340px, calc(100% - 18px));
+  /* Room above the paper for open wire loops. */
+  padding-top: 30px;
+  transform: rotate(-0.45deg);
+  transform-origin: 50% 12px;
+}
+
+.sergeants-pad::before{
+  content: "";
+  position: absolute;
+  top: 42px;
+  left: 7px;
+  right: -7px;
+  bottom: -8px;
+  z-index: 0;
+  background: var(--notebook-paper-shadow);
+  border: 2px solid rgba(0, 0, 0, 0.28);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.sergeants-pad::after{
+  content: "";
+  position: absolute;
+  top: 36px;
+  left: 3px;
+  right: -3px;
+  bottom: -4px;
+  z-index: 0;
+  background: var(--notebook-paper-edge);
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22), transparent 28px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px 13px);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+/* Open wire curls, one per punched hole. */
+/* The binding, photographed rather than drawn. src/notebook-spiral.webp is the
+   top of src/notes.webp with the paper keyed out of it, so the loops keep their
+   own anti-aliasing and the white below them comes from the CSS sheet.
+
+   Sized to the pad width rather than tiled: the crop holds eight loops at their
+   real spacing, and repeating it would put a seam wherever the pad happened to
+   end. The strip covers the sheet's top edge on purpose - in the photograph the
+   wire wraps around it, and cutting above the edge would have left the loops
+   floating. */
+.sergeants-spiral{
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  /* 443 x 130 in the file. The height follows the width so the wire never
+     stretches out of proportion as the pad narrows. */
+  aspect-ratio: 443 / 130;
+  z-index: 4;
+  background-image: url("../src/notebook-spiral.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* The open sheet itself: yellow, softly worn, and punched at the top. */
+.sergeants-paper{
+  position: relative;
+  z-index: 1;
+  /* Two wide by three high, the shape of a notebook somebody carries. It is a
+     minimum rather than a fixed box: a quiet week writes four notes and a busy
+     one writes five, and clipping the fifth to hold a ratio would be choosing
+     the proportion over the point. */
+  aspect-ratio: 2 / 3;
+  min-height: 178px;
+  background-color: var(--notebook-paper);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0 calc(var(--notebook-margin-x) - 1px),
+      var(--notebook-margin) calc(var(--notebook-margin-x) - 1px) calc(var(--notebook-margin-x) + 1px),
+      transparent calc(var(--notebook-margin-x) + 1px)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--notebook-line) - 1px),
+      var(--notebook-rule) calc(var(--notebook-line) - 1px) var(--notebook-line)
+    ),
+    radial-gradient(circle at 18px 17px, rgba(255, 255, 255, 0.24) 0 0.8px, transparent 1.1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28), transparent 10%, transparent 90%, rgba(0, 0, 0, 0.08));
+  background-size: 100% 100%, 100% var(--notebook-line), 24px 24px, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat, no-repeat;
+  background-position: 0 0, 0 28px, 0 0, 0 0;
+  border: 2px solid rgba(0, 0, 0, 0.38);
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.04),
+    4px 4px 0 rgba(0, 0, 0, 0.34);
+  padding: 72px 26px 24px var(--notebook-margin-x);
+}
+
+.sergeants-heading{
+  position: relative;
+  z-index: 2;
+  margin: 0 0 10px;
+  font-family: var(--font-hand);
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  color: #181818;
+  transform: rotate(-1deg);
+}
+
+.sergeants-list{
+  position: relative;
+  z-index: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The rules are on the paper; the notes only need to sit like blue pen on top
+   of them. */
+.sergeants-note{
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.72;
+  color: var(--notebook-blue);
+  padding-left: 20px;
+  text-indent: -20px;
+  transform: rotate(0.15deg);
+}
+
+.sergeants-note::before{
+  content: "-  ";
+  color: var(--notebook-blue);
+}
+
+@media (max-width: 767px){
+  .sergeants-notes{
+    justify-content: flex-start;
+  }
+
+  .sergeants-pad{
+    --notebook-ring-step: 36.5px;
+    width: min(328px, calc(100vw - 54px));
+    margin-left: 20px;
+    padding-top: 30px;
+    transform: none;
+  }
+
+  .sergeants-paper{
+    --notebook-margin-x: 44px;
+    padding: 68px 14px 18px var(--notebook-margin-x);
+  }
+
+  .sergeants-spiral{ left: 10px; right: 10px; }
+
+  .sergeants-heading{ font-size: 1.18rem; }
+  .sergeants-note{ font-size: 0.9375rem; }
+}
+
 /* ===== THE WIRE ===== */
 /* The squad room radio, across the top of the Precinct. One strip, travelling
    right to left forever, with a diamond between entries so the eye can find
@@ -6043,7 +6463,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    what happened the moment the bracketed matchups arrived: (LIONS OVER SAINTS)
    put .wire-side and .wire-victim one level deeper than everything else on the
    line, and only those words came out faint. */
-.wire-item > *{
+.wire-item > *,
+/* And the handle, by name. It sits inside .wire-mug, which is exempt below so
+   the photograph is not shredded - which meant the one thing on the strip that
+   is somebody's TEAM NAME printed solid while every word around it was dotted.
+   Masking it directly puts it back in the same typeface as the rest. */
+.wire-name{
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
   mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
   -webkit-mask-size: 3px 3px;
@@ -6061,9 +6486,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   align-items: center;
   --wire-gap: 10px;
   gap: var(--wire-gap);
-  /* Wider than it was: with no mark between entries this space is the only
-     thing telling one sentence from the next. */
-  padding: 0 34px;
+  /* With no mark between entries this space is the only thing telling one
+     sentence from the next - but it is doubled where two entries meet, so 34
+     each side read as 68px of nothing and the strip looked broken rather than
+     spaced. 20 gives 40 between entries, about four characters at this size. */
+  padding: 0 20px;
   white-space: nowrap;
   color: var(--paper-raised);
 }
@@ -6076,7 +6503,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    used until js/suspect-colors.js has resolved the suspect's own, and kept by
    anyone whose mugshot cannot be sampled. */
 .wire-mug{
-  --wire-primary: var(--accent-yellow);
+  --wire-primary: var(--score-amber);
   --wire-secondary: var(--ink);
   display: inline-flex;
   align-items: center;
@@ -6126,9 +6553,20 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   mask-image: none;
 }
 
+/* ...and the name gets its own back, because the exemption above would
+   otherwise take it down with the frame it happens to sit beside. */
+.wire-name{
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 50%, transparent 56%);
+  -webkit-mask-size: 3px 3px;
+  mask-size: 3px 3px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
 .wire-item-checkback[hidden]{ display: none; }
 
-.wire-name{ color: var(--accent-yellow); }
+.wire-name{ color: var(--score-amber); }
 
 /* The copula, and the joining words of a closed case's sentence. Quiet, because
    they are the words on the strip carrying no information - they are there so
@@ -6149,11 +6587,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .wire-paren{ white-space: nowrap; }
 
 /* The team the suspect accused, wherever it appears. */
-.wire-victim{ color: var(--accent-yellow); }
+.wire-victim{ color: var(--score-amber); }
 
 /* When the game is, and the one sentence on the line that is not yet a fact. */
 .wire-when,
-.wire-pending{ color: var(--accent-yellow); }
+.wire-pending{ color: var(--score-amber); }
 
 .wire-flag{ padding: 2px 7px; }
 
@@ -6163,8 +6601,8 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .wire-flag-live{ padding: 2px 0; color: #6FD39A; }
 .wire-flag-out{ background: var(--primary-red); color: var(--paper-raised); }
 
-.wire-pick strong{ color: var(--accent-yellow); }
-.wire-pick-none{ color: var(--accent-yellow); }
+.wire-pick strong{ color: var(--score-amber); }
+.wire-pick-none{ color: var(--score-amber); }
 
 .wire-verdict{ color: var(--paper-raised); }
 .wire-verdict-good{ color: #6FD39A; }
@@ -6184,7 +6622,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .wire-at{ opacity: 0.7; }
 
 .wire-state{ opacity: 0.85; }
-.wire-state-final{ color: var(--accent-yellow); opacity: 1; }
+.wire-state-final{ color: var(--score-amber); opacity: 1; }
 
 /* A provenance note for the scores in the strip above it - a stale file
    otherwise looks exactly like "no games have finished yet" - so it sits on the

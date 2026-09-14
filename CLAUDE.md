@@ -62,7 +62,7 @@ why they get muddled. Rules:
 
 - **`DUN DUN` is never a standing.** Do not count people under it, do not label a
   person with it. It is the verdict on one week's pick, and the mugshot stamp on
-  suspects/ is that verdict, not a status badge.
+  the Precinct's corkboard is that verdict, not a status badge.
 - **`CASE CLOSED` is never a week's result.** It is what a suspect *is* once a
   `DUN DUN` has landed on them.
 - These are the only words for either state, in labels **and** in prose.
@@ -133,15 +133,27 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 
 **Pages**
 
-- [index.html](index.html) — **the Precinct**, the home page. Now little more than
-  the QR code and the share strip; the game itself lives on the other pages.
+- [index.html](index.html) — **the Precinct**, the home page, and now most of
+  the site. In order: the wire, the Scoreboard, the Sergeant's Notes, the
+  **corkboard** of mugshots, the Legal Pad and the Suspect Tracker. The board of
+  faces had its own page until it moved here — the Precinct is where people
+  actually land, and a page whose whole content was one list did not earn a
+  second click.
 - [victims/index.html](victims/index.html) — the Victims page: all 32 teams, and where a
   pick is made. Takes `?week=N`.
-- [suspects/index.html](suspects/index.html) — the players, as mugshot cards.
 - [law/index.html](law/index.html) — the rules.
 - [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard
   (`STILL A SUSPECT` against `CASE CLOSED`), the Sergeant's Notes, the Legal Pad
-  and the Suspect Tracker. Linked from the nav. The League Timeline
+  and the Suspect Tracker. All four are repeated on the Precinct, which is where
+  people actually land; this page is no longer in the nav. One copy of each
+  module serves both, because every one of them mounts itself by id and no-ops
+  when its element is absent.
+
+  The Scoreboard is **the Scoreboard** in every place it is named — the section,
+  its id, its classes, its screen-reader heading and [js/scoreboard.js](js/scoreboard.js).
+  It used to be "the docket" in the code, "the Scoreboard" here and "League
+  status totals" to a screen reader, all for the same two numbers. Note the
+  inner grid is `.scoreboard-grid`: the section took the plain name. Linked from the nav. The League Timeline
   and Evidence Locker that used to live here have been removed.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
 - [admin/index.html](admin/index.html) — schedule reconciliation and league removal.
@@ -160,7 +172,13 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   helpers that derive the open week, kickoff locks and matchups from it.
 - [js/teams.js](js/teams.js) — `NFL_TEAMS`: name, NFL `abbr`, and colours.
 - [js/nav.js](js/nav.js) — the header menu. **The only place nav items are
-  defined** — edit here, not in the HTML. It also renders the phone hamburger
+  defined** — edit here, not in the HTML. An item marked `corner: true` renders
+  as a cell of the top-right header cluster instead of a button in the bar;
+  **Cold Cases** is the one, because the archive is a closed season and standing
+  it beside the four live pages made it look like a fifth place to go and play.
+  It is still built into the list as well, and the stylesheet shows exactly one
+  copy at a time: the corner above 767px, the hamburger below it, where the
+  whole corner is hidden. It also renders the phone hamburger
   (`.nav-toggle`) and wires it up: CSS hides the toggle above 767px and hides
   the list below it until `.nav-open` is on the `<nav>`. The list is never
   removed from the DOM, so the menu still reads with the script blocked.
@@ -199,8 +217,13 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   because a hand-written observation is true on the Sunday somebody writes it and
   quietly wrong by Tuesday. Six of them, best five shown.
 - [js/victims.js](js/victims.js) — the registry grid and the pick flow.
-- [js/suspects.js](js/suspects.js) — the mugshot cards, including the placard
-  stripes sampled from each photo.
+- [js/suspects.js](js/suspects.js) — the corkboard on the Precinct: the mugshot
+  cards, the placard stripes sampled from each photo, and the order they hang
+  in. That order is five bands — being decided, closed, owes a pick, through to
+  next week, filed ahead — alphabetical inside each, and the bands must stay in
+  step with the colour of the week line under the name. It also exposes
+  `window.ffOpenSuspectCard(username)`, which is how the Suspect Tracker's
+  lightbox opens somebody's card without a page change.
 - [js/join.js](js/join.js) — the join form and mugshot processing.
 - [js/join-prefill.js](js/join-prefill.js) — carries what was typed in the sign-in
   popup over to the join form.
@@ -210,7 +233,8 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   old `reset.html`, which no longer exists; recovery links land on the site root.
 - [js/mugshot-lightbox.js](js/mugshot-lightbox.js) — the full-size mugshot viewer.
 - [js/rap-sheet.js](js/rap-sheet.js) — **EDIT RAP SHEET**, a suspect's whole
-  record in one popup, opened from their own mugshot preview on suspects/. It
+  record in one popup, opened from their own mugshot preview on the Precinct's
+  corkboard. It
   replaces the old `js/mugshot-edit.js`, which could only change the photograph.
   Reads and writes through `_2026_my_rap_sheet` / `_2026_save_my_rap_sheet`
   ([supabase/sql/ff_own_rap_sheet.sql](supabase/sql/ff_own_rap_sheet.sql)) rather
@@ -361,6 +385,22 @@ hotlink; nothing is copied into the repo.
   in the UI to explain it. Don't reintroduce the lookup behind an RPC: a function
   that turns a public username into a private email address is the leak that file
   closed, through a narrower straw.
+- **`revoke ... from public` does not lock a function.** `public` there is the
+  pseudo-role, not the schema of the same name sitting next to it in the
+  identifier, and Supabase ships
+  `alter default privileges in schema public grant all on functions to ... anon,
+  authenticated`, so every new function is granted EXECUTE to both browser roles
+  **by name** the moment it is created. Revoking the pseudo-role leaves both
+  named grants in place: the line reads like a lock and does nothing. This left
+  `_2026_score_week_core` — the scoring engine, which takes the finals as an
+  argument, has no admin check by design, and writes `SURVIVED` / `DUN DUN` —
+  callable by anyone signed out, verified against the live project. Closed in
+  [supabase/sql/ff_lock_scoring_core.sql](supabase/sql/ff_lock_scoring_core.sql).
+  **Name every role you mean to exclude** (`from public, anon, authenticated`),
+  and don't take the script's word for it afterwards — that file ends with a
+  query listing every `SECURITY DEFINER` function a browser role can reach, which
+  asks the database instead. Run it after adding one.
+
 - **A column grant can break a path nobody thought to test.** The same script's
   post-run checklist covered the lineup, first names and the admin table, and missed
   login entirely. When narrowing grants, grep for every `select('<column>')` in `js/`

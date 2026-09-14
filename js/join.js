@@ -132,7 +132,10 @@ let leavingForSuspects = false;
 function redirectToSuspects(delay = 800){
   leavingForSuspects = true;
   window.setTimeout(() => {
-    window.location.href = joinRootUrl('suspects/index.html');
+    // The Precinct. This used to be suspects/index.html, which was where a new
+    // member could see themselves pinned up for the first time; that board is a
+    // section of the Precinct now and there is no suspects page to land on.
+    window.location.href = joinRootUrl('index.html');
   }, delay);
 }
 
@@ -801,7 +804,11 @@ document.addEventListener('DOMContentLoaded', () => {
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: joinRootUrl('suspects/index.html')
+          // The root, not suspects/ - that page is gone. Whatever is used here
+          // has to be in the project's Redirect URLs list in Supabase or the
+          // link in the confirmation email dies on arrival; the production root
+          // is already on it.
+          emailRedirectTo: joinRootUrl('index.html')
         }
       });
 

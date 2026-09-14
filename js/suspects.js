@@ -122,18 +122,34 @@ function addCurrentUserProfileData(suspect, user, showFirstNames){
 }
 
 // Which band of the board a suspect sits in, in the order they are drawn. The
-// numbers are the colours of the week line under the name: none, yellow, green,
-// plain. Keep this in step with weekLineHtml - they are two readings of the
-// same state, and a suspect sorted into a band whose colour they are not
+// numbers are the colours of the week line under the name: amber, none, yellow,
+// green, plain. Keep this in step with weekLineHtml - they are two readings of
+// the same state, and a suspect sorted into a band whose colour they are not
 // wearing is the bug this exists to prevent.
-const BAND_CLOSED = 0;
-const BAND_WAITING = 1;
-const BAND_CLEARED = 2;
-const BAND_FILED = 3;
+//
+// PENDING leads, because it is the only band where the answer is not yet known.
+// Everyone else on the board has had the live week settled one way or the
+// other, or has not filed for it at all; these are the cases actually being
+// decided right now, and the board should open with them. The Legal Pad has
+// sorted undecided to the top since it was built - this is the same rule on a
+// different page, and the two used to disagree.
+//
+// PENDING and FILED both read "Pick is in", which is why they were one band and
+// why that was wrong: one of them means the game has not been played yet, the
+// other means the week is already survived and this is next week's homework
+// done early. Opposite ends of the board, not neighbours.
+const BAND_PENDING = 0;
+const BAND_CLOSED = 1;
+const BAND_WAITING = 2;
+const BAND_CLEARED = 3;
+const BAND_FILED = 4;
 
 function lineupBand(suspect){
   if(isOutOfTheGame(suspect)) return BAND_CLOSED;
-  if(suspect.filed_open_week) return BAND_FILED;
+  // open_week is this week for anyone still in it and next week for anyone who
+  // has already survived it, so cleared_this_week is what separates a pick
+  // waiting on a whistle from one filed ahead.
+  if(suspect.filed_open_week) return suspect.cleared_this_week ? BAND_FILED : BAND_PENDING;
   return suspect.cleared_this_week ? BAND_CLEARED : BAND_WAITING;
 }
 
@@ -162,10 +178,10 @@ function normalizeSuspects(suspects, user, showFirstNames, pickWeeks = new Map()
       }, user, showFirstNames);
     })
     // The board reads top to bottom in the order the name plates are coloured:
-    // closed cases, then anyone the clock is running on, then anyone already
-    // through to next week, then the picks still waiting on Sunday. Alphabetical
-    // inside a band, so the order holds still between loads rather than
-    // reshuffling on whatever came back first.
+    // the cases still being decided, then closed cases, then anyone the clock is
+    // running on, then anyone already through to next week, then the picks filed
+    // ahead for it. Alphabetical inside a band, so the order holds still between
+    // loads rather than reshuffling on whatever came back first.
     //
     // One pick per week is the most anyone can have, so the number that orders
     // the board is the open week's: filed or not, nothing else. It used to be a
@@ -242,7 +258,15 @@ function weekLineHtml(suspect, isOut){
   if(isOut) return '';
 
   const week = Number(suspect.open_week) || Number(window.CURRENT_WEEK) || 1;
-  if(suspect.filed_open_week) return `<span class="suspect-week">Pick is in for Week ${week}</span>`;
+
+  // Filed, and the two ways that can be true. Amber when the week it is filed
+  // for is the one being played, because nothing has happened yet and this is
+  // the live end of the board. Plain when it is next week's, because surviving
+  // this one is what opened that week and the green line above already said so.
+  if(suspect.filed_open_week){
+    const tone = suspect.cleared_this_week ? '' : ' suspect-week-pending';
+    return `<span class="suspect-week${tone}">Pick is in for Week ${week}</span>`;
+  }
 
   const tone = suspect.cleared_this_week ? 'suspect-week-cleared' : 'suspect-week-waiting';
   return `<span class="suspect-week ${tone}">Waiting for Week ${week} pick</span>`;
@@ -543,10 +567,35 @@ async function loadCurrentSuspects(){
 // of thirty faces and leaving them to find the same one again would undo the
 // point of the button, so the card they asked for opens itself.
 //
+// Scroll to one suspect's card and open its preview.
+//
 // The card's own trigger is clicked rather than the lightbox being called
 // directly: that button already carries the photo, the caption, the first name
-// and - on your own card and no other - the Retake action, so a synthetic click
-// is bound to produce exactly the preview a real one would.
+// and - on your own card and no other - the Edit Rap Sheet action, so a
+// synthetic click is bound to produce exactly the preview a real one would.
+//
+// Returns whether it found the card, so a caller with somewhere else to go can
+// tell "opened it" from "not on this page". That is the whole of what the
+// tracker's lightbox needs: the board used to be its own page and the button
+// was a link, and now that the two sit on the Precinct together it is a scroll
+// instead - but the Case File still carries the tracker without the board.
+function openSuspectCard(username){
+  // Usernames are stored with their own capitalisation and matched
+  // case-insensitively everywhere else on the site.
+  const key = (username || '').trim().toLowerCase();
+  if(!key) return false;
+
+  const card = [...document.querySelectorAll('.suspect-card')]
+    .find((el) => (el.dataset.username || '').trim().toLowerCase() === key);
+  if(!card) return false;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.querySelector('.suspect-avatar-button')?.click();
+  return true;
+}
+
+window.ffOpenSuspectCard = openSuspectCard;
+
 let requestedSuspectOpened = false;
 
 function openRequestedSuspect(){
@@ -555,21 +604,14 @@ function openRequestedSuspect(){
   const wanted = new URLSearchParams(window.location.search).get('suspect');
   if(!wanted) return;
 
-  // Usernames are stored with their own capitalisation and matched
-  // case-insensitively everywhere else on the site.
-  const key = wanted.trim().toLowerCase();
-  const card = [...document.querySelectorAll('.suspect-card')]
-    .find((el) => (el.dataset.username || '').trim().toLowerCase() === key);
   // Not marked done when there is no match: the first render can be the
   // signed-out roster, and the name may only turn up on the next one.
-  if(!card) return;
+  if(!openSuspectCard(wanted)) return;
 
   requestedSuspectOpened = true;
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  card.querySelector('.suspect-avatar-button')?.click();
 
   // Taken back out of the address bar, so a reload - or a link copied from
-  // here - is just the suspects page.
+  // here - is just the Precinct.
   const url = new URL(window.location.href);
   url.searchParams.delete('suspect');
   window.history.replaceState({}, '', url.pathname + url.search + url.hash);

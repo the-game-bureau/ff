@@ -18,9 +18,22 @@
   const SHARE_TEXT = 'Join me in playing the strangest fantasy football game you\'ve ever seen. DUN DUN.';
 
   document.addEventListener('DOMContentLoaded', () => {
+    // The sheet is built by js/summons.js, which runs on this same event - so
+    // wait a tick rather than bailing if we happen to have got here first.
+    window.setTimeout(wire, 0);
+  });
+
+  function wire() {
     const modal = document.getElementById('shareModal');
-    const openBtn = document.getElementById('btnOtherShare');
-    if (!modal || !openBtn) return;
+    if (!modal) return;
+
+    // The Summons button in the header of every page. btnOtherShare was the
+    // Precinct's "Other Ways to Share" under its QR code; that body is gone and
+    // the id is kept here only so an older cached page still opens the sheet.
+    const openers = ['btnSummons', 'btnOtherShare']
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+    if (!openers.length) return;
 
     const closeBtn = document.getElementById('btnCloseShare');
     const nativeBtn = document.getElementById('btnShareNative');
@@ -40,8 +53,31 @@
     const isMobile = isIOS || isAndroid;
 
     const body = `${SHARE_TEXT}\n\n${SHARE_URL}`;
+    const mailto = 'mailto:?subject=' + encodeURIComponent(SHARE_TITLE) +
+      '&body=' + encodeURIComponent(body);
+
+    // Gmail's compose window, not mailto:, on anything that is not a phone.
+    //
+    // This button only ever appears on desktop - a phone gets the OS share
+    // sheet instead, which already reaches Mail - and desktop is exactly
+    // where mailto: fails: with no mail client registered the click does
+    // nothing at all and says nothing about why. A compose tab opens for
+    // anybody signed into Gmail in that browser, and the ones it does not
+    // suit have Copy Link sitting directly underneath.
+    //
+    // Same URL shape the admin screen's APB uses to hand over a bulletin.
+    const gmail = 'https://mail.google.com/mail/?view=cm&fs=1' +
+      '&su=' + encodeURIComponent(SHARE_TITLE) +
+      '&body=' + encodeURIComponent(body);
+
     if (emailLink) {
-      emailLink.href = `mailto:?subject=${encodeURIComponent(SHARE_TITLE)}&body=${encodeURIComponent(body)}`;
+      emailLink.href = isMobile ? mailto : gmail;
+      if (!isMobile) {
+        // A new tab, so nobody loses the page they were on - and noopener,
+        // because it is a third-party site.
+        emailLink.target = '_blank';
+        emailLink.rel = 'noopener noreferrer';
+      }
     }
 
     // The OS share sheet is a phone affordance. Chrome and Edge on Windows do
@@ -74,7 +110,7 @@
       if (el) el.hidden = true;
     }
 
-    const actionRow = document.querySelector('.share-actions');
+    const actionRow = modal.querySelector('.share-actions');
     lineup.forEach((el, index) => {
       el.hidden = false;
       actionRow?.appendChild(el);
@@ -98,13 +134,15 @@
       }
     });
 
-    openBtn.addEventListener('click', () => {
-      setStatus('', false);
-      // A fresh open starts from the plain label; the "copied" state belongs to
-      // the visit that did the copying.
-      if (copyBtn) copyBtn.textContent = COPY_LABEL;
-      modal.hidden = false;
-    });
+    for (const openBtn of openers) {
+      openBtn.addEventListener('click', () => {
+        setStatus('', false);
+        // A fresh open starts from the plain label; the "copied" state belongs
+        // to the visit that did the copying.
+        if (copyBtn) copyBtn.textContent = COPY_LABEL;
+        modal.hidden = false;
+      });
+    }
 
     closeBtn?.addEventListener('click', () => { modal.hidden = true; });
 
@@ -121,5 +159,5 @@
       statusEl.textContent = message;
       statusEl.style.color = isError ? 'var(--error)' : 'var(--success)';
     }
-  });
+  }
 })();

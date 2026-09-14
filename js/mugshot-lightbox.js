@@ -43,7 +43,7 @@
   // next to a picture that is already on screen, so it only needs the name;
   // the alt text stands in for the picture entirely and has to say what it is.
   // The two-tone stripe every other view of a mugshot carries: down the left of
-  // the placard on suspects/, down the booking card on the tracker, down the
+  // the placard on the corkboard, down the booking card on the tracker, down the
   // thumbnail in the admin roster. Blown up to full size the photo was the one
   // place it went missing, which is the place a suspect is most recognisable.
   //
@@ -57,7 +57,7 @@
     const styles = window.getComputedStyle(trigger);
     const read = (name) => styles.getPropertyValue(name).trim();
 
-    // suspects/ names them one way and the tracker another; they are the same
+    // the corkboard names them one way and the tracker another; they are the same
     // two colours either way.
     const primary = read('--stripe-a') || read('--tracker-primary');
     const secondary = read('--stripe-b') || read('--tracker-secondary');

@@ -111,7 +111,21 @@
 
     event.preventDefault();
     const username = trigger.getAttribute('data-suspects-page');
-    const url = new URL('../suspects/index.html', window.location.href);
+
+    // The corkboard is a section of the Precinct now, so on that page this is
+    // no longer a journey - scroll to the card and open it where it stands.
+    // js/suspects.js owns that behaviour and does exactly this for the
+    // ?suspect= deep link; calling it keeps one implementation of "open this
+    // suspect's card" rather than a second copy that drifts.
+    if (document.getElementById('suspectGrid') && window.ffOpenSuspectCard) {
+      if (window.ffOpenSuspectCard(username)) return;
+    }
+
+    // The Case File still carries the tracker without the board, so from there
+    // it stays a link. Prefix off the nav mount, the way every other module
+    // resolves a path.
+    const prefix = document.getElementById('siteNav')?.dataset.prefix || '';
+    const url = new URL(prefix + 'index.html', window.location.href);
     if (username) url.searchParams.set('suspect', username);
     window.location.href = url.href;
   });
