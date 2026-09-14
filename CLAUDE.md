@@ -567,6 +567,12 @@ Three things to know before touching it:
   `_2026_open_week()` to decide what to score, so a second copy in JavaScript
   would drift, and the failure mode is the scorer writing results for one week
   while the site shows another.
+- **Scoring a week can change the answer**, so `window.ffOpenWeekReady` is
+  replaced rather than settled-once: `js/admin-score.js` announces a scored week
+  both in its own tab and, through `localStorage`, in every other one, and
+  `js/season.js` re-asks on both. Without that, pressing Score The Week rolled
+  the week in the database and left every open page showing the old one until a
+  reload.
 - `getCurrentNflWeek()` in [js/nfl-schedule.js](js/nfl-schedule.js) is still
   there and still schedule-only. It is the **provisional** answer, used for the
   first paint and as the fallback whenever the database cannot be reached, so the
@@ -625,6 +631,37 @@ Three things to know before touching it:
 Every run writes a row to `_2026_auto_score_log` saying what it asked for, what
 came back and what it wrote. That log is the whole reason an unattended writer is
 acceptable: read it when a week scored itself unexpectedly, or did not.
+
+### The roster closes
+
+Five minutes after the last game of **Week 1** kicks off, the suspect list is
+final for the season - the same instant the Week 1 pick window shuts, because
+anybody who has not filed by then has not played week one.
+
+- `window.ffRosterLocked()` in [js/season.js](js/season.js) is the browser's
+  answer, derived from the schedule with no stored flag to go stale. No
+  schedule, no deadline, and the roster stays **open** - the safe direction,
+  since the failure worth avoiding is turning somebody away by mistake.
+- Every route into the booking form funnels through `openJoinModal()` or the
+  delegated link handler in [js/join-modal.js](js/join-modal.js), so one check
+  covers the sign-in popup's Join link, the welcome card, the nav and anything
+  else pointing at `join/index.html`. The join page itself is handled too, for a
+  bookmark that never passes the handler. It is a popup and not a dead button:
+  a control that does nothing when clicked reads as broken.
+- **The rule is in the database**, [supabase/sql/ff_roster_closes.sql](supabase/sql/ff_roster_closes.sql):
+  a BEFORE INSERT trigger on `_2026_profiles`. The form is a page anybody can
+  read and the publishable key is public by design, so a roster closed only in
+  the browser is one request away from being open. The admin is exempt, because
+  booking somebody who joined on time and got lost between the auth signup and
+  the profile insert is a real repair.
+- It does **not** touch auth. Signing up still works and should: that leaves an
+  Unbooked account, which the admin page already lists and
+  `js/username-gate.js` already understands. Turning off signup would also break
+  login and password recovery for the people already playing.
+- [js/wire.js](js/wire.js) leads every lap with the notice while the roster is
+  closed and the week is before 3, then drops it - by then anybody who was going
+  to turn up has, and a standing notice nothing can be done about is noise on a
+  strip that is otherwise all news.
 
 ### Scoring a week
 

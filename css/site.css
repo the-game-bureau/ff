@@ -6653,6 +6653,11 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    now, with no chip in the middle of it to break the reading. */
 .wire-gone{ color: #FF8A8A; }
 
+/* The roster-closed bulletin. Amber, which on this strip means something live
+   and worth reading, rather than the red of .wire-gone above - that red means a
+   case has closed on somebody, and this is an announcement, not an elimination. */
+.wire-notice{ color: var(--score-amber); }
+
 /* The two clubs in the game that ended it, or that the open week turns on. */
 .wire-side{ color: var(--paper-raised); }
 

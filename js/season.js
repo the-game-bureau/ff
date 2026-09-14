@@ -64,7 +64,7 @@ window.PICK_LOCK_MINUTES = PICK_LOCK_MINUTES;
 // EVERY FAILURE KEEPS THE PROVISIONAL WEEK. Offline, the function not deployed
 // yet, a bad response: the page carries on with the schedule's answer rather
 // than breaking. That is what makes it safe to ship this before the SQL is run.
-window.ffOpenWeekReady = (async function resolveOpenWeek(){
+async function fetchOpenWeek(){
   try {
     const config = window.FF_SUPABASE_CONFIG;
     if(!config?.url || !config?.publishableKey) return CURRENT_WEEK;
@@ -91,7 +91,60 @@ window.ffOpenWeekReady = (async function resolveOpenWeek(){
     console.warn('Open week: falling back to the schedule.', error);
     return CURRENT_WEEK;
   }
-})();
+}
+
+window.ffOpenWeekReady = fetchOpenWeek();
+
+// ASK AGAIN. The promise above settles once, which is right for page load and
+// wrong for the one thing that changes the answer while you are looking at it:
+// scoring a week writes the verdicts the rule is made of, so the week that was
+// open a second ago may not be. js/admin-score.js announces both in this tab
+// and, through localStorage, in every other one.
+//
+// The promise is replaced rather than mutated, so anything that awaits
+// ffOpenWeekReady after this gets the fresh answer.
+function refreshOpenWeek(){
+  window.ffOpenWeekReady = fetchOpenWeek();
+  return window.ffOpenWeekReady;
+}
+
+window.ffRefreshOpenWeek = refreshOpenWeek;
+window.addEventListener('ff-week-scored', refreshOpenWeek);
+window.addEventListener('storage', (event) => {
+  if(event.key === 'ff-week-scored-at') refreshOpenWeek();
+});
+
+// ===== THE ROSTER CLOSES =====
+// Five minutes after the last game of Week 1 kicks off, the suspect list is
+// final for the season. The same instant the week-1 pick window shuts, which is
+// not a coincidence: anybody who has not filed by then has not played week one,
+// and a survivor pool somebody joins in week four is a different game from the
+// one everybody else entered.
+//
+// Schedule-derived, like everything else about time here - nothing to set, and
+// no stored flag to go stale. PICK_LOCK_MINUTES rather than a typed 5, so the
+// deadline moves with the rule it belongs to.
+function rosterLockAt(){
+  const kickoffs = (window.NFL_SCHEDULE_HELPERS?.getWeekGames?.(1) || [])
+    .map((game) => game.kickoffUtc)
+    .filter(Boolean)
+    .map((stamp) => new Date(stamp).getTime())
+    .filter((time) => Number.isFinite(time));
+
+  if(!kickoffs.length) return null;
+  return new Date(Math.max(...kickoffs) + PICK_LOCK_MINUTES * 60 * 1000);
+}
+
+// No schedule, no deadline, and the roster stays open - the safe direction for
+// a page that could not read the fixtures. Turning people away is the thing
+// worth being sure about.
+function rosterLocked(){
+  const at = rosterLockAt();
+  return Boolean(at) && Date.now() >= at.getTime();
+}
+
+window.ffRosterLockAt = rosterLockAt;
+window.ffRosterLocked = rosterLocked;
 
 function renderWeekBadge(){
   const el = document.getElementById('weekBadge');

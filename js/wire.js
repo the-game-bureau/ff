@@ -814,6 +814,22 @@
     return clock ? label + ' ' + clock : label;
   }
 
+  // THE ROSTER IS CLOSED. Leads every lap while it runs, because it is the one
+  // entry on the strip addressed to somebody who is not in the league - and
+  // they have no reason to read to the end of a list of other people's picks.
+  //
+  // Stops at Week 3. By then anybody who was going to turn up has, and a
+  // standing notice that nothing can be done about is just noise on a strip
+  // that is otherwise all news.
+  function noticeItemHtml() {
+    if (!window.ffRosterLocked?.()) return '';
+    if ((Number(window.CURRENT_WEEK) || 1) >= 3) return '';
+
+    return `<span class="wire-item wire-item-notice">
+      <span class="wire-notice">Suspect list finalized, please play next year if you are not already signed up for this year</span>
+    </span>`;
+  }
+
   function snapshotItemHtml(game) {
     const g = snapshotParts(game);
 
@@ -846,6 +862,7 @@
     const rest = entries.filter((entry) => !entry.isOut && entry.pick);
 
     const items =
+      noticeItemHtml() +
       snapshot.map(snapshotItemHtml).join('') +
       closed.map(itemHtml).join('') +
       rest.map(itemHtml).join('') +

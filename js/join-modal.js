@@ -33,6 +33,19 @@
       event.preventDefault();
       openJoinModal();
     });
+
+    // join/index.html mounts the form inline, so a bookmark or a typed address
+    // arrives there without passing the handler above. Same sentence, in place
+    // of the form rather than over it - there is nothing to come back to.
+    const mount = document.getElementById('joinFormMount');
+    if (mount && window.ffRosterLocked?.()) {
+      mount.innerHTML = `
+        <h2>Suspects Are Final</h2>
+        <p class="gate-help">
+          The lineup closed when Week 1 kicked off and no one else is being booked
+          this season. Please play next year.
+        </p>`;
+    }
   });
 
   function buildModal() {
@@ -70,7 +83,55 @@
     });
   }
 
+  // THE ROSTER IS CLOSED. Every route into the booking form comes through here
+  // or through the delegated link handler above, so this one check turns them
+  // all away - the sign-in popup's Join link, the welcome card's button, the
+  // nav, and anything else that ever points at join/index.html.
+  //
+  // A popup rather than a dead button: a control that does nothing when clicked
+  // reads as broken, and the one thing somebody in this position needs is the
+  // sentence explaining why and what to do instead.
+  function rosterClosedModal() {
+    let modal = document.getElementById('rosterClosedModal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'rosterClosedModal';
+    modal.className = 'modal-backdrop';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rosterClosedTitle">
+        <button class="modal-close" id="btnCloseRosterClosed" type="button" aria-label="Close">&times;</button>
+        <h2 id="rosterClosedTitle">Suspects Are Final</h2>
+        <p class="gate-help">
+          The lineup closed when Week 1 kicked off and no one else is being booked
+          this season. Please play next year.
+        </p>
+        <div class="action-buttons">
+          <button id="btnRosterClosedOk" class="btn btn-primary" type="button">Understood</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+
+    const close = () => { modal.hidden = true; };
+    modal.querySelector('#btnCloseRosterClosed')?.addEventListener('click', close);
+    modal.querySelector('#btnRosterClosedOk')?.addEventListener('click', close);
+    modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+
+    return modal;
+  }
+
   function openJoinModal() {
+    if (window.ffRosterLocked?.()) {
+      document.getElementById('signInModal')?.setAttribute('hidden', '');
+      document.getElementById('welcomeModal')?.setAttribute('hidden', '');
+      const closed = rosterClosedModal();
+      closed.hidden = false;
+      closed.querySelector('#btnRosterClosedOk')?.focus();
+      return;
+    }
+
     const modal = document.getElementById(MODAL_ID);
     if (!modal) return;
 
