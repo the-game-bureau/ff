@@ -2851,6 +2851,38 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .scoreboard-label .scoreboard-dot-svg{ width: min(100%, 116px); }
 }
 
+/* ===== ADMIN: WEEK RESULTS =====
+   Nine narrow columns of counts. The numbers are what is being read, so they
+   get the width and the row label gets the left edge. */
+.admin-weeks th[scope="row"]{
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  border-top: 2px solid var(--ink);
+}
+
+.admin-weeks td{ text-align: right; }
+.admin-weeks th[scope="col"]{ text-align: right; }
+.admin-weeks th[scope="col"]:first-child,
+.admin-weeks th[scope="col"]:nth-child(2){ text-align: left; }
+.admin-weeks .admin-weeks-state{ text-align: left; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.6875rem; }
+
+/* The open week is the one being worked on, so it is the one the eye should
+   land on first in a column of eighteen near-identical rows. */
+.admin-weeks-row-this-week{ background: var(--accent-yellow); }
+.admin-weeks-row-this-week th[scope="row"]{ font-weight: 900; }
+
+/* A week nobody has reached recedes, rather than competing with the weeks that
+   have actually happened. */
+.admin-weeks-row-upcoming th[scope="row"],
+.admin-weeks-row-upcoming td{ color: var(--text-secondary); }
+
+/* A zero that answers a question, and a question that cannot be asked yet. The
+   second must not read as "none" - see cell() in js/admin-weeks.js. */
+.admin-weeks .admin-weeks-zero{ color: var(--text-secondary); }
+.admin-weeks .admin-weeks-na{ color: var(--text-secondary); opacity: 0.45; }
+
 /* ===== PICK CLIPBOARD ===== */
 .pick-clipboard{
   --bic-blue: #0047AB;

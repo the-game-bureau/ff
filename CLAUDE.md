@@ -294,6 +294,17 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   reported "Wrote 0 final NFL scores" indefinitely without saying why. It also
   skips the preseason, which lives further down the same page under its own
   headings and otherwise arrived as 36 Week 18 finals.
+- [js/admin-weeks.js](js/admin-weeks.js) — **Week Results**, the season as one
+  row per week: who was still a suspect going into it, who had already closed,
+  what is filed, and what was decided. Three kinds of row — settled, this week,
+  upcoming — labelled by where the week sits, with the numbers left to say how
+  far scoring actually got, so a past week with picks still pending shows it
+  rather than being hidden behind a label reading SCORED. Every figure is
+  counted from `_2026_active_picks` and `_2026_current_suspects`, the same views
+  the public pages read, so it cannot disagree with the board. Exhibition picks
+  (a closed case still filing) are reported under the table and kept out of
+  every column — counting them would make a dead suspect look live.
+
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).
   Plain table reads and writes behind four RLS policies, not an RPC: nothing in

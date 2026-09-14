@@ -419,13 +419,21 @@
   // Every other tab of this site is now showing results that are a week out of
   // date - the wire on the Precinct most of all, since every sentence on it is
   // built from the rows this just rewrote. A storage write fires the storage
-  // event in the OTHER tabs of the origin and not in this one, which is the
-  // reach wanted: nothing here needs telling, everything else does.
+  // event in the OTHER tabs of the origin and not in this one.
+  //
+  // Which is why there are two announcements and not one. The Week Results
+  // table is on THIS page, reading the rows that just changed, and the storage
+  // event is the one event that deliberately cannot reach it - so the same news
+  // goes out again as a plain event for anything listening in this tab.
   //
   // Best effort. Private windows and blocked site data throw on write, and a
   // scored week is not worth failing over a notification nobody may be
   // listening for.
   function announceScored() {
+    // This tab. Dispatched first and outside the try, because it cannot throw
+    // and must not be skipped by a storage write that does.
+    window.dispatchEvent(new CustomEvent('ff-week-scored'));
+
     try {
       window.localStorage.setItem(WEEK_SCORED_KEY, String(Date.now()));
     } catch (err) {

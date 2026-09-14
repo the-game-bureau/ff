@@ -46,6 +46,7 @@
     els.auditBody = document.getElementById('adminAuditBody');
     els.auditRefresh = document.getElementById('btnAdminAudit');
     els.scorePanel = document.getElementById('adminScorePanel');
+    els.weeksPanel = document.getElementById('adminWeeksPanel');
 
     els.databaseLink = document.getElementById('adminDatabaseLink');
     els.schedulePanel = document.getElementById('adminSchedulePanel');
@@ -235,6 +236,8 @@
     if (els.auditPanel) els.auditPanel.hidden = false;
     loadAudit();
     if (els.scorePanel) els.scorePanel.hidden = false;
+    if (els.weeksPanel) els.weeksPanel.hidden = false;
+    window.ffAdminWeeksLoad?.();
     // The list reads itself, but only the admin is allowed any rows, so this is
     // the moment it is worth asking for them.
     window.ffAdminTodoLoad?.();
