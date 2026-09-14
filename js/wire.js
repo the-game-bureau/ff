@@ -1,5 +1,5 @@
 // ===== WIRE =====
-// The squad room radio: every suspect on the board, what the week has done to
+// The Precinct's radio: every suspect on the board, what the week has done to
 // them so far, and the two teams whose game decides it. One long strip, read
 // left to right, the way a wire is.
 //

@@ -34,6 +34,8 @@ The mapping in use:
 | The rules | 🏛️ **Law** |
 | Standings and pick history | **Case File** |
 | Joining | **JOIN**, on the **Person of Interest** form |
+| The home page | **the Precinct** |
+| The admin page | **the Squad Room** |
 | Your pick's team losing (you advance) | **SURVIVED** |
 | Your pick's team winning (you're out) | **DUN DUN** — the *chung-chung* scene-transition sting |
 | Pick submitted, result pending | **PICK IS IN** |
@@ -169,7 +171,8 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   — it is served at whatever path was asked for, so a relative asset would
   resolve against a directory that may not exist.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
-- [admin/index.html](admin/index.html) — schedule reconciliation and league removal.
+- [admin/index.html](admin/index.html) — the **Squad Room**: schedule
+  reconciliation, scoring, the APB and league removal.
   Gated on the username `theclarinetofjustice`.
 - [2025/](2025/) — **frozen archive of the 2025 season.** Self-contained: its own
   `fonts/`, `src/`, and `data/`. No backend, no auth, no writes — see below.

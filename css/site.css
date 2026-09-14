@@ -4603,7 +4603,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .suspects-status-good{ color: var(--success); }
 .suspects-status-bad{ color: var(--error); }
 
-/* The board in the squad room: cork, a hard frame, and every suspect's photo
+/* The board on the Precinct wall: cork, a hard frame, and every suspect's photo
    pinned to it while the case is open. The wall it replaces was a height chart
    for a lineup, which staged the players as one row of bodies - a corkboard
    holds any number of faces and reads as an investigation rather than a parade.
@@ -6421,7 +6421,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* ===== THE WIRE ===== */
-/* The squad room radio, across the top of the Precinct. One strip, travelling
+/* The Precinct's radio, across the top of it. One strip, travelling
    right to left forever, with a diamond between entries so the eye can find
    where one suspect ends and the next begins. Black ground and mono type: this
    is equipment, not paper. */

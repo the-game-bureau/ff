@@ -23,7 +23,7 @@ var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 // the browser stricter, never looser.
 var PICK_LOCK_MINUTES = 5;
 
-// The one handle that gets the admin room, and where the door is. Compared
+// The one handle that gets the Squad Room, and where the door is. Compared
 // case-insensitively, which is what js/admin.js does before its own check, so
 // the link appears exactly when the admin page would let you in - the stored
 // handle is mixed case, and the badge's text-transform hides that.
@@ -31,7 +31,7 @@ var ADMIN_USERNAME = 'theclarinetofjustice';
 var ADMIN_PATH = 'admin/index.html';
 
 // The badge sits on pages nought, one and two levels deep, so the path to the
-// admin room is not the same from each. Every page already declares its own
+// Squad Room is not the same from each. Every page already declares its own
 // depth on #siteNav for js/nav.js and js/auth-corner.js to read; this reads
 // the same attribute rather than inventing a second way to know.
 function adminUrl(){
@@ -154,7 +154,7 @@ function renderWeekBadge(){
   // handle across the full width beneath them. The third cell carries its own
   // top rule, so while signed out the badge is simply the two-square block it
   // has always been. Display only, except for the one handle that gets a link
-  // to the admin room - see renderHeaderUser below.
+  // to the Squad Room - see renderHeaderUser below.
   el.innerHTML =
     '<span class="week-badge-row">' +
       `<span class="week-badge-week">Week ${CURRENT_WEEK}</span>` +
@@ -164,7 +164,7 @@ function renderWeekBadge(){
 }
 
 // Puts the signed-in handle in the badge, and for the admin makes it the way
-// into the admin room. Nobody else's page carries the link at all.
+// into the Squad Room. Nobody else's page carries the link at all.
 //
 // Both auth modules call this rather than writing the cell themselves -
 // js/auth-corner.js on most pages, js/app.js on the Precinct - so the two can

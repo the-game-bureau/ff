@@ -1,7 +1,7 @@
 // ===== SHARE SHEET =====
 // Backs the "Other Ways to Share" button under the QR code. Same destination
 // the QR encodes, so however someone passes the game along they land on the
-// squad room with the sign-in window already open.
+// Precinct with the welcome card already open.
 (function () {
   // What actually gets shared: the trailing "#welcome" opens the introduction
   // on arrival, so every copy/email/native share carries it. People reaching
