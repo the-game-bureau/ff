@@ -304,12 +304,11 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   the public pages read, so it cannot disagree with the board. Exhibition picks
   (a closed case still filing) are reported under the table and kept out of
   every column — counting them would make a dead suspect look live.
-  `Picked` is victims named and `Waiting` is how many of those the game has not
-  answered yet, so **Picked = Waiting + Survived + Dun Dun** on every row and
+  `Picked` is victims named and `In Play` is how many of those the game has not
+  answered yet, so **Picked = In Play + Survived + Dun Dun** on every row and
   each line checks itself; `No Pick` sits outside that sum because it is the
   opposite of a pick, and already carries a `DUN DUN` verdict that would
-  otherwise count somebody twice. Week 0 is counted like any other week and
-  reads zero until somebody files for it.
+  otherwise count somebody twice.
 
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).

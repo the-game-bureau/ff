@@ -2852,7 +2852,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 }
 
 /* ===== ADMIN: WEEK RESULTS =====
-   Nine narrow columns of counts. The numbers are what is being read, so they
+   Narrow columns of counts. The numbers are what is being read, so they
    get the width and the row label gets the left edge. */
 .admin-weeks th[scope="row"]{
   background: transparent;
@@ -2866,25 +2866,30 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-weeks th[scope="col"]{ text-align: right; }
 .admin-weeks th[scope="col"]:first-child,
 .admin-weeks th[scope="col"]:nth-child(2){ text-align: left; }
-.admin-weeks .admin-weeks-state{ text-align: left; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.6875rem; }
+/* nowrap so "this week" stays on one line and the open week's row is the same
+   height as every other one. */
+.admin-weeks .admin-weeks-state{
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
 
 /* The open week is the one being worked on, so it is the one the eye should
    land on first in a column of nineteen near-identical rows.
    THE SELECTOR CARRIES tbody tr ON PURPOSE. `tbody tr:nth-child(even)` stripes
    every table on the site and outweighs a bare class, so this highlight only
-   showed while the open week happened to land on an odd row - it worked, then
-   adding Week 0 shifted everything down one and it silently stopped. Matching
-   the stripe's shape and then adding a class beats it at every position. */
+   shows while the open week happens to land on an odd row - which it did until
+   a Week 0 row was briefly added above it, and then silently stopped. Matching
+   the stripe's shape and adding a class beats it at every position. */
 .admin-weeks tbody tr.admin-weeks-row-this-week{ background: var(--accent-yellow); }
 .admin-weeks tbody tr.admin-weeks-row-this-week th[scope="row"]{ font-weight: 900; }
 
 /* A week nobody has reached recedes, rather than competing with the weeks that
-   have actually happened. Week 0 recedes for the opposite reason - it is where
-   the season started from, not something that happened in it. */
+   have actually happened. */
 .admin-weeks-row-upcoming th[scope="row"],
-.admin-weeks-row-upcoming td,
-.admin-weeks-row-preseason th[scope="row"],
-.admin-weeks-row-preseason td{ color: var(--text-secondary); }
+.admin-weeks-row-upcoming td{ color: var(--text-secondary); }
 
 /* A zero that answers a question, and a question that cannot be asked yet. The
    second must not read as "none" - see cell() in js/admin-weeks.js. */

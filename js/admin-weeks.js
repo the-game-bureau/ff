@@ -19,10 +19,10 @@
 //
 // WHAT THE COLUMNS MEAN
 //   Picked    victims named for that week
-//   Waiting   named, and the game has not said yet
+//   In Play   named, and the game has not said yet
 //   Survived / Dun Dun   the verdicts written
 //   No Pick   scored as never having filed
-// Picked = Waiting + Survived + Dun Dun, every row, which makes each line check
+// Picked = In Play + Survived + Dun Dun, every row, which makes each line check
 // itself. No Pick sits outside that sum because it is the opposite of a pick:
 // the scorer writes a row carrying the team NO PICK for somebody who never
 // filed, and counting it as one would make a missed week look like a named
@@ -119,14 +119,8 @@
     let exhibition = 0;
     const rows = [];
 
-    // WEEK 0 IS COUNTED LIKE ANY OTHER WEEK, from 0 rather than 1. It began as
-    // a baseline row carrying the starting roster, which was the only thing it
-    // could say while In and Out were columns; with those gone it had no cell
-    // left to fill, so it earns its line the ordinary way instead - it reads
-    // zero today because nobody has filed for it, and fills itself in if
-    // anybody ever does.
-    for (let week = 0; week <= TOTAL_WEEKS; week += 1) {
-      const tally = { picked: 0, waiting: 0, survived: 0, dunDun: 0, noPick: 0 };
+    for (let week = 1; week <= TOTAL_WEEKS; week += 1) {
+      const tally = { picked: 0, inPlay: 0, survived: 0, dunDun: 0, noPick: 0 };
 
       for (const id of ids) {
         const pick = byUserWeek.get(`${id}|${week}`);
@@ -151,7 +145,7 @@
         const verdict = result(pick);
         if (verdict === 'SURVIVED') tally.survived += 1;
         else if (verdict === 'DUN DUN') tally.dunDun += 1;
-        else tally.waiting += 1;
+        else tally.inPlay += 1;
       }
 
       rows.push({ week, tally });
@@ -170,9 +164,7 @@
 
   function paint(rows, thisWeek, exhibition) {
     const html = rows.map(({ week, tally }) => {
-      const state = week === 0
-        ? 'preseason'
-        : (week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming'));
+      const state = week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming');
 
       // Nothing has been decided in a week that has not been played.
       const judged = week <= thisWeek;
@@ -182,7 +174,7 @@
           <th scope="row">Week ${week}</th>
           <td class="admin-weeks-state">${state}</td>
           ${cell(tally.picked, true)}
-          ${cell(tally.waiting, true)}
+          ${cell(tally.inPlay, true)}
           ${cell(tally.survived, judged)}
           ${cell(tally.dunDun, judged)}
           ${cell(tally.noPick, judged)}
