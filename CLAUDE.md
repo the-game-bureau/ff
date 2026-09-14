@@ -302,8 +302,8 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   rather than being hidden behind a label reading SCORED. Every figure is
   counted from `_2026_active_picks` and `_2026_current_suspects`, the same views
   the public pages read, so it cannot disagree with the board. Exhibition picks
-  (a closed case still filing) are reported under the table and kept out of
-  every column — counting them would make a dead suspect look live.
+  (a closed case still filing) are skipped entirely and not reported — counting
+  them anywhere would make a dead suspect look live.
   `Picks` reads `42/0/100%` — victims named, weeks scored as never having been
   filed, and the share of the suspects still in that week who named somebody.
   The missed count rides in the same cell because it is almost always zero and a

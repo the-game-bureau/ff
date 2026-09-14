@@ -35,11 +35,12 @@
 // would make a missed week look like a named victim, and it already carries a
 // DUN DUN verdict that would count one person twice.
 //
-// EXHIBITION PICKS ARE NOT IN THE TABLE. A closed case may keep filing and is
-// still told whether the pick won or lost, but none of it counts - see
-// supabase/sql/ff_exhibition_picks.sql. Counting them in Picked or Waiting
-// would make a dead suspect look live. They are reported under the table
-// instead, where they are information without being a total.
+// EXHIBITION PICKS ARE NOT IN THE TABLE AT ALL. A closed case may keep filing
+// and is still told whether the pick won or lost, but none of it counts - see
+// supabase/sql/ff_exhibition_picks.sql. Counting them anywhere here would make
+// a dead suspect look live, so they are skipped and not reported. There was a
+// line under the table saying how many had been skipped; it was a footnote
+// about nothing on almost every load.
 (function () {
   const WEEKS_CONFIG = window.FF_SUPABASE_CONFIG || {};
   const SUSPECTS_VIEW = WEEKS_CONFIG.views?.currentSuspects || 'ff_current_suspects';
@@ -64,7 +65,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     els.panel = document.getElementById('adminWeeksPanel');
     els.body = document.getElementById('adminWeeksBody');
-    els.note = document.getElementById('adminWeeksNote');
     if (!els.body) return;
 
     document.getElementById('btnRefreshWeeks')?.addEventListener('click', load);
@@ -119,7 +119,7 @@
 
   async function load() {
     if (!weeksDb) {
-      setNote('Signed-out: no session to read the season with.');
+      setMessage('Signed out: no session to read the season with.');
       return;
     }
 
@@ -164,7 +164,6 @@
       if (seen == null || pick.week < seen) closedIn.set(pick.user_id, pick.week);
     }
 
-    let exhibition = 0;
     const rows = [];
 
     for (let week = 1; week <= TOTAL_WEEKS; week += 1) {
@@ -178,10 +177,7 @@
         // AFTER the one that ended them, and anything they filed there is an
         // exhibition pick.
         const closed = closedIn.get(id);
-        if (closed != null && closed < week) {
-          if (pick) exhibition += 1;
-          continue;
-        }
+        if (closed != null && closed < week) continue;
 
         // The denominator for the share below: everybody who could still file
         // for this week, whether they did or not. It was a column of its own
@@ -205,7 +201,7 @@
       rows.push({ week, tally });
     }
 
-    paint(rows, thisWeek, exhibition);
+    paint(rows, thisWeek);
   }
 
   // A zero that answers a question is a fact; a zero to a question that cannot
@@ -241,7 +237,7 @@
     return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}${slash}${missed}${slash}${share}</td>`;
   }
 
-  function paint(rows, thisWeek, exhibition) {
+  function paint(rows, thisWeek) {
     const html = rows.map(({ week, tally }) => {
       const state = week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming');
 
@@ -260,21 +256,10 @@
     }).join('');
 
     els.body.innerHTML = html;
-
-    // Only ever says something when there is something to say. The roster
-    // total used to sit here and was already the In + Out of every row above -
-    // a line of standing text under a table that restates the table.
-    setNote(exhibition
-      ? `${exhibition} exhibition pick${exhibition === 1 ? '' : 's'} from closed cases, judged but never counted - not in any column above.`
-      : '');
   }
 
   function setMessage(text) {
     if (els.body) els.body.innerHTML = '<tr><td colspan="6" class="table-empty">' + text + '</td></tr>';
-  }
-
-  function setNote(text) {
-    if (els.note) els.note.textContent = text || '';
   }
 
   // Called by js/admin.js once the gate has let somebody in, the same way the
