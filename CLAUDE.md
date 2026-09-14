@@ -391,9 +391,14 @@ hotlink; nothing is copied into the repo.
   chrome and nothing else. The client is therefore named `db`, and the script tag
   pins an exact version. Don't rename `db` back, and don't unpin.
 - `SEASON` and `CURRENT_WEEK` live in [js/season.js](js/season.js), not `app.js`, and
-  the week is **derived, not set**: `getCurrentNflWeek()` returns the first week whose
-  last kickoff is still in the future, so it advances on its own once Monday night
-  starts. Nothing else should hardcode a year or a week.
+  the week is **derived, not set** — but **derived from the league, not the
+  schedule**. `_2026_open_week()`
+  ([supabase/sql/ff_open_week.sql](supabase/sql/ff_open_week.sql)) is the rule; see
+  **How the week rolls** below. Nothing else should hardcode a year or a week.
+  `CURRENT_WEEK` starts out as the schedule's guess and is corrected once the
+  database answers, so **anything that decides what to show from it must
+  `await window.ffOpenWeekReady` first** — every module that reads it already does
+  that at the top of its own fetch.
 - **Signing in is by email address, and the password minimum lives in
   [js/supabase-config.js](js/supabase-config.js).** `passwordMinLength` is read by
   the booking form and the recovery lightbox both. They used to hardcode 6 and 8
@@ -533,11 +538,39 @@ list once there are several).
 
 ## Editing the current site
 
-- **The week advances itself.** Nothing to edit weekly. `getCurrentNflWeek()` in
-  [js/nfl-schedule.js](js/nfl-schedule.js) walks the schedule and returns the first
-  week whose last kickoff is still ahead, so Week N+1 appears once Week N's Monday
-  night game starts. 24 games in weeks 16–17 have no kickoff time yet, so the roll
-  can land slightly early there until the schedule file is regenerated.
+- **The week advances itself.** Nothing to edit weekly, and nothing flips it —
+  no cron, no button. It is a question asked and answered on every page load.
+
+### How the week rolls
+
+A week is over when **both**:
+
+1. every pick that still counts has a verdict — "counts" meaning a *surviving*
+   suspect filed it, so a closed case playing on for fun holds up nothing; and
+2. either every surviving suspect filed for that week, or nobody can file any
+   more (five minutes past the week's last kickoff).
+
+The open week is the first week for which that is not true. Part 2 has two
+halves because part 1 alone stalls forever on somebody who never files: a pick
+that does not exist never gets a verdict.
+
+Three things to know before touching it:
+
+- **"Gone final" is read as "has a verdict."** `public._2026_nfl_schedule` holds
+  kickoff times and nothing else — no scores, no final flag — so the database
+  cannot see a whistle. The scorer's verdict is its only honest signal that a
+  game is over. The cost, stated plainly: **the roll waits on the scorer having
+  run.** The cron goes every five minutes through the window either side of a
+  game finishing, so the lag is minutes; if scoring is broken the week stays put,
+  which is the right failure.
+- **The rule lives in SQL and nowhere else.** The auto-scorer already calls
+  `_2026_open_week()` to decide what to score, so a second copy in JavaScript
+  would drift, and the failure mode is the scorer writing results for one week
+  while the site shows another.
+- `getCurrentNflWeek()` in [js/nfl-schedule.js](js/nfl-schedule.js) is still
+  there and still schedule-only. It is the **provisional** answer, used for the
+  first paint and as the fallback whenever the database cannot be reached, so the
+  page never shows nothing. It is right except in the hours around a roll.
 - **Season year** lives in `NFL_SCHEDULE_SEASON` (from the generated schedule) and is
   read by `js/season.js`. The schedule source URL carries it too.
 - `NFL_TEAMS` in [js/teams.js](js/teams.js) holds all 32 teams with `abbr` and colours.

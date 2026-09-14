@@ -942,6 +942,9 @@ async function runVictimPick(teamName){
 
 document.addEventListener('DOMContentLoaded', async () => {
   renderVictims();
+  // Before the state, because viewWeek() falls back to CURRENT_WEEK and this is
+  // the page a pick is actually made on. See js/season.js.
+  await window.ffOpenWeekReady;
   await refreshVictimState();
   renderVictims();
 });

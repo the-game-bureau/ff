@@ -103,6 +103,15 @@ function renderSiteNav(){
   wireNavToggle(mount);
   renderNavAuth(mount);
   renderCornerNav(mount);
+
+  // The Victims button carries ?week=, and this row is built before the league
+  // has said which week is open - so a click in that first moment would land on
+  // the wrong one. Repointed rather than the whole nav re-rendered: nothing
+  // else here depends on the week.
+  window.ffOpenWeekReady?.then((week) => {
+    const link = mount.querySelector('.main-nav-list a[href*="victims/index.html"]');
+    if(link) link.href = `${prefix}victims/index.html?week=${week}`;
+  });
 }
 
 // ===== COLD CASES IN THE HEADER CORNER =====

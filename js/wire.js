@@ -78,6 +78,9 @@
   // over or under it and no toast beside it: waiting, failing and having nothing
   // to report are all just what the strip is carrying at that moment.
   async function loadWire() {
+    // The league's open week, not the schedule's. See js/season.js.
+    await window.ffOpenWeekReady;
+
     if (!wireDb) {
       runMessage('Radio is down.');
       return;

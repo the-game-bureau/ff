@@ -535,6 +535,9 @@ async function fetchSuspectsFromView(showFirstNames){
 }
 
 async function loadCurrentSuspects(){
+  // The league's open week, not the schedule's. See js/season.js.
+  await window.ffOpenWeekReady;
+
   if(!suspectsDb){
     setSuspectsStatus('Lineup room is offline. Refresh and try again.', 'bad');
     return;

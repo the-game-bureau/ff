@@ -125,6 +125,9 @@
   });
 
   async function loadLineup() {
+    // The league's open week, not the schedule's. See js/season.js.
+    await window.ffOpenWeekReady;
+
     if (!lineupDb) {
       setStatus('Pick pool is unavailable.', 'bad');
       return;

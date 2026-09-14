@@ -72,6 +72,19 @@
     }
     els.week.value = String(Number(window.CURRENT_WEEK) || 1);
 
+    // The dropdown is built before the league has answered which week is open,
+    // so move it once it has. Not if somebody has already picked a week for
+    // themselves - having the control jump under the cursor of the one person
+    // who can write results is worse than starting on the wrong week.
+    els.week.addEventListener('change', () => { els.week.dataset.touched = '1'; }, { once: true });
+
+    window.ffOpenWeekReady?.then((week) => {
+      if (els.week.dataset.touched) return;
+      if (els.week.value === String(week)) return;
+      els.week.value = String(week);
+      describeWeek();
+    });
+
     els.week.addEventListener('change', () => {
       // A preview belongs to the week it was taken of.
       previewedWeek = 0;

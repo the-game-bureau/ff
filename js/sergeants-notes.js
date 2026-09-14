@@ -51,6 +51,9 @@
   });
 
   async function loadNotes() {
+    // The league's open week, not the schedule's. See js/season.js.
+    await window.ffOpenWeekReady;
+
     if (!notesDb) {
       render(['The sergeant is off the desk.']);
       return;

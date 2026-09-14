@@ -118,6 +118,9 @@
   }
 
   async function load() {
+    // The league's open week, not the schedule's. See js/season.js.
+    await window.ffOpenWeekReady;
+
     if (!weeksDb) {
       setMessage('Signed out: no session to read the season with.');
       return;

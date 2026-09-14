@@ -120,6 +120,9 @@
   }
 
   async function loadPicks() {
+    // The league's open week, not the schedule's. See js/season.js.
+    await window.ffOpenWeekReady;
+
     if (!pickboardDb) {
       setCountText('Clipboard is unavailable.');
       return;

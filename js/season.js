@@ -2,6 +2,16 @@
 // The generated Plain Text Sports schedule drives the open week when present.
 // Fall back to Week 1 if a page is opened without the schedule file.
 var SEASON = window.NFL_SCHEDULE_SEASON || 2026;
+
+// PROVISIONAL. The schedule alone says the week rolls when the last game of it
+// kicks off, which is not the league's rule - a week is over when the picks
+// that count have been answered, not when the last ball is in the air. The real
+// answer needs the picks and lives in the database; see ffOpenWeekReady below
+// and supabase/sql/ff_open_week.sql.
+//
+// This one is still computed, and still first, because something has to be here
+// before the network answers and "undefined" is worse than "close". It is right
+// except in the hours around a roll.
 var CURRENT_WEEK = window.NFL_SCHEDULE_HELPERS?.getCurrentWeek?.() || 1;
 
 // How many minutes before kickoff a team stops being pickable. A house rule,
@@ -32,6 +42,56 @@ function adminUrl(){
 window.SEASON = SEASON;
 window.CURRENT_WEEK = CURRENT_WEEK;
 window.PICK_LOCK_MINUTES = PICK_LOCK_MINUTES;
+
+// ===== THE OPEN WEEK, FROM THE LEAGUE =====
+// _2026_open_week() knows what the schedule cannot: who is still in it, what
+// they filed, and which of it has been answered. One definition, shared with
+// the auto-scorer, so the two can never disagree about which week is being
+// played - see supabase/sql/ff_open_week.sql.
+//
+// A PROMISE, NOT A VALUE. Every module that decides anything from CURRENT_WEEK
+// already does an async fetch of its own before it renders, so each awaits this
+// at the top of that fetch and the extra round trip costs nothing. Reading
+// CURRENT_WEEK without awaiting is still safe; it is just the provisional
+// answer above.
+//
+// PLAIN FETCH, NO CLIENT. This file loads before js/auth-corner.js, so
+// window.ffAuthClient does not exist yet, and standing up a second GoTrue on
+// the same storage key to ask one question is the race CLAUDE.md warns about.
+// The function is granted to anon and takes no arguments, so the publishable
+// key and a POST are the whole of it.
+//
+// EVERY FAILURE KEEPS THE PROVISIONAL WEEK. Offline, the function not deployed
+// yet, a bad response: the page carries on with the schedule's answer rather
+// than breaking. That is what makes it safe to ship this before the SQL is run.
+window.ffOpenWeekReady = (async function resolveOpenWeek(){
+  try {
+    const config = window.FF_SUPABASE_CONFIG;
+    if(!config?.url || !config?.publishableKey) return CURRENT_WEEK;
+
+    const response = await fetch(`${config.url}/rest/v1/rpc/_2026_open_week`, {
+      method: 'POST',
+      headers: {
+        apikey: config.publishableKey,
+        Authorization: `Bearer ${config.publishableKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    });
+    if(!response.ok) return CURRENT_WEEK;
+
+    const week = Number(await response.json());
+    if(!Number.isInteger(week) || week < 1 || week > 18) return CURRENT_WEEK;
+
+    CURRENT_WEEK = week;
+    window.CURRENT_WEEK = week;
+    renderWeekBadge();
+    return week;
+  } catch (error) {
+    console.warn('Open week: falling back to the schedule.', error);
+    return CURRENT_WEEK;
+  }
+})();
 
 function renderWeekBadge(){
   const el = document.getElementById('weekBadge');
