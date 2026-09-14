@@ -56,20 +56,32 @@
       return;
     }
 
-    const [suspects, picks] = await Promise.all([fetchSuspects(), fetchPicks()]);
+    const [suspects, picks, live] = await Promise.all([
+      fetchSuspects(), fetchPicks(), fetchLiveScores()
+    ]);
     if (suspects === null || picks === null) {
       render(['The sergeant is off the desk.']);
       return;
     }
 
-    const board = readBoard(suspects, picks);
+    const board = readBoard(suspects, picks, live);
+    // Forward-looking, in the order a reader wants them: what is about to be
+    // decided, what would happen if it goes either way, who is still waiting,
+    // who still owes a pick, and how far ahead the league has got.
+    //
+    // Nothing here reports a result. The Case File scoreboard counts standings
+    // four inches above this pad and the Suspect Tracker shows every verdict
+    // ever written - a third telling of the same story is not a note, it is
+    // noise. The two backward-looking ones that survive only fire when the past
+    // is genuinely remarkable: a bloodbath, or an endgame.
     const notes = [
-      noteLastToSettle,
-      noteConcentration,
       noteNextResolution,
+      noteSwing,
+      noteLastToSettle,
       noteOutstanding,
-      noteField,
-      noteAlone
+      noteNextWeek,
+      noteEndgame,
+      noteCarnage
     ]
       .map((write) => write(board))
       .filter(Boolean)
@@ -102,12 +114,33 @@
     return data || [];
   }
 
+  // The scoreboard as it stands, straight from ESPN in the browser - the same
+  // module the admin's SCORE THE WEEK uses.
+  //
+  // Not optional dressing: without it these notes read finals out of the
+  // generated js/nfl-scores.js, which is only as current as the last deploy.
+  // On a Sunday afternoon that had the sergeant telling people to wait on a
+  // game that finished three hours earlier. Best effort - no scoreboard just
+  // means falling back to the file, which is where it was before.
+  async function fetchLiveScores() {
+    const week = Number(window.CURRENT_WEEK) || 1;
+    const season = Number(window.SEASON) || 2026;
+    if (!window.ffLiveScores?.fetchWeekCached) return [];
+
+    try {
+      return (await window.ffLiveScores.fetchWeekCached(season, week)) || [];
+    } catch (error) {
+      console.warn("Sergeant's Notes: no live scoreboard, using the file:", error);
+      return [];
+    }
+  }
+
   // ===== WHAT THE BOARD LOOKS LIKE RIGHT NOW =====
 
   // One pass over the data, producing the handful of shapes every note below
   // asks about. Built once because six notes each walking the picks would be
   // six chances for two of them to disagree about the same number.
-  function readBoard(suspects, picks) {
+  function readBoard(suspects, picks, scoreboard = []) {
     const week = Number(window.CURRENT_WEEK) || 1;
     const season = String(window.SEASON || '');
 
@@ -141,6 +174,38 @@
 
     const nameOf = new Map(live.map((suspect) => [suspect.id, suspect.username]));
 
+    // How many live suspects have already filed for the week AFTER this one.
+    // Picks can be filed for any week at any time, so this exists before next
+    // week does - and it is the only forward number the board cannot show.
+    const nextWeekFiled = new Set(
+      picks
+        .filter((row) => {
+          const id = String(row?.user_id || '');
+          if (!id || out.has(id)) return false;
+          if (Number(row.week) !== week + 1) return false;
+          if (season && String(row.season || season) !== season) return false;
+          if (String(row.result || '').trim().toUpperCase() === SKIP_RESULT) return false;
+          const team = String(row.team || '').trim();
+          return Boolean(team) && team !== NO_PICK_TEAM;
+        })
+        .map((row) => String(row.user_id))
+    ).size;
+
+    // The week that closed the most cases, for the one backward-looking note
+    // that is allowed to exist.
+    const closedPerWeek = new Map();
+    for (const row of picks) {
+      if (!String(row?.result || '').toUpperCase().includes('DUN DUN')) continue;
+      if (season && String(row.season || season) !== season) continue;
+      const w = Number(row.week);
+      if (!w) continue;
+      closedPerWeek.set(w, (closedPerWeek.get(w) || 0) + 1);
+    }
+    let worstWeek = { week: 0, count: 0 };
+    for (const [w, count] of closedPerWeek) {
+      if (count > worstWeek.count) worstWeek = { week: w, count };
+    }
+
     // Every picked team with the fixture it turns on and when that is expected
     // to be over. Teams whose game has no announced kickoff are kept, with a
     // null time, so a note can still count them.
@@ -148,8 +213,13 @@
       const info = window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(team, week);
       const game = info?.game || null;
       const kickoff = game?.kickoffUtc ? new Date(game.kickoffUtc).getTime() : null;
+      // The deployed file first, then what the page just fetched. A game the
+      // file has not heard about is still over.
       const score = game
         ? window.NFL_SCORE_HELPERS?.getGameForTeams?.(game.away, game.home, week) || null
+        : null;
+      const liveGame = game
+        ? scoreboard.find((row) => row.away === game.away && row.home === game.home)
         : null;
 
       return {
@@ -160,13 +230,15 @@
         opponent: info?.opponent || '',
         kickoff,
         endsAt: kickoff ? kickoff + GAME_LENGTH_MS : null,
-        settled: Boolean(score?.final)
+        settled: Boolean(score?.final) || Boolean(liveGame?.final)
       };
     });
 
     return {
       week,
       live,
+      nextWeekFiled,
+      worstWeek,
       outCount: out.size,
       filed: [...filedBy],
       unfiled: live.filter((suspect) => !filedBy.has(suspect.id)),
@@ -205,29 +277,31 @@
       `${timeWord(last)} ${dayWord(last)}.`;
   }
 
-  // Where the league is bunched up. The number worth printing is not "the most
-  // popular team" but how much of the board one or two results carry.
-  function noteConcentration(board) {
-    const filed = board.filed.length;
-    if (filed < 4) return '';
+  // The single result still to come that moves the most cases, said both ways.
+  // Pending games only: a team whose game is already final decides nothing, and
+  // "23 picks ride on the Cardinals" was counting settled exposure as if the
+  // league were still waiting on it.
+  //
+  // The direction matters and is easy to get backwards. A suspect names a team
+  // they expect to LOSE, so the opponent winning is the good outcome: the
+  // accused team going down is what lets them walk.
+  function noteSwing(board) {
+    const open = board.pending.filter((exposure) => exposure.count > 1 && exposure.opponent);
+    if (!open.length) return '';
 
-    const ranked = [...board.exposures].sort((a, b) => b.count - a.count);
-    const top = ranked.slice(0, 2).filter((exposure) => exposure.count > 1);
-    if (!top.length) return '';
+    const biggest = open.reduce((best, exposure) =>
+      exposure.count > best.count ? exposure : best);
 
-    const riding = top.reduce((total, exposure) => total + exposure.count, 0);
-    // Not worth remarking on unless it is actually a concentration.
-    if (riding / filed < 0.4) return '';
+    const stillOpen = board.pending.reduce((total, exposure) => total + exposure.count, 0);
+    // One game carrying two of the thirty still open is not a swing.
+    if (biggest.count < 3 && biggest.count / Math.max(1, stillOpen) < 0.25) return '';
 
-    const teams = top.map((exposure) => `the ${short(exposure.team)}`).join(' or ');
-    const biggest = top[0];
-    const tail = biggest.opponent && !biggest.settled
-      ? ` If the ${short(biggest.opponent)} beat the ${short(biggest.team)}` +
-        (biggest.endsAt ? ` by about ${timeWord(biggest.endsAt)}` : '') +
-        `, ${biggest.count} of them walk at once.`
-      : '';
+    const when = biggest.endsAt ? ` by about ${timeWord(biggest.endsAt)} ${dayWord(biggest.endsAt)}` : '';
+    const cases = biggest.count === 1 ? 'case' : 'cases';
 
-    return `${riding} of ${filed} picks ride on ${teams}.${tail}`;
+    return `${biggest.count} ${cases} turn on one game: the ${short(biggest.opponent)} ` +
+      `beat the ${short(biggest.team)}${when} and all ${biggest.count} walk - ` +
+      `the ${short(biggest.team)} win and all ${biggest.count} close.`;
   }
 
   // What the next few hours actually decide.
@@ -270,28 +344,46 @@
       `Week ${board.week}${by}.`;
   }
 
-  // How wide the field is. Thirty-five picks spread over four teams is a very
-  // different week from thirty-five over twenty, and neither is visible from
-  // any one row of the board.
-  function noteField(board) {
-    const filed = board.filed.length;
-    if (filed < 6 || board.exposures.length < 2) return '';
+  // How far ahead the league has got. Picks can be filed for any week at any
+  // time, so this is the one number about NEXT week that exists before next
+  // week does - and it is the thing a reader can act on right now.
+  function noteNextWeek(board) {
+    const ahead = board.nextWeekFiled;
+    const live = board.live.length;
+    if (!live) return '';
 
-    const alone = board.exposures.filter((exposure) => exposure.count === 1).length;
-    if (!alone || alone === board.exposures.length) return '';
+    if (!ahead) {
+      return `Nobody has named a victim for Week ${board.week + 1} yet. ` +
+        'Picks can be filed for any week at any time.';
+    }
 
-    return `${filed} picks across ${board.exposures.length} teams - ` +
-      `${alone} ${alone === 1 ? 'suspect is' : 'suspects are'} out there alone.`;
+    if (ahead === live) return `Every suspect has already filed for Week ${board.week + 1}.`;
+
+    return `${ahead} of ${live} have already filed for Week ${board.week + 1}.`;
   }
 
-  // The league's last survivors, once it is down to a number worth naming.
-  function noteAlone(board) {
-    if (!board.outCount) return '';
+  // The endgame. Only worth a line once the number is small enough to be the
+  // whole story - at twenty-two still walking this is just the scoreboard again.
+  function noteEndgame(board) {
     const standing = board.live.length;
-    if (standing > 6) return '';
+    if (!standing || standing > 4) return '';
 
-    return `${spell(standing)} still suspects, ${board.outCount} case closed.` +
-      (standing <= 2 ? ' It is nearly over.' : '');
+    if (standing === 1) return 'One suspect left. That is the season.';
+    return `${spell(standing)} suspects left. Any week now this ends.`;
+  }
+
+  // A week that took out a quarter of the field or more. Backward-looking, and
+  // allowed to be, because it is the one thing about a finished week that a
+  // reader would not get from looking at the board: not who went out, but that
+  // the week was a bloodbath.
+  function noteCarnage(board) {
+    const { week, count } = board.worstWeek;
+    if (!count) return '';
+
+    const field = count + board.live.length;
+    if (count < 3 || count / Math.max(1, field) < 0.25) return '';
+
+    return `Week ${week} took ${count} of them out at once.`;
   }
 
   // ===== SAYING IT =====

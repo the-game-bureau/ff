@@ -120,5 +120,29 @@
     return parseScoreboard(await response.json(), season, week);
   }
 
-  window.ffLiveScores = { fetchWeek, parseScoreboard, outcomeFor, urlFor };
+  // One request per week per page load, shared by every read-only reader.
+  //
+  // Deliberately NOT what SCORE THE WEEK uses. That button must see the
+  // scoreboard as it is at the instant it is pressed - it is about to write
+  // results from it - so it keeps calling fetchWeek and gets a fresh answer
+  // every time. This is for the pages that only want to know which games are
+  // over: the Case File has two of those, and without a cache they would ask
+  // ESPN the same question twice on every load.
+  const pending = new Map();
+
+  function fetchWeekCached(season, week) {
+    const key = `${season}:${week}`;
+    if (!pending.has(key)) {
+      // The promise is cached, not the result, so two readers starting at the
+      // same moment share one request rather than racing.
+      pending.set(key, fetchWeek(season, week).catch((error) => {
+        // A failure must not be remembered: the next reader should get to try.
+        pending.delete(key);
+        throw error;
+      }));
+    }
+    return pending.get(key);
+  }
+
+  window.ffLiveScores = { fetchWeek, fetchWeekCached, parseScoreboard, outcomeFor, urlFor };
 })();

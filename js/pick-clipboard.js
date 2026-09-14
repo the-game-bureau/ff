@@ -28,6 +28,10 @@
     : null;
 
   let activePicks = [];
+  // The scoreboard as it stands, from ESPN in the browser. Empty until it
+  // answers, and empty forever if it does not - in which case the sheet falls
+  // back to the generated file, which is where it was before.
+  let liveGames = [];
   let selectedWeek = Number(window.CURRENT_WEEK || 1);
   let pendingFocus = null;
   // username (lower-cased) -> first name. Empty for a signed-out visitor, who
@@ -149,6 +153,27 @@
     eliminatedCache = null;
     renderWeekOptions();
     renderClipboard();
+
+    // Drawn once without it, then again once the scoreboard answers. The sheet
+    // is useful the instant the picks land, and waiting on a third-party fetch
+    // to show anything at all would trade that for a tidier sort.
+    liveGames = await fetchLiveScores();
+    if (liveGames.length) renderClipboard();
+  }
+
+  // Which games are over, straight from ESPN. Shared with the Sergeant's Notes
+  // through fetchWeekCached, so the Case File asks once rather than twice.
+  async function fetchLiveScores() {
+    const season = Number(window.SEASON) || 2026;
+    const week = Number(window.CURRENT_WEEK) || 1;
+    if (!window.ffLiveScores?.fetchWeekCached) return [];
+
+    try {
+      return (await window.ffLiveScores.fetchWeekCached(season, week)) || [];
+    } catch (error) {
+      console.warn('Legal Pad: no live scoreboard, sorting from the file:', error);
+      return [];
+    }
   }
 
   async function fetchPicks() {
@@ -360,6 +385,12 @@
     }
 
     return [...groups.values()].sort((a, b) => {
+      // Undecided games first. A sheet of picks is read for the ones still to
+      // come; a box whose game finished on Sunday afternoon is a record, and
+      // records belong underneath. Within each half the old order stands.
+      const byDecided = (isDecided(a.pick) ? 1 : 0) - (isDecided(b.pick) ? 1 : 0);
+      if (byDecided) return byDecided;
+
       if (b.picks.length !== a.picks.length) return b.picks.length - a.picks.length;
       // Level on count, so sort by where the team is from. Comparing the full
       // name gets the same answer for every real NFL name, since they all lead
@@ -367,6 +398,28 @@
       // would sort under the wrong letter.
       return cityName(a.pick).localeCompare(cityName(b.pick), undefined, { sensitivity: 'base' });
     });
+  }
+
+  // Has this pick's game finished? The generated js/nfl-scores.js first, then the
+  // scoreboard this page fetched - the file is only as current as the last
+  // deploy, and sorting on it alone would file Sunday's finished games above the
+  // ones still to kick off.
+  //
+  // A game in progress counts as undecided, which is the whole point: it is
+  // still worth watching.
+  function isDecided(pick) {
+    const helpers = window.NFL_SCORE_HELPERS;
+    const victimName = teamName(pick);
+    const info = window.NFL_SCHEDULE_HELPERS?.getTeamScheduleInfo?.(victimName, Number(pick.week));
+    const opponent = info?.opponent;
+    if (!opponent) return false;
+
+    const game = helpers?.getGameForTeams?.(victimName, opponent, Number(pick.week));
+    if (game?.final) return true;
+
+    return liveGames.some((row) => row.final &&
+      (row.away === victimName || row.home === victimName) &&
+      (row.away === opponent || row.home === opponent));
   }
 
   // "New York Jets" -> "New York". Every NFL nickname is a single word, so the
@@ -644,16 +697,30 @@
   // Only a finished game gets one. A number next to a team that has not played
   // would read as a prediction.
   function finalScore(pick, matchup) {
+    if (matchup.isBye) return null;
+
     const helpers = window.NFL_SCORE_HELPERS;
-    if (!helpers || matchup.isBye) return null;
-
     const victimName = teamName(pick);
-    const game = helpers.getGameForTeams?.(victimName, matchup.opponent, Number(pick.week));
-    if (!game || !game.final) return null;
+    const game = helpers?.getGameForTeams?.(victimName, matchup.opponent, Number(pick.week));
 
-    const victim = helpers.getTeamScoreFromGame?.(game, victimName);
-    const opponent = helpers.getTeamScoreFromGame?.(game, matchup.opponent);
-    if (!Number.isInteger(victim) || !Number.isInteger(opponent)) return null;
+    if (game?.final) {
+      const victim = helpers.getTeamScoreFromGame?.(game, victimName);
+      const opponent = helpers.getTeamScoreFromGame?.(game, matchup.opponent);
+      if (Number.isInteger(victim) && Number.isInteger(opponent)) return { victim, opponent };
+    }
+
+    // Not in the generated file, which is only as current as the last deploy.
+    // The sort above already treats this game as played, from the same live
+    // scoreboard - a box filed under "already happened" with no score in it
+    // reads as a bug.
+    const live = liveGames.find((row) => row.final &&
+      (row.away === victimName || row.home === victimName) &&
+      (row.away === matchup.opponent || row.home === matchup.opponent));
+    if (!live) return null;
+
+    const victim = Number(live.away === victimName ? live.awayPoints : live.homePoints);
+    const opponent = Number(live.away === victimName ? live.homePoints : live.awayPoints);
+    if (!Number.isFinite(victim) || !Number.isFinite(opponent)) return null;
 
     return { victim, opponent };
   }

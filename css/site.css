@@ -5738,104 +5738,196 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* ===== SERGEANT'S NOTES ===== */
 
-/* A cop's top-spiral pocket notebook, lying on the page. The Legal Pad above it
-   is the record - ruled, filed, kept; this is the thing somebody scribbled on
-   while watching the board, so it is smaller, narrower, and set in the hand
-   rather than in type. */
+/* A cop's top-spiral pocket notebook, flipped open on the desk. The Legal Pad
+   above it is the record - ruled, filed, kept; this is the thing somebody
+   scribbled on while watching the board. */
 .sergeants-notes{
+  --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  /* White stock. Three shades, not one: the sheet, the edge the next page down
+     shows at, and the shadow under the stack - flatten them to a single white
+     and the pad stops looking like paper and starts looking like a div. */
+  --notebook-paper: #FFFFFF;
+  --notebook-paper-edge: #EDEAE3;
+  --notebook-paper-shadow: #D9D5CC;
+  /* The blue rule was set against yellow stock. On white it needs to carry a
+     little more, or the lines vanish and the writing floats. */
+  --notebook-rule: rgba(62, 103, 164, 0.26);
+  --notebook-margin: rgba(196, 43, 56, 0.42);
+  --notebook-blue: #163B89;
+  --notebook-line: 31px;
+  --notebook-margin-x: 56px;
+  --notebook-ring-step: 47px;
   display: flex;
   justify-content: center;
-  margin: 0 0 26px;
+  margin: 2px 0 36px;
 }
 
 .sergeants-pad{
+  isolation: isolate;
   position: relative;
-  width: min(520px, 100%);
-  /* Room above the paper for the rings to sit in. */
-  padding-top: 20px;
+  /* Narrow, so the 2:3 sheet below lands at notebook size rather than poster
+     size. Was 420px, which at that ratio would have been 630px tall. */
+  width: min(340px, calc(100% - 18px));
+  /* Room above the paper for open wire loops. */
+  padding-top: 30px;
+  transform: rotate(-0.45deg);
+  transform-origin: 50% 12px;
 }
 
-/* The board the wire is punched through: a dark strip along the top edge, and
-   the rings looped over it. */
-.sergeants-spiral{
+.sergeants-pad::before{
+  content: "";
   position: absolute;
-  top: 0;
-  left: 12px;
-  right: 12px;
-  height: 34px;
-  z-index: 2;
-  /* Each ring is one radial gradient: a bright left side and a shadowed right,
-     so the wire reads as round metal rather than as a row of holes. */
-  background-image:
-    radial-gradient(circle at 38% 34%, #FFFFFF 0 1.5px, transparent 2px),
-    radial-gradient(ellipse at 50% 50%, #8C8C8C 0 5.5px, #4A4A4A 6.5px, transparent 7.5px);
-  background-size: 26px 34px, 26px 34px;
-  background-repeat: repeat-x, repeat-x;
+  top: 42px;
+  left: 7px;
+  right: -7px;
+  bottom: -8px;
+  z-index: 0;
+  background: var(--notebook-paper-shadow);
+  border: 2px solid rgba(0, 0, 0, 0.28);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }
 
-/* The paper itself. Squared off and hard-shadowed like everything else on the
-   site - a notebook on a desk, not a floating card. */
+.sergeants-pad::after{
+  content: "";
+  position: absolute;
+  top: 36px;
+  left: 3px;
+  right: -3px;
+  bottom: -4px;
+  z-index: 0;
+  background: var(--notebook-paper-edge);
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22), transparent 28px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px 13px);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+/* Open wire curls, one per punched hole. */
+/* The binding, photographed rather than drawn. src/notebook-spiral.webp is the
+   top of src/notes.webp with the paper keyed out of it, so the loops keep their
+   own anti-aliasing and the white below them comes from the CSS sheet.
+
+   Sized to the pad width rather than tiled: the crop holds eight loops at their
+   real spacing, and repeating it would put a seam wherever the pad happened to
+   end. The strip covers the sheet's top edge on purpose - in the photograph the
+   wire wraps around it, and cutting above the edge would have left the loops
+   floating. */
+.sergeants-spiral{
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  /* 443 x 130 in the file. The height follows the width so the wire never
+     stretches out of proportion as the pad narrows. */
+  aspect-ratio: 443 / 130;
+  z-index: 4;
+  background-image: url("../src/notebook-spiral.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* The open sheet itself: yellow, softly worn, and punched at the top. */
 .sergeants-paper{
   position: relative;
   z-index: 1;
-  background: var(--paper-raised);
-  border: var(--rule);
-  box-shadow: var(--shadow-sm);
-  padding: 26px 22px 20px;
-  /* The perforated tear line the sheet is torn from, just under the rings. */
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent 0 4px,
-    rgba(0, 0, 0, 0.28) 4px 8px
-  );
-  background-size: 100% 2px;
-  background-repeat: no-repeat;
-  background-position: 0 10px;
+  /* Two wide by three high, the shape of a notebook somebody carries. It is a
+     minimum rather than a fixed box: a quiet week writes four notes and a busy
+     one writes five, and clipping the fifth to hold a ratio would be choosing
+     the proportion over the point. */
+  aspect-ratio: 2 / 3;
+  min-height: 178px;
+  background-color: var(--notebook-paper);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0 calc(var(--notebook-margin-x) - 1px),
+      var(--notebook-margin) calc(var(--notebook-margin-x) - 1px) calc(var(--notebook-margin-x) + 1px),
+      transparent calc(var(--notebook-margin-x) + 1px)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--notebook-line) - 1px),
+      var(--notebook-rule) calc(var(--notebook-line) - 1px) var(--notebook-line)
+    ),
+    radial-gradient(circle at 18px 17px, rgba(255, 255, 255, 0.24) 0 0.8px, transparent 1.1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28), transparent 10%, transparent 90%, rgba(0, 0, 0, 0.08));
+  background-size: 100% 100%, 100% var(--notebook-line), 24px 24px, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat, no-repeat;
+  background-position: 0 0, 0 28px, 0 0, 0 0;
+  border: 2px solid rgba(0, 0, 0, 0.38);
+  border-top: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.04),
+    4px 4px 0 rgba(0, 0, 0, 0.34);
+  padding: 72px 26px 24px var(--notebook-margin-x);
 }
 
 .sergeants-heading{
-  margin: 0 0 14px;
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--ink);
+  position: relative;
+  z-index: 2;
+  margin: 0 0 10px;
+  font-family: var(--font-hand);
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  color: #181818;
+  transform: rotate(-1deg);
 }
 
 .sergeants-list{
+  position: relative;
+  z-index: 2;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* Each note on its own ruled line, in pen. The rule is drawn under the text
-   rather than behind the block, so a note that wraps to two lines sits on two
-   rules like it would in a real book. */
+/* The rules are on the paper; the notes only need to sit like blue pen on top
+   of them. */
 .sergeants-note{
   font-family: var(--font-hand);
   font-size: 1rem;
-  line-height: 1.85;
-  color: #1B2A6B;
-  background-image: linear-gradient(
-    to bottom,
-    transparent calc(1.85em - 2px),
-    rgba(20, 20, 20, 0.22) calc(1.85em - 2px),
-    rgba(20, 20, 20, 0.22) 1.85em
-  );
-  background-size: 100% 1.85em;
-  padding-left: 18px;
-  text-indent: -18px;
+  font-weight: 600;
+  line-height: 1.72;
+  color: var(--notebook-blue);
+  padding-left: 20px;
+  text-indent: -20px;
+  transform: rotate(0.15deg);
 }
 
 .sergeants-note::before{
-  content: "- ";
-  color: #1B2A6B;
+  content: "-  ";
+  color: var(--notebook-blue);
 }
 
 @media (max-width: 767px){
-  .sergeants-paper{ padding: 24px 14px 16px; }
+  .sergeants-notes{
+    justify-content: flex-start;
+  }
+
+  .sergeants-pad{
+    --notebook-ring-step: 36.5px;
+    width: min(328px, calc(100vw - 54px));
+    margin-left: 20px;
+    padding-top: 30px;
+    transform: none;
+  }
+
+  .sergeants-paper{
+    --notebook-margin-x: 44px;
+    padding: 68px 14px 18px var(--notebook-margin-x);
+  }
+
+  .sergeants-spiral{ left: 10px; right: 10px; }
+
+  .sergeants-heading{ font-size: 1.18rem; }
   .sergeants-note{ font-size: 0.9375rem; }
 }
 
