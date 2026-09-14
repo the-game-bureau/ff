@@ -88,6 +88,9 @@
 
     // Needs the picks first, to know which games are anybody's business here.
     const snapshot = await fetchSnapshot(picks);
+    // Read by fixtureFor while the entries below are built, so a result the
+    // deployed scoreboard file has not caught up with still reads as a score.
+    liveGames = snapshot;
 
     const entries = buildEntries(suspects, picks);
     if (!entries.length) {
@@ -371,7 +374,12 @@
     const game = info.game;
     const away = game?.away || (info.homeAway === '@' ? team : info.opponent);
     const home = game?.home || (info.homeAway === '@' ? info.opponent : team);
-    const score = window.NFL_SCORE_HELPERS?.getGameForTeams?.(away, home, week) || null;
+    // The generated file first, then the scoreboard this page just fetched.
+    // js/nfl-scores.js is only as current as the last deploy, and a final it has
+    // not heard about is what made closed cases print "did not lose" instead of
+    // the score that closed them.
+    const score = window.NFL_SCORE_HELPERS?.getGameForTeams?.(away, home, week)
+      || liveScoreFor(away, home);
 
     return {
       away,
@@ -381,6 +389,24 @@
       // Null for a flex-scheduled week with no announced kickoff yet.
       endsAt: endOfGame(game?.kickoffUtc),
       isTbd: Boolean(info.isTbd)
+    };
+  }
+
+  // The finished games from this page's own fetch, shaped like the entries in
+  // js/nfl-scores.js so fixtureFor can use either without knowing which.
+  let liveGames = [];
+
+  function liveScoreFor(away, home) {
+    const game = liveGames.find((row) =>
+      row.final && row.away === away && row.home === home);
+    if (!game) return null;
+
+    return {
+      away: game.away,
+      home: game.home,
+      awayScore: Number(game.awayPoints),
+      homeScore: Number(game.homePoints),
+      final: true
     };
   }
 
@@ -567,9 +593,17 @@
 
     // No opponent on file at all, or no final for the game - the scoreboard is
     // behind. Say the one thing that is known rather than inventing a matchup.
-    if (!opponent || !score) {
-      return `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
-        <span class="wire-verdict-bad">did not lose</span>)</span>`;
+    // No score on file for the game that ended them - neither the deployed
+    // scoreboard nor this page's own fetch has it, which happens for a week
+    // older than the one being fetched. The matchup is still known and still
+    // true: a case closes precisely because the accused team did not lose, so
+    // their name goes on the left exactly as it would with a score beside it.
+    if (!score) {
+      return opponent
+        ? `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
+            over <span class="wire-side">${escapeHtml(opponent)}</span>)</span>`
+        : `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
+            did not lose)</span>`;
     }
 
     // A tie closes a case the same as a win, and "over" would be wrong about the
@@ -652,7 +686,10 @@
     const f = entry.fixture;
     const opponent = f ? shortName(f.away === entry.pick.team ? f.home : f.away) : '';
     const score = f?.score?.final ? f.score : null;
-    if (!opponent || !score) return `${head}: the ${victim} did not lose.`;
+    if (!score) {
+      return opponent ? `${head} (${victim} over ${opponent}).`
+                      : `${head}: the ${victim} did not lose.`;
+    }
 
     const mine = Number(f.away === entry.pick.team ? score.awayScore : score.homeScore);
     const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
