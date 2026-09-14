@@ -2901,6 +2901,14 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-weeks .admin-weeks-slash,
 .admin-weeks .admin-weeks-nopick{ color: var(--text-secondary); }
 .admin-weeks .admin-weeks-slash{ padding: 0 1px; }
+
+/* The share of the league, trailing the two counts it is drawn from. Muted and
+   set a size down: it is the gloss on the numbers beside it, not a third one. */
+.admin-weeks .admin-weeks-share{
+  margin-left: 8px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
 .admin-weeks .admin-weeks-na{ color: var(--text-secondary); opacity: 0.45; }
 
 /* ===== PICK CLIPBOARD ===== */

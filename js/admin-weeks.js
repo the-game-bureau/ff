@@ -18,7 +18,8 @@
 // useful thing to see and would be hidden by a label that just said SCORED.
 //
 // WHAT THE COLUMNS MEAN
-//   Picks     victims named that week, then weeks scored as never filed
+//   Picks     victims named that week, then weeks scored as never filed, then
+//             what share of the suspects still in it that is
 //   In Play   named, and the game has not said yet
 //   Survived / Dun Dun   the verdicts written
 // Picks reads as two numbers, 42/0, because the second is the count of the
@@ -123,20 +124,26 @@
     const rows = [];
 
     for (let week = 1; week <= TOTAL_WEEKS; week += 1) {
-      const tally = { picks: 0, inPlay: 0, survived: 0, dunDun: 0, noPick: 0 };
+      const tally = { live: 0, picks: 0, inPlay: 0, survived: 0, dunDun: 0, noPick: 0 };
 
       for (const id of ids) {
         const pick = byUserWeek.get(`${id}|${week}`);
-        if (!pick) continue;
 
-        // Closed BEFORE this week: an exhibition pick. The week that closed
-        // somebody still counts them - they were playing when it happened - so
-        // this is strictly weeks AFTER the one that ended them.
+        // Closed BEFORE this week. The week that closed somebody still counts
+        // them - they were playing when it happened - so this is strictly weeks
+        // AFTER the one that ended them, and anything they filed there is an
+        // exhibition pick.
         const closed = closedIn.get(id);
         if (closed != null && closed < week) {
-          exhibition += 1;
+          if (pick) exhibition += 1;
           continue;
         }
+
+        // The denominator for the share below: everybody who could still file
+        // for this week, whether they did or not. It was a column of its own
+        // once; it earns more as the thing the percentage is out of.
+        tally.live += 1;
+        if (!pick) continue;
 
         if (String(pick.team || '').trim().toUpperCase() === NO_PICK_TEAM) {
           tally.noPick += 1;
@@ -165,15 +172,26 @@
     return `<td${value ? '' : ' class="admin-weeks-zero"'}>${value}</td>`;
   }
 
-  // Picks, then the weeks nobody filed, as one cell. The second half is dashed
-  // rather than shown as 0 until the week has been scored - nobody has missed a
-  // week that has not been judged yet, and a 0 there would be a finding.
+  // Picks, the weeks nobody filed, and how much of the league that is, as one
+  // cell: 42/0 100%.
+  //
+  // The middle number is dashed rather than shown as 0 until the week has been
+  // scored - nobody has missed a week nothing has been said about yet, and a 0
+  // there would read as a finding.
+  //
+  // The share is out of the suspects still in it that week, not the roster, so
+  // an upcoming week reads against the people who can actually still file for
+  // it. Named only: somebody scored as never having filed did not file.
   function picksCell(tally, judged) {
     const missed = judged
       ? `<span class="admin-weeks-nopick">${tally.noPick}</span>`
       : '<span class="admin-weeks-na">&middot;</span>';
 
-    return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}<span class="admin-weeks-slash">/</span>${missed}</td>`;
+    const share = tally.live
+      ? `<span class="admin-weeks-share">${Math.round((tally.picks / tally.live) * 100)}%</span>`
+      : '';
+
+    return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}<span class="admin-weeks-slash">/</span>${missed}${share}</td>`;
   }
 
   function paint(rows, thisWeek, exhibition) {
