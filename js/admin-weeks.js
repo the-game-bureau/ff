@@ -217,7 +217,8 @@
   }
 
   // Picks, the weeks nobody filed, and how much of the league that is, as one
-  // cell: 42/0 100%.
+  // cell: 42/0/100%. Three numbers on one slash rule, so the legend under the
+  // column heading reads straight onto them - Pick In/No Pick/% In.
   //
   // The middle number is dashed rather than shown as 0 until the week has been
   // scored - nobody has missed a week nothing has been said about yet, and a 0
@@ -233,9 +234,11 @@
 
     const share = tally.live
       ? `<span class="admin-weeks-share">${Math.round((tally.picks / tally.live) * 100)}%</span>`
-      : '';
+      : '<span class="admin-weeks-na">&middot;</span>';
 
-    return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}<span class="admin-weeks-slash">/</span>${missed}${share}</td>`;
+    const slash = '<span class="admin-weeks-slash">/</span>';
+
+    return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}${slash}${missed}${slash}${share}</td>`;
   }
 
   function paint(rows, thisWeek, exhibition) {

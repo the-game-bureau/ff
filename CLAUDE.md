@@ -304,7 +304,7 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   the public pages read, so it cannot disagree with the board. Exhibition picks
   (a closed case still filing) are reported under the table and kept out of
   every column — counting them would make a dead suspect look live.
-  `Picks` reads `42/0 100%` — victims named, weeks scored as never having been
+  `Picks` reads `42/0/100%` — victims named, weeks scored as never having been
   filed, and the share of the suspects still in that week who named somebody.
   The missed count rides in the same cell because it is almost always zero and a
   column of zeros earns less than its width; the share is out of who could still
