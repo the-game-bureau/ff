@@ -65,7 +65,8 @@ begin
   select coalesce(jsonb_agg(row_to_json(a) order by a.signed_up desc), '[]'::jsonb)
     into v_unbooked
   from (
-    select u.email::text                          as email,
+    select u.id                                   as id,
+           u.email::text                          as email,
            u.created_at                           as signed_up,
            u.email_confirmed_at                   as confirmed_at,
            u.last_sign_in_at                      as last_sign_in,
@@ -101,6 +102,69 @@ $audit$;
 revoke all on function public._2026_admin_account_audit() from public, anon;
 grant execute on function public._2026_admin_account_audit() to authenticated;
 
+
+-- ---------------------------------------------------------------------------
+-- DELETE AN UNBOOKED ACCOUNT.
+--
+-- For the half-made ones only: a signup that never became a member, holding an
+-- email address that its owner may want to use properly later. Supabase will
+-- not let the same address sign up twice, so an abandoned account is not just
+-- clutter - it can lock somebody out of joining.
+--
+-- WHY THIS IS NOT _2026_admin_remove_member
+-- That one removes a MEMBER: it deletes their picks and their profile and
+-- deliberately KEEPS the login (`login_kept: true`). This is the opposite
+-- operation - there is no profile and no picks, and the login is the only thing
+-- there is to remove. Pointing the existing function at one of these accounts
+-- raises 'That account is not a member of this league', which is correct.
+--
+-- THE GUARD THAT MATTERS
+-- It refuses any account that HAS a profile. That is what makes this button
+-- safe to put next to a list: it is incapable of deleting a suspect, however it
+-- is called and whatever id it is handed. Deleting a real member stays behind
+-- the type-the-name dialog where it belongs.
+-- ---------------------------------------------------------------------------
+create or replace function public._2026_admin_delete_unbooked(target_user_id uuid)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public, auth, pg_temp
+as $unbook$
+declare
+  v_email text;
+begin
+  if not public._2026_is_admin() then
+    raise exception 'Not authorised' using errcode = '42501';
+  end if;
+
+  if target_user_id = auth.uid() then
+    raise exception 'Refusing to delete the account you are signed in as'
+      using errcode = '22023';
+  end if;
+
+  if exists (select 1 from public._2026_profiles p where p.id = target_user_id) then
+    raise exception 'That account is a booked suspect. Remove them from FF Players instead.'
+      using errcode = '22023';
+  end if;
+
+  select u.email::text into v_email from auth.users u where u.id = target_user_id;
+
+  if v_email is null then
+    raise exception 'No such account' using errcode = 'P0002';
+  end if;
+
+  -- Nothing to cascade: an unbooked account owns no profile, and picks are
+  -- keyed to profiles. The login is the whole of it.
+  delete from auth.users where id = target_user_id;
+
+  return jsonb_build_object('email', v_email, 'deleted', true);
+end;
+$unbook$;
+
+revoke all on function public._2026_admin_delete_unbooked(uuid) from public, anon;
+grant execute on function public._2026_admin_delete_unbooked(uuid) to authenticated;
+
 notify pgrst, 'reload schema';
 
 
@@ -116,4 +180,5 @@ cross join lateral (
     and has_function_privilege(rolname, p.oid, 'EXECUTE')
 ) as r
 where n.nspname = 'public'
-  and p.proname = '_2026_admin_account_audit';
+  and p.proname in ('_2026_admin_account_audit', '_2026_admin_delete_unbooked')
+order by p.proname;

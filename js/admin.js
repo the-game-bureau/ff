@@ -26,6 +26,7 @@
   // supabase/sql/ff_account_audit.sql, and the panel is written to say so when
   // the function is not there yet rather than to fall back to another name.
   const AUDIT_RPC = ADMIN_RPCS.adminAccountAudit || '_2026_admin_account_audit';
+  const DELETE_UNBOOKED_RPC = ADMIN_RPCS.adminDeleteUnbooked || '_2026_admin_delete_unbooked';
 
   const els = {};
   // The roster as last loaded, kept whole so the APB can address it. Suspect
@@ -91,6 +92,7 @@
     els.saveAllRecords?.addEventListener('click', saveAllRecords);
 
     els.auditRefresh?.addEventListener('click', loadAudit);
+    wireAuditActions();
     els.apbAllEmail?.addEventListener('click', () => drawUpApb());
     // Delegated: the list is rebuilt on every load.
     els.apbSend?.addEventListener('click', openApbMail);
@@ -1141,12 +1143,24 @@
         const confirmed = Boolean(row.confirmed_at);
         const chose = String(row.chose || '').trim();
 
+        const id = String(row.id || '');
+        const email = String(row.email || '');
+
         return '<li class="admin-audit-row">' +
-          '<b>' + escapeAdminHtml(row.email || '(no address)') + '</b>' +
+          '<b>' + escapeAdminHtml(email || '(no address)') + '</b>' +
           (chose ? '<span class="admin-audit-chose">wanted ' + escapeAdminHtml(chose) + '</span>' : '') +
           '<span class="admin-audit-when">signed up ' + escapeAdminHtml(auditWhen(row.signed_up)) + '</span>' +
           '<span class="admin-audit-state' + (confirmed ? '' : ' admin-audit-state-cold') + '">' +
             (confirmed ? 'confirmed - one sign-in fixes it' : 'never confirmed their email') +
+          '</span>' +
+          '<span class="admin-audit-actions">' +
+            '<button class="btn btn-secondary btn-mini" type="button" data-audit-contact="' +
+              escapeAdminHtml(email) + '" data-audit-confirmed="' + (confirmed ? '1' : '') +
+              '" data-audit-chose="' + escapeAdminHtml(chose) + '"' +
+              (email ? '' : ' disabled') + '>Contact</button>' +
+            '<button class="btn btn-secondary btn-mini admin-audit-delete" type="button" data-audit-delete="' +
+              escapeAdminHtml(id) + '" data-audit-email="' + escapeAdminHtml(email) + '"' +
+              (id ? '' : ' disabled') + '>Delete</button>' +
           '</span>' +
           '</li>';
       }).join('') + '</ul>';
@@ -1161,6 +1175,91 @@
     }
 
     els.auditBody.innerHTML = html;
+  }
+
+  // One listener on the list rather than one per button: the rows are rebuilt
+  // on every check, and per-button handlers would be re-bound every time.
+  function wireAuditActions() {
+    els.auditBody?.addEventListener('click', (event) => {
+      const contact = event.target.closest('[data-audit-contact]');
+      if (contact) {
+        openAuditMail(contact.dataset);
+        return;
+      }
+
+      const remove = event.target.closest('[data-audit-delete]');
+      if (remove) deleteUnbooked(remove.dataset.auditDelete, remove.dataset.auditEmail);
+    });
+  }
+
+  // A nudge written for which kind of stuck they are, because the two need
+  // opposite things: one has to click a link they already have, the other has
+  // to sign in once and let the username gate finish the job.
+  function openAuditMail(data) {
+    const email = String(data.auditContact || '');
+    if (!email) return;
+
+    const confirmed = Boolean(data.auditConfirmed);
+    const chose = String(data.auditChose || '').trim();
+    const handle = chose ? ` as ${chose}` : '';
+
+    const subject = confirmed
+      ? 'One more step to get on the board - Law & Order: SVU'
+      : 'Your signup is waiting on one click - Law & Order: SVU';
+
+    // Built with an explicit newline rather than an escape: this string is
+    // assembled by hand often enough that a lost backslash would ship a mail
+    // body with a literal backslash-n in it.
+    const BREAK = String.fromCharCode(10);
+
+    const body = confirmed
+      ? 'You started signing up' + handle + ' but you are not on the board yet.' +
+        BREAK + BREAK +
+        'Sign in once at https://thegamebureau.com/ff and it will finish booking ' +
+        'you automatically. That is the whole of it.' + BREAK
+      : 'You started signing up' + handle + ', but the confirmation email was ' +
+        'never clicked, so the account is only half made.' + BREAK + BREAK +
+        'Check your inbox (and your spam folder) for the confirmation link, or ' +
+        'just sign up again at https://thegamebureau.com/ff and tell me - I can ' +
+        'clear the old attempt out of the way.' + BREAK;
+
+    window.open(
+      GMAIL_COMPOSE +
+      '&to=' + encodeURIComponent(email) +
+      '&su=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body),
+      '_blank', 'noopener');
+  }
+
+  // Deliberately a plain confirm and not the type-the-name dialog that removing
+  // a member uses. Nothing of value is lost here - no profile, no picks, no
+  // history - and the reason to do it is usually that the address is blocking
+  // somebody from signing up properly. Friction proportionate to the stakes.
+  async function deleteUnbooked(id, email) {
+    if (!id || !adminDb) return;
+
+    const ok = window.confirm(
+      'Delete the unbooked account ' + email + '?' + String.fromCharCode(10, 10) +
+      'There is no profile and no picks behind it - just the login. ' +
+      'Deleting it frees the address to sign up again.');
+    if (!ok) return;
+
+    const { error } = await adminDb.rpc(DELETE_UNBOOKED_RPC, { target_user_id: id });
+
+    if (error) {
+      const missing = error.code === 'PGRST202' ||
+        /could not find the function|does not exist/i.test(error.message || '');
+      window.ffToast?.(
+        missing
+          ? 'Not switched on yet: run supabase/sql/ff_account_audit.sql.'
+          : `Could not delete it: ${error.message}`,
+        'bad', 'audit');
+      console.error('_2026_admin_delete_unbooked failed:', error);
+      return;
+    }
+
+    window.ffToast?.(`${email} deleted. The address is free to sign up again.`, 'good', 'audit');
+    loadAudit();
   }
 
   function setAuditCount(text) {
@@ -1209,6 +1308,7 @@
   const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six',
     'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
   const spellNumber = (n) => NUMBER_WORDS[n] || String(n);
+  const capitalise = (text) => String(text).charAt(0).toUpperCase() + String(text).slice(1);
 
   // A URL that reads as itself. Written this way so the HTML copy is clickable
   // and the plain-text fallback still shows the whole address rather than a
@@ -1234,8 +1334,16 @@
     // behind.
     const live = recordRows.filter((row) => !apbEliminated(row));
     const picksIn = live.filter((row) => row.week_pick);
-    const outstanding = live.filter((row) => !row.week_pick);
-    const closed = recordRows.filter(apbEliminated);
+
+    // The breakdown under the draft is about THIS MAIL, so it counts the people
+    // it is going to - not the roster. Counting the roster made the three
+    // numbers fail to add up to the recipient count beside them the moment
+    // anybody had no email on file, which is exactly the check that line exists
+    // to let you make.
+    const reachable = apbRecipients();
+    const reachableLive = reachable.filter((row) => !apbEliminated(row));
+    const outstanding = reachableLive.filter((row) => !row.week_pick);
+    const closed = reachable.filter(apbEliminated);
 
     // The house rule, read from js/season.js rather than typed in, so the
     // number in the email cannot drift from the one the site enforces.
@@ -1245,11 +1353,20 @@
 
     // Where the league stands, first, because it is the one line that is worth
     // reading whichever of the states below applies to you.
+    //
+    // Two numbers, and they must not be the same number said twice. Once
+    // everybody has filed, "22 out of 22 picks are in and 22 of you are still
+    // walking" is arithmetically correct and reads like a broken template - the
+    // pick tally is only worth printing while somebody still owes one.
+    const owing = live.filter((row) => !row.week_pick).length;
+    const filedLine = owing
+      ? picksIn.length + " out of " + live.length + " picks are in for Week " + week + ". "
+      : "Every pick is in for Week " + week + ". ";
+
     paragraphs.push(
       "All units, be advised. Week " + week + " of Law &amp; Order: Special Victory Unit. " +
-      "As of this bulletin, " + picksIn.length + " out of " + live.length +
-      " picks are in and " + spellNumber(live.length) + " of you are still walking. " +
-      "The last one still free wins.");
+      filedLine + capitalise(spellNumber(live.length)) + " of you are still walking, " +
+      "and the last one still free wins.");
 
     // Who went down, and when - the week that was last scored, not the one the
     // league is on now.
@@ -1257,8 +1374,11 @@
     // Only that week's casualties. Rolling every suspect eliminated all season
     // would grow the list every bulletin and read as though a dozen people had
     // just gone down, when most of them went out in September.
-    const outWeek = apbWeekFor('closed', closed);
-    const justOut = closed.filter((row) => {
+    // The week the last scoring run closed cases in - taken from everybody who
+    // is out, not only those with an address, because it is a fact about the
+    // league rather than about this mailing list.
+    const outWeek = apbWeekFor('closed', recordRows.filter(apbEliminated));
+    const justOut = recordRows.filter(apbEliminated).filter((row) => {
       const record = eliminations.get(String(row.id || ''));
       return record && Number(record.week) === Number(outWeek);
     });
@@ -1287,18 +1407,22 @@
       "You can change your choice up to " + lockMinutes + " minutes before your current " +
       "victim's game kicks off, and only to a team that has not kicked off yet.");
 
-    // Named, because the nudge is the entire point of this paragraph and the
-    // board is public anyway. Left out when there is nobody to nudge, rather
-    // than printing an empty list.
-    const chase = outstanding.length
-      ? " Still outstanding: " + outstanding.map((row) => row.username || '(no handle)').join(', ') + "."
-      : " Nobody is outstanding right now, which has never happened before.";
+    // Dropped entirely when nobody owes a pick. A paragraph of instructions
+    // addressed to an empty set is the sort of thing that makes a bulletin read
+    // as generated rather than written.
+    if (owing) {
+      // Named, because the nudge is the entire point of this paragraph and the
+      // board is public anyway.
+      const chase = outstanding.length
+        ? " Still outstanding: " + outstanding.map((row) => row.username || '(no handle)').join(', ') + "."
+        : "";
 
-    paragraphs.push(
-      "<b>IF YOU HAVE NOT NAMED A VICTIM</b> - name a team you expect to lose in Week " +
-      week + ", before their game kicks off. Miss it and the case closes on you. Name " +
-      "yours here: " + apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
-      "." + chase);
+      paragraphs.push(
+        "<b>IF YOU HAVE NOT NAMED A VICTIM</b> - name a team you expect to lose in Week " +
+        week + ", before their game kicks off. Miss it and the case closes on you. Name " +
+        "yours here: " + apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
+        "." + chase);
+    }
 
     paragraphs.push(
       "<b>IF YOUR CASE IS CLOSED</b> - your victim won, so you lose. So you are NOT " +
@@ -1325,7 +1449,7 @@
       // Only used by the note under the draft, so the admin can see at a glance
       // that the one message really does cover everybody.
       breakdown: {
-        named: picksIn.length,
+        named: reachableLive.length - outstanding.length,
         outstanding: outstanding.length,
         closed: closed.length,
         outWeek: outWeek
@@ -1354,10 +1478,15 @@
     // is left out of it - and the way to check that claim is to see the three
     // groups add up to the number of people it is going to.
     const b = draft.breakdown;
+    const adds = b.named + b.outstanding + b.closed === rows.length;
     els.apbDraftNote.textContent =
       rows.length + ' recipient' + (rows.length === 1 ? '' : 's') + ', all in BCC - ' +
-      b.named + ' named, ' + b.outstanding + ' outstanding, ' + b.closed + ' closed. ' +
-      'Edit it, then open it in Gmail.';
+      b.named + ' named, ' + b.outstanding + ' outstanding, ' + b.closed + ' closed.' +
+      // Should never fire. If it does, something upstream is classifying
+      // somebody into none of the three, and a silent wrong number here is
+      // worse than an ugly one.
+      (adds ? '' : ' (These do not add up - reload Records.)') +
+      ' Edit it, then open it in Gmail.';
 
     setApbStatus('Bulletin drawn up. Nothing is sent until you send it.', 'good');
     els.apbSubject.focus();

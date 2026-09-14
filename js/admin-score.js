@@ -480,11 +480,31 @@
     const listed = groups.reduce((sum, [, rows]) => sum + (rows || []).length, 0);
     const closed = Number(data.closed_before || 0);
     const accounted = listed + closed;
+    const week = Number(data.week) || 0;
+
+    // This is a reconciliation, not a standing: it exists to prove the report
+    // covers everybody, so it counts the suspects who are NOT in the groups
+    // above because their season ended in an EARLIER week.
+    //
+    // It used to say "0 already out", which on Week 1 is both correct and
+    // completely misleading - Week 1 has no earlier weeks, so the term is
+    // always zero there, and it reads as "nobody is eliminated" on an afternoon
+    // when twenty people just went out. The term is dropped when it is zero,
+    // and named properly when it is not.
+    const carried = closed
+      ? `${listed} listed + ${closed} out in earlier weeks = ${accounted} of ${roster} suspects`
+      : `${listed} of ${roster} suspects listed${week === 1 ? '' : ', nobody carried over'}`;
+
+    // What actually happened this week, which is the number the groups above
+    // are about and the one a reader is looking for.
+    const outNow = (data.dun_dun || []).length + (data.no_pick || []).length;
+    const thisWeek = outNow
+      ? ` ${outNow} case${outNow === 1 ? '' : 's'} closed in Week ${week}.`
+      : '';
 
     return `
       <p class="admin-score-tally${accounted === roster ? '' : ' admin-score-tally-off'}">
-        ${listed} listed + ${closed} already out = ${accounted} of ${roster} suspects
-        ${accounted === roster ? '' : ' - some are unaccounted for'}
+        ${carried}${accounted === roster ? '.' : ' - some are unaccounted for.'}${thisWeek}
       </p>`;
   }
 
