@@ -137,7 +137,11 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 
 - [index.html](index.html) — **the Precinct**, the home page, and now most of
   the site. In order: the wire, the Scoreboard, the Sergeant's Notes, the
-  **corkboard** of mugshots, the Legal Pad and the Suspect Tracker. The board of
+  **corkboard** of mugshots, the Legal Pad and the Suspect Tracker. The
+  corkboard *is* its section, not something inside one: it used to sit in a
+  white panel with the heading printed above it, which framed a wall as a
+  document. The heading is pinned to the board instead, on the same tack the
+  mugshots wear - one rule draws both, so they cannot drift. The board of
   faces had its own page until it moved here — the Precinct is where people
   actually land, and a page whose whole content was one list did not earn a
   second click.
