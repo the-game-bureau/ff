@@ -31,7 +31,7 @@ The mapping in use:
 | The team grid | **Victims** page |
 | The player grid | **Suspects** page |
 | Signing out | **ESCAPE** |
-| The rules | 🏛️ **The Law** |
+| The rules | 🏛️ **Law** |
 | Standings and pick history | **Case File** |
 | Joining | **JOIN**, on the **Person of Interest** form |
 | Your pick's team losing (you advance) | **SURVIVED** |
@@ -67,7 +67,7 @@ why they get muddled. Rules:
   `DUN DUN` has landed on them.
 - These are the only words for either state, in labels **and** in prose.
   `STILL UNDER SUSPICION`, "still walking" and "still free" are retired — they
-  were doing the job of `STILL A SUSPECT` in three different voices. The Law's
+  were doing the job of `STILL A SUSPECT` in three different voices. Law's
   *"If they win or tie, that's your case closed. DUN DUN."* is the shape to copy:
   verdict, then standing.
 
@@ -141,7 +141,10 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   second click.
 - [victims/index.html](victims/index.html) — the Victims page: all 32 teams, and where a
   pick is made. Takes `?week=N`.
-- [law/index.html](law/index.html) — the rules.
+- [law/index.html](law/index.html) — **Law**, the rules. First in the nav
+  although it is not the landing page: picking a team to *lose* is the one
+  thing a new arrival has to be told before the rest of the site reads as
+  anything but backwards.
 - [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard
   (`STILL A SUSPECT` against `CASE CLOSED`), the Sergeant's Notes, the Legal Pad
   and the Suspect Tracker. All four are repeated on the Precinct, which is where
@@ -182,7 +185,7 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   helpers that derive the open week, kickoff locks and matchups from it.
 - [js/teams.js](js/teams.js) — `NFL_TEAMS`: name, NFL `abbr`, and colours.
 - [js/nav.js](js/nav.js) — the header menu. **The only place nav items are
-  defined** — edit here, not in the HTML. An item marked `corner: true` renders
+  defined** — edit here, not in the HTML. Order is Law, Precinct, Victims. An item marked `corner: true` renders
   as a cell of the top-right header cluster instead of a button in the bar;
   **Cold Cases** is the one, because the archive is a closed season and standing
   it beside the four live pages made it look like a fifth place to go and play.

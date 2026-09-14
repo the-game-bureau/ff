@@ -2,24 +2,28 @@
 // apart. Mark the current page with:
 //   <div id="siteNav" data-current="victims"></div>
 
-// Ordered by how often a player needs them, which is also the order they come
-// up in a season: start here, make this week's pick, look up a rule, then last
-// year's file. Suspects is not in the list any more - the board of mugshots is
-// a section of the Precinct now, so the button pointed at a page that no longer
-// exists.
+// Law, then the Precinct, then Victims. Not the order a returning player uses
+// them in - see the note on Law below for why it leads anyway. Suspects is not
+// in the list any more: the board of mugshots is a section of the Precinct now,
+// so the button pointed at a page that no longer exists.
 //
 // `corner: true` moves an item out of the button bar and into the header
 // cluster instead - see renderCornerNav below. It still lives in this list,
 // because this is still the only place a destination is written down; the flag
 // says where it is drawn, not what it is.
 const NAV_ITEMS = [
+  // FIRST, though it is not the landing page and the Precinct is. Deliberate:
+  // the rules are what somebody arriving needs before anything else on this
+  // site makes sense - you pick a team to LOSE - and the one question a new
+  // suspect asks is how it works, not where the home page is. Everybody else
+  // already knows, and the logo above goes home from every page.
+  // Sublabel instead of a title: the gloss shows without needing a hover.
+  { label: 'Law',        key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
   { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'Home' },
   // Land on the open week so the page and the header badge agree.
   { label: 'Victims',    key: 'victims',
     href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,
     sublabel: 'Make Your Pick' },
-  // Sublabel instead of a title: the gloss shows without needing a hover.
-  { label: 'The Law',    key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
   // New tab: the archive is a different season with its own gate, and leaving
   // it in place means you come back to the live site rather than back through
   // it. external drives target="_blank" in the renderer below.

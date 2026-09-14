@@ -805,7 +805,7 @@ body[data-page="home"] .main-nav{ padding-bottom: 0; }
 
 .used-teams{ background: var(--bg-secondary); }
 
-/* The Law, as a charge sheet: one clause per line, each behind a hard black
+/* Law, as a charge sheet: one clause per line, each behind a hard black
    tick. No disc bullets anywhere in this theme. */
 .law-list{
   list-style: none;
