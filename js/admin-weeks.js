@@ -149,7 +149,7 @@
       rows.push({ week, tally });
     }
 
-    paint(rows, thisWeek, exhibition, ids.length);
+    paint(rows, thisWeek, exhibition);
   }
 
   // A zero that answers a question is a fact; a zero to a question that cannot
@@ -160,7 +160,7 @@
     return `<td${value ? '' : ' class="admin-weeks-zero"'}>${value}</td>`;
   }
 
-  function paint(rows, thisWeek, exhibition, roster) {
+  function paint(rows, thisWeek, exhibition) {
     const html = rows.map(({ week, tally }) => {
       const state = week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming');
       const judged = week <= thisWeek;
@@ -181,11 +181,12 @@
 
     els.body.innerHTML = html;
 
-    const parts = [`${roster} on the roster.`];
-    if (exhibition) {
-      parts.push(`${exhibition} exhibition pick${exhibition === 1 ? '' : 's'} from closed cases, judged but never counted - not in any column above.`);
-    }
-    setNote(parts.join(' '));
+    // Only ever says something when there is something to say. The roster
+    // total used to sit here and was already the In + Out of every row above -
+    // a line of standing text under a table that restates the table.
+    setNote(exhibition
+      ? `${exhibition} exhibition pick${exhibition === 1 ? '' : 's'} from closed cases, judged but never counted - not in any column above.`
+      : '');
   }
 
   function setMessage(text) {
