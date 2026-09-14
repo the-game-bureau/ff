@@ -398,8 +398,11 @@
 
     if (commit) {
       previewedWeek = 0;
+      // Exhibition picks are written too - they are real rows carrying a real
+      // verdict - so "records written" has to include them or the number under
+      // the button disagrees with the number of rows that changed.
       const written = (data.survived?.length || 0) + (data.dun_dun?.length || 0) +
-        (data.no_pick?.length || 0);
+        (data.no_pick?.length || 0) + (data.exhibition?.length || 0);
       window.ffToast?.(`Week ${week} scored. ${written} record${written === 1 ? '' : 's'} written.`,
         'good', 'score');
       // The roster's pick counts and everything else on the page are now stale.
@@ -443,6 +446,13 @@
       ['Not final yet', data.pending, 'note']
     ];
 
+    // Kept out of `groups` on purpose. These are picks by suspects whose case
+    // closed in an earlier week - judged, because being told every week whether
+    // you would have made it is the whole reason to keep playing, but counted
+    // nowhere. Putting them in the list above would add them to the tally that
+    // reconciles against the roster, and the roster is the live league.
+    const exhibition = data.exhibition || [];
+
     els.report.innerHTML = `
       <p class="admin-score-headline">${committed ? 'Written' : 'Would write'} for Week ${Number(data.week)}:</p>
       ${groups.map(([label, rows, kind]) => `
@@ -451,7 +461,7 @@
           <span class="admin-score-count">${(rows || []).length}</span>
           <span class="admin-score-names">${(rows || []).map(nameOf).join(', ') || '-'}</span>
         </div>`).join('')}
-      ${tallyHtml(data, groups)}
+      ${tallyHtml(data, groups)}${exhibitionHtml(exhibition)}
     `;
   }
 
@@ -459,6 +469,25 @@
   // groups above or was already out before this week. If those do not sum to
   // the roster, something upstream is dropping suspects and the screen says so
   // rather than quietly showing a short list.
+  // Shown under the tally rather than beside the real groups, so the eye reads
+  // it as a footnote and not as a fifth outcome.
+  function exhibitionHtml(rows) {
+    if (!rows.length) return '';
+
+    const names = rows.map((row) => {
+      const verdict = String(row.verdict || '').toUpperCase().includes('SURVIVED')
+        ? 'would have survived' : 'would have gone out';
+      return `${escapeHtml(row.username || '(unknown)')} ` +
+        `(${escapeHtml(row.team || '')}, ${verdict})`;
+    }).join(', ');
+
+    return `
+      <p class="admin-score-tally">
+        ${rows.length} exhibition pick${rows.length === 1 ? '' : 's'} from closed
+        cases, judged but not counted: ${names}.
+      </p>`;
+  }
+
   function tallyHtml(data, groups) {
     // The old function returned neither of these. Without them there is no way
     // to tell a genuine zero from a group the database never filled in - which

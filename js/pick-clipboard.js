@@ -144,6 +144,9 @@
     handles = people.handles || new Map();
     focusFromHash();
     activePicks = activePicksFromHistory(picks);
+    // The set of closed cases is derived from these, so it has to go stale with
+    // them - otherwise a suspect who went out between loads keeps their colour.
+    eliminatedCache = null;
     renderWeekOptions();
     renderClipboard();
   }
@@ -393,8 +396,13 @@
   // an empty cell up there goes to the victims page instead.
   function nameChipHtml(username, options = {}) {
     const first = firstNames.get(String(username).trim().toLowerCase()) || '';
+    // A closed case still owns the picks it filed before the case closed. They
+    // stay on the sheet - the record is the record - but they stop competing
+    // for attention with the picks that can still go either way.
+    const out = eliminatedNames().has(String(username).trim().toLowerCase())
+      ? ' pick-clipboard-suspect-out' : '';
 
-    return `<span class="pick-clipboard-suspect${options.linked ? ' pick-clipboard-suspect-linked' : ''}"
+    return `<span class="pick-clipboard-suspect${out}${options.linked ? ' pick-clipboard-suspect-linked' : ''}"
                   ${options.linked ? `role="button" tabindex="0" data-tracker-username="${escapeHtml(username)}"` : ''}
                   ${options.id ? `id="${escapeHtml(options.id)}"` : ''}
                   ${options.title ? `title="${escapeHtml(options.title)}"` : ''}><span class="pick-clipboard-suspect-handle">${escapeHtml(username)}</span>${
@@ -407,6 +415,22 @@
   // Eliminated suspects are left out: their season is over, so listing them as
   // "no pick yet" would be reporting a pick that is never coming as if it were
   // late. Same rule the tracker's tally and the APB both follow.
+  // Everyone whose case is closed, by handle. One pass over the picks, cached
+  // for the render: nameChipHtml asks this once per chip and the sheet can hold
+  // forty of them.
+  let eliminatedCache = null;
+
+  function eliminatedNames() {
+    if (eliminatedCache) return eliminatedCache;
+
+    eliminatedCache = new Set(
+      activePicks
+        .filter((pick) => String(pick?.result || '').trim().toLowerCase().includes('dun dun'))
+        .map((pick) => String(displayName(pick)).trim().toLowerCase())
+    );
+    return eliminatedCache;
+  }
+
   function unfiledSuspects() {
     const filed = new Set(
       activePicks
@@ -414,11 +438,7 @@
         .map((pick) => String(displayName(pick)).trim().toLowerCase())
     );
 
-    const out = new Set(
-      activePicks
-        .filter((pick) => String(pick?.result || '').trim().toLowerCase().includes('dun dun'))
-        .map((pick) => String(displayName(pick)).trim().toLowerCase())
-    );
+    const out = eliminatedNames();
 
     return roster.filter((username) => {
       const key = username.trim().toLowerCase();
@@ -426,9 +446,14 @@
     });
   }
 
-  // The first box, always. It is the one thing the sheet cannot show by
-  // grouping picks: the picks that are not there.
+  // The first box, whenever there is one. It is the one thing the sheet cannot
+  // show by grouping picks: the picks that are not there - so when there are
+  // none missing, there is nothing for it to show and it does not appear.
+  // A box reading "no pick yet: everyone has filed" was a heading contradicted
+  // by its own contents.
   function unfiledCardHtml(missing) {
+    if (!missing.length) return '';
+
     return `
       <li class="pad-card pad-card-unfiled">
         <span class="pad-card-head">
@@ -438,17 +463,15 @@
         </span>
 
         <span class="pick-clipboard-suspect-names">${
-          missing.length
-            ? missing.map((username) => nameChipHtml(username, {
-                // Addressable, because the tracker's blank cells link here now
-                // rather than to the victims page. A suspect is filed or
-                // unfiled for a week, never both, so one id scheme covers both
-                // boxes without collision.
-                id: pickAnchorId(username, selectedWeek),
-                title: 'Click to find them on the tracker.',
-                linked: true
-              })).join('')
-            : '<span class="pad-card-allin">everyone has filed</span>'
+          missing.map((username) => nameChipHtml(username, {
+            // Addressable, because the tracker's blank cells link here now
+            // rather than to the victims page. A suspect is filed or unfiled
+            // for a week, never both, so one id scheme covers both boxes
+            // without collision.
+            id: pickAnchorId(username, selectedWeek),
+            title: 'Click to find them on the tracker.',
+            linked: true
+          })).join('')
         }</span>
       </li>`;
   }

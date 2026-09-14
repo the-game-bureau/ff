@@ -3173,8 +3173,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    exist. */
 .pad-card-unfiled .pick-clipboard-suspect-names{ margin-top: 8px; }
 
-.pad-card-allin{ opacity: 0.7; }
-
 .pick-clipboard-empty{
   grid-column: 1 / -1;
   color: var(--bic-blue);
@@ -3524,7 +3522,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
 /* Printed, not typed: the same dot-matrix as SUSPECT TRACKER and capped at the
    same 16px, so the two read as one machine rather than two. */
-.lineup-chart-status-tally{ min-height: 16px; }
 
 .lineup-tally-dot-svg{
   display: block;
@@ -3937,6 +3934,34 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-color: var(--lineup-pick-border);
   outline: 2px solid var(--matrix-ink);
   outline-offset: 2px;
+}
+
+/* ===== A CLOSED CASE GOES GREY =====
+   Once a suspect is out, everything they filed stops being live information.
+   The rows stay - the record is the record, and the board is the point - but
+   they stop competing for attention with the picks that can still go either
+   way. Greyscale rather than a colour, because the club logos are images: a
+   colour rule would leave thirty-two brands shouting inside a row that is
+   meant to have gone quiet. */
+.lineup-chart-row-out .lineup-week-block{
+  filter: grayscale(1) contrast(0.85);
+  opacity: 0.72;
+}
+
+/* The verdict tint underneath the logo goes with it, or a closed row keeps a
+   green cell for the weeks it survived before the case closed. */
+.lineup-chart-row-out .lineup-week-block-survived,
+.lineup-chart-row-out .lineup-week-block-pending,
+.lineup-chart-row-out .lineup-week-block-out{
+  background: var(--paper-raised);
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+/* On the Legal Pad the shared card belongs to everybody who named that team,
+   so it is the name that greys, not the card. */
+.pick-clipboard-suspect-out{
+  filter: grayscale(1);
+  opacity: 0.6;
 }
 
 .lineup-week-block-survived{

@@ -610,7 +610,11 @@
     // one fact this line carries.
     const mine = Number(f.away === entry.pick.team ? score.awayScore : score.homeScore);
     const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
-    const verb = mine === theirs ? 'tied' : 'over';
+    // A draw closes a case the same as a win - the accused team did not lose,
+    // which is the whole test - but "BEARS OVER PACKERS" would be a lie about
+    // the one fact this line carries, and a bare "TIED" reads as a score line
+    // rather than as the verb between two clubs.
+    const verb = mine === theirs ? 'tied with' : 'over';
 
     return `${head} <span class="wire-paren">(<span class="wire-victim">${escapeHtml(victim)}</span>
       <span class="wire-verdict-bad">${verb}</span>
@@ -693,7 +697,7 @@
 
     const mine = Number(f.away === entry.pick.team ? score.awayScore : score.homeScore);
     const theirs = Number(f.away === entry.pick.team ? score.homeScore : score.awayScore);
-    return `${head} (${victim} ${mine === theirs ? 'tied' : 'over'} ${opponent}).`;
+    return `${head} (${victim} ${mine === theirs ? 'tied with' : 'over'} ${opponent}).`;
   }
   // The NFL scoreboard for the open week, straight from ESPN in the browser -
   // the same source and the same module the admin's SCORE THE WEEK uses. Best

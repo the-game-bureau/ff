@@ -296,6 +296,8 @@ declare
   v_dun_dun  jsonb := '[]'::jsonb;
   v_no_pick  jsonb := '[]'::jsonb;
   v_unfiled  jsonb := '[]'::jsonb;
+  -- Picks by suspects who are already out: judged, shown, never counted.
+  v_exhibition jsonb := '[]'::jsonb;
   v_pending  jsonb := '[]'::jsonb;
   v_row      record;
   v_outcome  text;
@@ -313,7 +315,20 @@ begin
   -- ---- picks that were actually filed ----
   for v_row in
     select ap.user_id, ap.week, ap.team, ap.result,
-           coalesce(p.username, ap.username, '(unknown)') as username
+           coalesce(p.username, ap.username, '(unknown)') as username,
+           -- Did they come INTO this week already out? Earlier weeks only, and
+           -- deliberately not _2026_is_out(): that is season-wide, and this
+           -- same run is about to write a DUN DUN for anybody going out today.
+           -- Asking a question whose answer this loop is changing would put
+           -- everybody eliminated this week into the exhibition group instead
+           -- of into the elimination they just earned.
+           exists (
+             select 1 from public._2026_active_picks prior
+             where prior.user_id = ap.user_id
+               and prior.season = v_season
+               and prior.week < p_week
+               and upper(btrim(coalesce(prior.result, ''))) = 'DUN DUN'
+           ) as already_out
     from public._2026_active_picks ap
     left join public._2026_profiles p on p.id = ap.user_id
     where ap.season = v_season
@@ -340,7 +355,15 @@ begin
     -- Win or tie is an elimination. The whole game is picking a loser.
     v_verdict := case when v_outcome = 'lost' then 'SURVIVED' else 'DUN DUN' end;
 
-    if v_verdict = 'SURVIVED' then
+    -- A suspect whose case closed in an earlier week can still file, and their
+    -- pick is still judged - being told every week whether you would have made
+    -- it is the entire reason to keep playing. It just does not count. Reported
+    -- in its own group so it cannot be mistaken for a survival, and left out of
+    -- every tally that asks how the league is doing.
+    if v_row.already_out then
+      v_exhibition := v_exhibition || jsonb_build_object(
+        'username', v_row.username, 'team', v_row.team, 'verdict', v_verdict);
+    elsif v_verdict = 'SURVIVED' then
       v_survived := v_survived || jsonb_build_object(
         'username', v_row.username, 'team', v_row.team);
     else
@@ -439,6 +462,7 @@ begin
     'no_pick', v_no_pick,
     'unfiled', v_unfiled,
     'pending', v_pending,
+    'exhibition', v_exhibition,
     -- So the screen can say whether the report covers everybody. Suspects whose
     -- case closed in an earlier week are not in any of the lists above and
     -- should not be: they have nothing left to file.

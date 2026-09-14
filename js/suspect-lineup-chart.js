@@ -243,11 +243,13 @@
         };
       });
 
-    const shouldRankByWins = rows.some((row) => row.completed > 0);
-    rows.sort((a, b) => {
-      if (shouldRankByWins && b.wins !== a.wins) return b.wins - a.wins;
-      return a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
-    });
+    // Strictly alphabetical, and nothing else. It used to lead with wins once
+    // any week had been scored, which meant the row a reader was looking for
+    // moved every Tuesday - and a tracker is a thing you scan for one name.
+    // Standing is on the board already: the crossed-out rows say who is out and
+    // the Case File counts them.
+    rows.sort((a, b) =>
+      a.username.localeCompare(b.username, undefined, { sensitivity: 'base' }));
 
     return rows;
   }
@@ -309,30 +311,6 @@
   // whatever they have done since.
   function isEliminatedRow(row) {
     return [...row.picksByWeek.values()].some((pick) => resultText(pick).includes('dun dun'));
-  }
-
-  // Where the board stands this week, put in the status line beside the
-  // heading. That line is already there and already reserved its own height -
-  // it carries the loading and failure messages - and it went empty the moment
-  // the board drew, which is the moment this becomes worth saying.
-  //
-  // Only suspects still in the game are counted, on both sides of the "of":
-  // someone eliminated in Week 3 is never going to file a Week 9 pick, and
-  // counting them would leave the board looking permanently behind.
-  function weekTallyText(rows) {
-    const week = Number(window.CURRENT_WEEK) || 0;
-    if (!week) return '';
-
-    const stillIn = rows.filter((row) => !isEliminatedRow(row));
-    if (!stillIn.length) return '';
-
-    const filed = stillIn.filter((row) => row.picksByWeek.has(week)).length;
-
-    // The count leads and the plural attaches to the total, so this reads
-    // correctly at one pick as well as at twelve.
-    // A dash, not a colon: the dot-matrix font carries A-Z, 0-9, dash, dot and
-    // underscore, and anything else prints as its "?" glyph.
-    return `Week ${week} - ${filed} of ${stillIn.length} picks are in`;
   }
 
   function renderRows(rows) {
@@ -870,7 +848,7 @@
     // textContent, so it also wipes any dot-matrix tally that was printed here.
     el.textContent = message;
     el.removeAttribute('aria-label');
-    el.classList.remove('lineup-chart-status-good', 'lineup-chart-status-bad', 'lineup-chart-status-tally');
+    el.classList.remove('lineup-chart-status-good', 'lineup-chart-status-bad');
     if (kind) el.classList.add(`lineup-chart-status-${kind}`);
   }
 
@@ -883,14 +861,12 @@
     const el = document.getElementById('suspectLineupChartStatus');
     if (!el) return;
 
-    const text = weekTallyText(rows);
+    // Nothing to say once the board has drawn. This element carries the loading
+    // and failure messages, and it used to fill with a week tally - "WEEK 1 -
+    // 22 OF 22 PICKS ARE IN" - which was the wrong altitude for a grid showing
+    // eighteen weeks at once, and said what the Case File scoreboard four
+    // inches above it already says.
     setStatus('', '');
-    if (!text) return;
-
-    // The SVG is aria-hidden, so the live region needs the words some other way.
-    el.setAttribute('aria-label', text);
-    el.classList.add('lineup-chart-status-tally');
-    el.innerHTML = dotMatrixTextHtml(text.toUpperCase(), 'lineup-tally');
   }
 
   function displayName(row) {
