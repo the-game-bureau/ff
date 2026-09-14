@@ -155,6 +155,16 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   status totals" to a screen reader, all for the same two numbers. Note the
   inner grid is `.scoreboard-grid`: the section took the plain name. Linked from the nav. The League Timeline
   and Evidence Locker that used to live here have been removed.
+- [404.html](404.html) — **every dead URL under `/ff/` lands on the Precinct.**
+  GitHub Pages serves this, with a 404 status, for any missing path under this
+  project at any depth; Pages has no server-side redirects, so the redirect is
+  done in the head before anything paints. It **carries the query string and the
+  fragment across**, which is the part that matters: confirmation emails sent
+  before the suspects page was removed still point at
+  `/ff/suspects/index.html#access_token=…`, and dropping the fragment would turn
+  each one into a silently failed sign-up. It loads no stylesheet, font or image
+  — it is served at whatever path was asked for, so a relative asset would
+  resolve against a directory that may not exist.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
 - [admin/index.html](admin/index.html) — schedule reconciliation and league removal.
   Gated on the username `theclarinetofjustice`.
@@ -369,6 +379,22 @@ hotlink; nothing is copied into the repo.
   not merely look old, it fails silently. `js/app.js` calling `window.renderHeaderUser?.()`
   against a cached `js/season.js` that predates that function makes the signed-in
   username disappear with nothing in the console — which is exactly what happened.
+- **An asset path in `js/` must be resolved from the nav prefix, never written
+  as `../src/…`.** The site is served from `/ff/`, so from `/ff/index.html` a
+  `../` climbs out of the site to `/src/…` and the asset 404s; from
+  `/ff/suspects/index.html` the same string was correct, which is why it sat
+  there unnoticed until the corkboard and the Suspect Tracker moved to the
+  Precinct. **Local testing cannot catch this** — a server rooted at the site
+  cannot climb above `/`, so `../src/x` and `src/x` resolve to the same file and
+  everything looks fine. Serve the folder's *parent* and open `/ff/index.html`
+  to reproduce the deployed shape. The pattern is a helper that reads
+  `data-prefix` off `#siteNav` and resolves on use — see `defaultMugshotUrl()`
+  in [js/suspects.js](js/suspects.js), `assetUrl()` in
+  [js/suspect-lineup-chart.js](js/suspect-lineup-chart.js), and the two that
+  already did it right, [js/rap-sheet.js](js/rap-sheet.js) and
+  [js/join.js](js/join.js). Paths inside `css/site.css` are a different case and
+  are correctly relative to `css/`.
+
 - **A username can be changed, so never key anything off the copy stored on a
   pick.** `_2026_picks` rows carry a snapshot of the handle they were filed
   under. The Suspect Tracker matches picks to profiles on `user_id`, and the

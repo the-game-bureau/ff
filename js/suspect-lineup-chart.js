@@ -8,7 +8,8 @@
   const PICKS_TABLE = LINEUP_CONFIG.tables?.picks || 'ff_picks';
   const ACTIVE_PICKS_VIEW = LINEUP_CONFIG.views?.activePicks || 'ff_active_picks';
   const CURRENT_SUSPECTS_VIEW = LINEUP_CONFIG.views?.currentSuspects || 'ff_current_suspects';
-  const DEFAULT_MUGSHOT_URL = new URL('../src/generated/mugshot-placeholder.svg', window.location.href).href;
+  // See assetUrl below: this was '../src/...' and broke the same way the
+  // corkboard's did once the tracker was copied onto the Precinct.
   const TOTAL_WEEKS = 18;
   const POOL_WEEKS = Array.from({ length: TOTAL_WEEKS }, (_, index) => index + 1);
   const THEME_SAMPLE_SIZE = 24;
@@ -19,7 +20,14 @@
   const NO_PICK_TEAM = 'NO PICK';
   // The signed-in suspect's id, or '' for a passer-by.
   let viewerId = '';
-  const NFL_SHIELD_ICON_SRC = new URL('../src/generated/nfl-shield.png', window.location.href).href;
+  // Where src/ is from the page asking - see the note in js/suspects.js. Both
+  // assets below were '../src/...', which resolves one directory too high from
+  // /ff/index.html and never misbehaved locally, because a server rooted at the
+  // site cannot climb above /.
+  function assetUrl(path){
+    const prefix = document.getElementById('siteNav')?.dataset.prefix || '';
+    return new URL(prefix + path, window.location.href).href;
+  }
   const DOT_TEXT_ROWS = 7;
   const DOT_TEXT_PITCH = 4;
   // Bold, in the only way a dot-matrix printer can be: fatter dots, same grid.
@@ -249,7 +257,7 @@
           // Empty whenever the viewer is signed out, or the column was dropped
           // on the way in. The line is then not rendered at all.
           firstName: String(profile.first_name || '').trim(),
-          avatarSrc: safeAvatarSrc(profile.avatar_data_url) || DEFAULT_MUGSHOT_URL,
+          avatarSrc: safeAvatarSrc(profile.avatar_data_url) || assetUrl('src/generated/mugshot-placeholder.svg'),
           picksByWeek,
           picksIn,
           wins,
@@ -594,7 +602,7 @@
     }
 
     const team = teamForPick(pick);
-    const src = team ? teamLogoSrc(team.abbr) : NFL_SHIELD_ICON_SRC;
+    const src = team ? teamLogoSrc(team.abbr) : assetUrl('src/generated/nfl-shield.png');
     const label = team ? `${team.name} logo` : 'NFL shield';
     const markerText = pickMarkerText(pick);
     return `

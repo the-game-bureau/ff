@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Case Not Found - Law &amp; Order: Special Victory Unit</title>
+<meta name="robots" content="noindex"/>
+
+<!--
+  EVERY DEAD URL UNDER /ff/ LANDS ON THE PRECINCT.
+
+  GitHub Pages serves this file, with a 404 status, for any path under this
+  project that does not exist - whatever the depth. There is no server-side
+  redirect available on Pages, so the redirect is done here, in the head, before
+  anything paints.
+
+  WHY THIS EXISTS
+  Pages get retired. suspects/ and dispatch/ were both real URLs that people
+  bookmarked and that went out in links, and the Precinct now holds what both of
+  them held. A default 404 tells somebody the site is broken; this hands them
+  the thing they were looking for.
+
+  THE QUERY STRING AND THE HASH COME WITH IT. That is not a nicety - it is the
+  point. Supabase confirmation emails sent before the suspects page was removed
+  still carry redirect_to=.../ff/suspects/index.html, and Supabase appends
+  #access_token=... to it. Dropping the fragment here would turn every one of
+  those into a silent failed sign-up. Same for the #welcome the QR code carries
+  and the recovery tokens js/password-reset.js reads.
+
+  Nothing here loads a stylesheet, a font or an image. This page is served at
+  whatever path was asked for, so a relative asset path would resolve against a
+  directory that may not exist - and a 404 page that cannot render is worse than
+  a plain one. Everything below is inline and self-contained.
+-->
+<script>
+(function () {
+  // The site is published at thegamebureau.com/ff/. Local testing serves this
+  // folder at the root instead, where there is no /ff/ segment to match - so
+  // the root is derived rather than assumed, and the page works both places.
+  // If the site is ever published somewhere else, this is the line to change.
+  var SITE_ROOT = '/ff/';
+  var here = window.location.pathname;
+  var root = here.indexOf(SITE_ROOT) === 0 ? SITE_ROOT : '/';
+
+  // Already home: nothing to do. Cannot happen while the Precinct exists, and
+  // costs one comparison to make a redirect loop impossible if it ever stops.
+  if (here === root || here === root + 'index.html') return;
+
+  // replace, not assign: this URL is a dead end, and leaving it in the history
+  // means Back lands on it and bounces straight forward again.
+  window.location.replace(root + window.location.search + window.location.hash);
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=/ff/"/></noscript>
+
+<style>
+  body{
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050505;
+    color: #F5F2EA;
+    font-family: "Courier New", Courier, monospace;
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .case{ max-width: 34rem; }
+  h1{
+    margin: 0 0 12px;
+    font-size: 1.5rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  p{ margin: 0 0 20px; font-size: 0.875rem; line-height: 1.6; letter-spacing: 0.04em; }
+  a{
+    display: inline-block;
+    padding: 12px 20px;
+    background: #C8102E;
+    color: #F5F2EA;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 3px solid #F5F2EA;
+  }
+  a:hover, a:focus{ background: #FFD400; color: #050505; outline: none; }
+</style>
+</head>
+
+<body>
+  <!-- Only ever seen with the script blocked, or in the instant before the
+       redirect on a slow connection. Written to be worth reading either way. -->
+  <div class="case">
+    <h1>No Such Case File</h1>
+    <p>That page has been closed and archived. The Precinct has what you came for.</p>
+    <a href="/ff/">Back to the Precinct</a>
+  </div>
+</body>
+</html>

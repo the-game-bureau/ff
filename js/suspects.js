@@ -3,7 +3,20 @@ const SUSPECTS_SUPABASE_URL = SUSPECTS_CONFIG.url || 'https://vkoczgzizzppdrpvpe
 const SUSPECTS_SUPABASE_ANON_KEY = SUSPECTS_CONFIG.publishableKey || 'sb_publishable_XfvD3zCvnCHT1v_EGE-LJA_3Z9bGjKw';
 const SUSPECTS_VIEW = SUSPECTS_CONFIG.views?.currentSuspects || 'ff_current_suspects';
 const SUSPECTS_PROFILES_TABLE = SUSPECTS_CONFIG.tables?.profiles || 'ff_profiles';
-const DEFAULT_MUGSHOT_URL = new URL('../src/generated/mugshot-placeholder.svg', window.location.href).href;
+// Where src/ is from the page asking, read off the nav mount rather than
+// guessed. This was `new URL('../src/...')`, which was right for exactly as
+// long as the board only ever rendered one directory deep. The site is served
+// from /ff/, so from /ff/index.html that climbs to /src/ and every suspect
+// without a photograph gets a broken image - and it never showed up in local
+// testing, because a server rooted at the site cannot climb above /.
+//
+// Resolved on use, not at load: the mount is markup on every page, but a
+// function costs nothing and cannot be caught out by a script that runs before
+// the element exists. Same helper shape as js/rap-sheet.js and js/join.js.
+function defaultMugshotUrl(){
+  const prefix = document.getElementById('siteNav')?.dataset.prefix || '';
+  return new URL(prefix + 'src/generated/mugshot-placeholder.svg', window.location.href).href;
+}
 
 const suspectsDb = window.supabase ? window.supabase.createClient(SUSPECTS_SUPABASE_URL, SUSPECTS_SUPABASE_ANON_KEY, {
   auth: {
@@ -287,7 +300,7 @@ function renderSuspects(suspects){
     // from the public view, so it arrives empty when signed out and the line
     // is dropped rather than left blank.
     const firstName = (suspect.first_name || '').trim();
-    const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || DEFAULT_MUGSHOT_URL;
+    const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || defaultMugshotUrl();
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
     // Editing your own record lives in the preview, not under the card: it
