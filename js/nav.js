@@ -19,7 +19,10 @@ const NAV_ITEMS = [
   // already knows, and the logo above goes home from every page.
   // Sublabel instead of a title: the gloss shows without needing a hover.
   { label: 'Law',        key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
-  { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'Home' },
+  // "League Status" rather than "Home": the logo above already goes home from
+  // every page, so the gloss is better spent saying what is on the other end -
+  // the scoreboard, the board of faces, and where the week stands.
+  { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'League Status' },
   // Land on the open week so the page and the header badge agree.
   { label: 'Victims',    key: 'victims',
     href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,
