@@ -290,7 +290,7 @@
     const standing = board.live.length;
     if (standing > 6) return '';
 
-    return `${spell(standing)} still walking, ${board.outCount} closed.` +
+    return `${spell(standing)} still suspects, ${board.outCount} case closed.` +
       (standing <= 2 ? ' It is nearly over.' : '');
   }
 

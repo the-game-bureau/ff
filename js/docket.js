@@ -1,5 +1,6 @@
 // ===== THE DOCKET =====
-// How many suspects are still walking, and the way through to their faces.
+// How many are still a suspect, how many are case closed, and the way through
+// to their faces.
 // Deliberately one number: the Case File goes deep further down, and the top of
 // the page should answer "how many are left" before anything else.
 //
@@ -65,7 +66,10 @@
     '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
     '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100']
   };
-  const DOT_SCOREBOARD_LABEL_WIDTH = getDotTextWidth('Still Under Suspicion');
+  // Widest of the two standing labels, so both sides of the scoreboard are
+  // printed at one scale. Measured from the label itself rather than typed,
+  // so changing the wording cannot leave the sizing behind.
+  const DOT_SCOREBOARD_LABEL_WIDTH = getDotTextWidth('Still A Suspect');
 
   const docketDb = window.supabase
     ? window.supabase.createClient(DOCKET_SUPABASE_URL, DOCKET_SUPABASE_ANON_KEY, {
@@ -147,8 +151,12 @@
     const rows = data || [];
     const out = rows.filter((row) => isEliminated(row.game_status)).length;
     setScore(String(rows.length - out), String(out));
-    setLabel(labelEl, 'Still Under Suspicion');
-    setLabel(outLabelEl, 'Dun Dun');
+    // The two standings, in the site's only words for them. DUN DUN is the
+    // verdict on one week's pick and is not a standing - counting people
+    // under it here is what made the Case File and the wire disagree about
+    // the same twenty suspects.
+    setLabel(labelEl, 'Still A Suspect');
+    setLabel(outLabelEl, 'Case Closed');
   }
 
   function renderDocketText() {

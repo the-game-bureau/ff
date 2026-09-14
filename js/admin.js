@@ -1365,8 +1365,8 @@
 
     paragraphs.push(
       "All units, be advised. Week " + week + " of Law &amp; Order: Special Victory Unit. " +
-      filedLine + capitalise(spellNumber(live.length)) + " of you are still walking, " +
-      "and the last one still free wins.");
+      filedLine + capitalise(spellNumber(live.length)) + " of you are still suspects. " +
+      "The last suspect wins.");
 
     // Who went down, and when - the week that was last scored, not the one the
     // league is on now.

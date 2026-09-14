@@ -45,6 +45,35 @@ Note the inversion that makes the jokes work: a **guilty** verdict means the tea
 (you were right), **not guilty** means they won (you were wrong). Keep that direction
 straight in any new copy.
 
+### Two axes, and they are not interchangeable
+
+This is the one thing that has actually drifted, so it is worth stating flatly.
+There are **two** states being named, they belong to different things, and using
+either word for the other is what made the Case File and the wire disagree about
+the same twenty people:
+
+| Axis | Belongs to | Values |
+| --- | --- | --- |
+| **The week's verdict** | a **pick** | `PICK IS IN` → `SURVIVED` / `DUN DUN` |
+| **Season standing** | a **person** | `STILL A SUSPECT` / `CASE CLOSED` |
+
+They fire at the same instant — one `DUN DUN` closes your case — which is exactly
+why they get muddled. Rules:
+
+- **`DUN DUN` is never a standing.** Do not count people under it, do not label a
+  person with it. It is the verdict on one week's pick, and the mugshot stamp on
+  suspects/ is that verdict, not a status badge.
+- **`CASE CLOSED` is never a week's result.** It is what a suspect *is* once a
+  `DUN DUN` has landed on them.
+- These are the only words for either state, in labels **and** in prose.
+  `STILL UNDER SUSPICION`, "still walking" and "still free" are retired — they
+  were doing the job of `STILL A SUSPECT` in three different voices. The Law's
+  *"If they win or tie, that's your case closed. DUN DUN."* is the shape to copy:
+  verdict, then standing.
+
+`DUN DUN` also survives as the show's sting in flavour text (the tagline, the
+share copy). That is the sound effect, not the status, and it is fine.
+
 The frame that keeps SUSPECT and VICTIM from competing: **you are a suspect, and each
 week you must name a victim to stay free.** Name right and you walk; name wrong and the
 case closes on you. The last suspect still walking wins. Player-facing copy should not
@@ -110,8 +139,9 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   pick is made. Takes `?week=N`.
 - [suspects/index.html](suspects/index.html) — the players, as mugshot cards.
 - [law/index.html](law/index.html) — the rules.
-- [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard,
-  still standing against eliminated. Linked from the nav. The League Timeline
+- [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard
+  (`STILL A SUSPECT` against `CASE CLOSED`), the Sergeant's Notes, the Legal Pad
+  and the Suspect Tracker. Linked from the nav. The League Timeline
   and Evidence Locker that used to live here have been removed.
 - [join/index.html](join/index.html) — the **Person of Interest** form.
 - [admin/index.html](admin/index.html) — schedule reconciliation and league removal.
@@ -160,6 +190,14 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   entries go out as sentences in an `.sr-only` list beside it. It briefly had
   its own page at `dispatch/`; that page is gone and the Precinct is the only
   place it lives.
+- [js/sergeants-notes.js](js/sergeants-notes.js) — **Sergeant's Notes** on the
+  Case File: a top-spiral notebook saying what the board adds up to. Every other
+  section there states a fact about one suspect or one week; this says what those
+  facts mean together — who is exposed, what settles when, which single result
+  would gut the league. **Every note is derived, never typed**: each is a function
+  that either finds something worth saying in the current data or returns nothing,
+  because a hand-written observation is true on the Sunday somebody writes it and
+  quietly wrong by Tuesday. Six of them, best five shown.
 - [js/victims.js](js/victims.js) — the registry grid and the pick flow.
 - [js/suspects.js](js/suspects.js) — the mugshot cards, including the placard
   stripes sampled from each photo.
@@ -180,7 +218,16 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   browser role and column grants cannot be narrowed to one row. That script also
   revokes the browser's UPDATE on the table entirely, so those two functions are
   the only way a profile row is written from a page.
-- [js/admin.js](js/admin.js) — the admin page.
+- [js/admin.js](js/admin.js) — the admin page. Two panels worth knowing about:
+  the **APB** is now one bulletin to everybody rather than four to four groups
+  (four sends was four chances to forget one, and whoever was in the forgotten
+  group heard nothing at all that week), and **Unbooked** lists accounts that
+  exist in Supabase auth with no profile row — invisible on every page here,
+  because every page reads profiles, which is what "I signed up and I'm not
+  there" always turns out to be. That one needs
+  [supabase/sql/ff_account_audit.sql](supabase/sql/ff_account_audit.sql), because
+  `auth.users` is not readable by any browser role.
+
 - [js/admin-score.js](js/admin-score.js) — **SCORE THE WEEK**, the process that
   turns NFL results into league results. Reads finals out of `js/nfl-scores.js`,
   previews what it would write, then calls `_2026_admin_score_week`
