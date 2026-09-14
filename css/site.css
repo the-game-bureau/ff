@@ -2894,6 +2894,13 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 /* A zero that answers a question, and a question that cannot be asked yet. The
    second must not read as "none" - see cell() in js/admin-weeks.js. */
 .admin-weeks .admin-weeks-zero{ color: var(--text-secondary); }
+
+/* The missed count rides in the Picks cell. Both halves are muted so the named
+   count keeps the cell - it is the number being read, and the one beside it is
+   almost always zero. */
+.admin-weeks .admin-weeks-slash,
+.admin-weeks .admin-weeks-nopick{ color: var(--text-secondary); }
+.admin-weeks .admin-weeks-slash{ padding: 0 1px; }
 .admin-weeks .admin-weeks-na{ color: var(--text-secondary); opacity: 0.45; }
 
 /* ===== PICK CLIPBOARD ===== */

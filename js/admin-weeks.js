@@ -18,16 +18,19 @@
 // useful thing to see and would be hidden by a label that just said SCORED.
 //
 // WHAT THE COLUMNS MEAN
-//   Picked    victims named for that week
+//   Picks     victims named that week, then weeks scored as never filed
 //   In Play   named, and the game has not said yet
 //   Survived / Dun Dun   the verdicts written
-//   No Pick   scored as never having filed
-// Picked = In Play + Survived + Dun Dun, every row, which makes each line check
-// itself. No Pick sits outside that sum because it is the opposite of a pick:
-// the scorer writes a row carrying the team NO PICK for somebody who never
-// filed, and counting it as one would make a missed week look like a named
-// victim. It also already carries a DUN DUN verdict, so counting it in that
-// column too would count one person twice.
+// Picks reads as two numbers, 42/0, because the second is the count of the
+// first not happening: the scorer writes a row carrying the team NO PICK for
+// somebody who never filed. It rides in this cell rather than a column of its
+// own because it is almost always zero, and a whole column of zeros earns less
+// than the width it takes.
+//
+// Only the left number is in the sum. Picks = In Play + Survived + Dun Dun on
+// every row, which makes each line check itself; a NO PICK row is the opposite
+// of a pick and would make a missed week look like a named victim, and it
+// already carries a DUN DUN verdict that would count one person twice.
 //
 // EXHIBITION PICKS ARE NOT IN THE TABLE. A closed case may keep filing and is
 // still told whether the pick won or lost, but none of it counts - see
@@ -120,7 +123,7 @@
     const rows = [];
 
     for (let week = 1; week <= TOTAL_WEEKS; week += 1) {
-      const tally = { picked: 0, inPlay: 0, survived: 0, dunDun: 0, noPick: 0 };
+      const tally = { picks: 0, inPlay: 0, survived: 0, dunDun: 0, noPick: 0 };
 
       for (const id of ids) {
         const pick = byUserWeek.get(`${id}|${week}`);
@@ -140,7 +143,7 @@
           continue;
         }
 
-        tally.picked += 1;
+        tally.picks += 1;
 
         const verdict = result(pick);
         if (verdict === 'SURVIVED') tally.survived += 1;
@@ -162,6 +165,17 @@
     return `<td${value ? '' : ' class="admin-weeks-zero"'}>${value}</td>`;
   }
 
+  // Picks, then the weeks nobody filed, as one cell. The second half is dashed
+  // rather than shown as 0 until the week has been scored - nobody has missed a
+  // week that has not been judged yet, and a 0 there would be a finding.
+  function picksCell(tally, judged) {
+    const missed = judged
+      ? `<span class="admin-weeks-nopick">${tally.noPick}</span>`
+      : '<span class="admin-weeks-na">&middot;</span>';
+
+    return `<td${tally.picks ? '' : ' class="admin-weeks-zero"'}>${tally.picks}<span class="admin-weeks-slash">/</span>${missed}</td>`;
+  }
+
   function paint(rows, thisWeek, exhibition) {
     const html = rows.map(({ week, tally }) => {
       const state = week < thisWeek ? 'settled' : (week === thisWeek ? 'this week' : 'upcoming');
@@ -173,11 +187,10 @@
         <tr class="admin-weeks-row admin-weeks-row-${state.replace(' ', '-')}">
           <th scope="row">Week ${week}</th>
           <td class="admin-weeks-state">${state}</td>
-          ${cell(tally.picked, true)}
+          ${picksCell(tally, judged)}
           ${cell(tally.inPlay, true)}
           ${cell(tally.survived, judged)}
           ${cell(tally.dunDun, judged)}
-          ${cell(tally.noPick, judged)}
         </tr>`;
     }).join('');
 
@@ -192,7 +205,7 @@
   }
 
   function setMessage(text) {
-    if (els.body) els.body.innerHTML = '<tr><td colspan="7" class="table-empty">' + text + '</td></tr>';
+    if (els.body) els.body.innerHTML = '<tr><td colspan="6" class="table-empty">' + text + '</td></tr>';
   }
 
   function setNote(text) {
