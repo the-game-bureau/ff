@@ -2,6 +2,55 @@
   let lightbox = null;
   let previousFocus = null;
 
+  // ===== ONE SUSPECT, ONE POPUP =====
+  // The attributes that make anything on the page open a suspect's preview.
+  // Every section that draws a mugshot calls this instead of writing the set
+  // out itself - the corkboard, the Suspect Tracker and the wire all did it by
+  // hand, which was three chances to caption the same photograph differently,
+  // forget the first name, or offer a different set of things to do with it.
+  // The module that reads these attributes now writes them, so the contract
+  // cannot drift.
+  //
+  // Edit Rap Sheet belongs to the popup, not to the corkboard. It used to be
+  // stamped on by js/suspects.js alone, so clicking your own face on the board
+  // offered your whole record and clicking the same face on the tracker offered
+  // nothing. Same face, same popup, same thing to do with it.
+  function escapeAttr(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function suspectMugshotAttrs(suspect){
+    const username = String(suspect?.username || '').trim();
+    const firstName = String(suspect?.firstName || '').trim();
+    const src = String(suspect?.avatarSrc || '').trim();
+
+    const attrs = [
+      'data-mugshot-lightbox',
+      `data-mugshot-src="${escapeAttr(src)}"`,
+      // The alt stands in for the picture entirely, so it says what it is; the
+      // caption sits beside a picture already on screen and only needs the name.
+      `data-mugshot-alt="${escapeAttr(`${username} mugshot`)}"`,
+      `data-mugshot-caption="${escapeAttr(username)}"`
+    ];
+
+    // Signed out, first_name is withheld from the public read and arrives
+    // empty, and the second line stays off.
+    if(firstName) attrs.push(`data-mugshot-subcaption="${escapeAttr(firstName)}"`);
+
+    if(suspect?.isSelf){
+      attrs.push('data-mugshot-action="Edit Rap Sheet"');
+      attrs.push('data-mugshot-action-flag="rap-sheet"');
+    }
+
+    return attrs.join(' ');
+  }
+
+  window.ffSuspectMugshotAttrs = suspectMugshotAttrs;
+
   function ensureLightbox(){
     if(lightbox) return lightbox;
 

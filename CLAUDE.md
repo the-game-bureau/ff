@@ -241,7 +241,17 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - [js/share.js](js/share.js) — the share sheet, with a per-platform lineup.
 - [js/password-reset.js](js/password-reset.js) — the recovery lightbox. Replaces the
   old `reset.html`, which no longer exists; recovery links land on the site root.
-- [js/mugshot-lightbox.js](js/mugshot-lightbox.js) — the full-size mugshot viewer.
+- [js/mugshot-lightbox.js](js/mugshot-lightbox.js) — the full-size mugshot
+  viewer, and **the one place the trigger for it is written**. Clicking a face
+  anywhere on the Precinct — the wire, the corkboard, the Suspect Tracker —
+  opens this same popup, because all three ask
+  `window.ffSuspectMugshotAttrs({username, firstName, avatarSrc, isSelf})` for
+  their `data-mugshot-*` attributes instead of spelling the set out. The module
+  that reads the attributes writes them, so the contract cannot drift; three
+  hand-written copies had already drifted into three different captions and
+  three different things you could do with the same photograph. **Edit Rap Sheet
+  belongs to the popup, not to one section** — it is offered wherever your own
+  face appears.
 - [js/rap-sheet.js](js/rap-sheet.js) — **EDIT RAP SHEET**, a suspect's whole
   record in one popup, opened from their own mugshot preview on the Precinct's
   corkboard. It
@@ -431,6 +441,14 @@ hotlink; nothing is copied into the repo.
   post-run checklist covered the lineup, first names and the admin table, and missed
   login entirely. When narrowing grants, grep for every `select('<column>')` in `js/`
   first — signed-out paths especially, since they run as `anon`.
+  The reverse bites just as hard: **naming a withheld column in a select fails the
+  whole query**, not just that column. Adding `first_name` to the wire's select
+  took the entire strip down for every signed-out visitor — `anon` has no grant on
+  it — and the only symptom was "Radio is down." `first_name` is the column this
+  keeps happening with, so ask for it conditionally, the way
+  `fetchSuspects(showFirstNames)` in [js/wire.js](js/wire.js) and
+  `fetchProfiles(showFirstNames)` in
+  [js/suspect-lineup-chart.js](js/suspect-lineup-chart.js) both do.
 - **The Supabase project the site talks to is set in exactly one place**,
   [js/supabase-config.js](js/supabase-config.js). Every `js/*.js` file also carries a
   hardcoded fallback URL/key, used only if that config fails to load — those fallbacks

@@ -54,6 +54,11 @@
       })
     : null;
 
+  // The signed-in suspect's id, or '' for a passer-by. Only decides whether a
+  // face on the strip is your own, and so whether its preview offers the rap
+  // sheet. Same name and same job as the one in js/suspect-lineup-chart.js.
+  let viewerId = '';
+
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('wireTrack')) return;
     loadWire();
@@ -80,7 +85,13 @@
 
     runMessage('Wire loading...');
 
-    const [suspects, picks] = await Promise.all([fetchSuspects(), fetchPicks()]);
+    // Which face is the viewer's own, so clicking it here offers Edit Rap
+    // Sheet exactly as it does on the board below.
+    const session = await wireDb.auth.getUser().catch(() => null);
+    const user = session?.data?.user || null;
+    viewerId = user?.id || '';
+
+    const [suspects, picks] = await Promise.all([fetchSuspects(Boolean(user)), fetchPicks()]);
     if (suspects === null || picks === null) {
       runMessage('Radio is down.');
       return;
@@ -219,10 +230,24 @@
     }
   }
 
-  async function fetchSuspects() {
+  // first_name is ASKED FOR ONLY WHEN SIGNED IN, and that is not an
+  // optimisation. `anon` has no grant on that column, and PostgREST fails the
+  // whole select rather than returning the rest - so naming it unconditionally
+  // took down the entire strip for every signed-out visitor, which is most of
+  // them, and the only symptom was "Radio is down." Same shape as
+  // fetchProfiles(showFirstNames) in js/suspect-lineup-chart.js.
+  //
+  // It is here at all so this strip's preview carries the same second line the
+  // corkboard's does: one popup, one caption, whichever copy of a face was
+  // clicked.
+  async function fetchSuspects(showFirstNames) {
+    const columns = showFirstNames
+      ? 'id, username, first_name, avatar_data_url, game_status'
+      : 'id, username, avatar_data_url, game_status';
+
     const { data, error } = await wireDb
       .from(SUSPECTS_VIEW)
-      .select('id, username, avatar_data_url, game_status');
+      .select(columns);
 
     if (error) {
       console.error('Wire: suspects unavailable:', error);
@@ -279,7 +304,9 @@
         const pick = realPick(row);
 
         return {
+          id: suspect.id || '',
           username: String(suspect.username || 'unknown'),
+          firstName: String(suspect.first_name || ''),
           avatar: suspect.avatar_data_url || '',
           isOut,
           week,
@@ -559,12 +586,26 @@
   // stripe, and their name on a plate tinted with the two colours sampled from
   // that photograph. js/suspect-colors.js resolves the pair; paintMugs() below
   // puts it on.
+  //
+  // Clicking one opens the same preview the corkboard and the tracker open,
+  // from the same builder - see js/mugshot-lightbox.js. No tabindex: the strip
+  // is aria-hidden and duplicated for the loop, so a focus stop here would put
+  // two of every suspect in the tab order of a thing a screen reader is being
+  // told to ignore. The .sr-only list beside it and the board below are the
+  // accessible route to the same faces.
   function mugHtml(entry) {
     const shot = entry.avatar
       ? `<img class="wire-mug-shot" src="${escapeHtml(entry.avatar)}" alt="" width="30" height="30"/>`
       : '';
 
-    return `<span class="wire-mug" data-username="${escapeHtml(entry.username)}">
+    const mugAttrs = window.ffSuspectMugshotAttrs?.({
+      username: entry.username,
+      firstName: entry.firstName,
+      avatarSrc: entry.avatar,
+      isSelf: Boolean(entry.id) && entry.id === viewerId
+    }) || '';
+
+    return `<span class="wire-mug" ${mugAttrs} data-username="${escapeHtml(entry.username)}">
       <span class="wire-mug-frame">${shot}</span>
       <span class="wire-name">${escapeHtml(entry.username)}</span>
     </span>`;
@@ -874,6 +915,15 @@
       strip.addEventListener('pointerdown', (event) => grab(strip, event));
       strip.addEventListener('pointermove', drag);
       strip.addEventListener('pointerup', release);
+
+      // Capture phase, so this runs before the document-level listener in
+      // js/mugshot-lightbox.js ever sees the event.
+      strip.addEventListener('click', (event) => {
+        if (!wire.swallowClick) return;
+        wire.swallowClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }, true);
       strip.addEventListener('pointercancel', release);
       // A drag that starts on the strip should not also select the text it is
       // dragging, which is what a pointer down on a run of words otherwise does.
@@ -916,7 +966,7 @@
 
   function grab(strip, event) {
     if (event.button != null && event.button !== 0) return;
-    wire.drag = { id: event.pointerId, x: event.clientX, from: wire.offset };
+    wire.drag = { id: event.pointerId, x: event.clientX, from: wire.offset, moved: false };
     strip.classList.add('is-dragging');
     if (strip.setPointerCapture) {
       try { strip.setPointerCapture(event.pointerId); } catch (_) { /* not fatal */ }
@@ -927,12 +977,19 @@
   // how far the track has travelled leftwards, so it moves against the pointer.
   function drag(event) {
     if (!wire.drag || event.pointerId !== wire.drag.id) return;
+    // Anything past a few pixels is a drag, not a slipped click. Below that a
+    // pointer wobbles on the way down and every tap would be swallowed.
+    if (Math.abs(event.clientX - wire.drag.x) > 4) wire.drag.moved = true;
     wire.offset = wrapOffset(wire.drag.from - (event.clientX - wire.drag.x));
     paintWire();
   }
 
   function release(event) {
     if (!wire.drag || event.pointerId !== wire.drag.id) return;
+    // Let the click that follows this pointerup know it was the end of a drag.
+    // Dragging the strip by a face would otherwise rewind the wire and open
+    // that suspect's preview on top of it.
+    wire.swallowClick = wire.drag.moved;
     wire.drag = null;
     const strip = event.currentTarget;
     strip.classList.remove('is-dragging');

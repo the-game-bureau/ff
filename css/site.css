@@ -6502,6 +6502,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    the sentence, and the sentence is the point. The defaults are the house pair,
    used until js/suspect-colors.js has resolved the suspect's own, and kept by
    anyone whose mugshot cannot be sampled. */
+/* A face on the strip opens the same preview a face on the board does, so it
+   has to look like it will. */
+.wire-mug{
+  cursor: pointer;
+}
+
 .wire-mug{
   --wire-primary: var(--score-amber);
   --wire-secondary: var(--ink);

@@ -303,20 +303,21 @@ function renderSuspects(suspects){
     const avatarSrc = safeAvatarSrc(suspect.avatar_data_url) || defaultMugshotUrl();
     const avatarLabel = `${displayNameForSuspect(suspect)} mugshot`;
 
-    // Editing your own record lives in the preview, not under the card: it
-    // starts from the picture, so it belongs where the picture is being looked
-    // at. Only your own card offers it - it is not rendered-and-hidden on the
-    // others, because there is nothing anyone else is allowed to do. It used to
-    // say Retake Mugshot and change only the photograph; the whole sheet is
-    // editable now, so it says so.
     // Eliminated: the case is closed and the file gets crossed out. Derived
     // from the newest pick's result, so a suspect stamped here is the same one
     // the Suspect Tracker shows a DUN DUN for.
     const isOut = isOutOfTheGame(suspect);
 
-    const retake = suspect.is_self
-      ? ' data-mugshot-action="Edit Rap Sheet" data-mugshot-action-flag="rap-sheet"'
-      : '';
+    // One builder for every mugshot on the page - see js/mugshot-lightbox.js.
+    // Editing your own record lives in the preview, not under the card: it
+    // starts from the picture, so it belongs where the picture is being looked
+    // at. That rule now applies wherever your face appears, not just here.
+    const mugAttrs = window.ffSuspectMugshotAttrs?.({
+      username,
+      firstName,
+      avatarSrc,
+      isSelf: suspect.is_self
+    }) || '';
 
     return `
       <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}${isOut ? ' suspect-card-out' : ''}" data-username="${escapeHtml(username)}">
@@ -326,7 +327,7 @@ function renderSuspects(suspects){
                nothing written below can creep back over it. -->
           <div class="suspect-photo">
             ${isOut ? '<span class="suspect-stamp" aria-hidden="true">Dun Dun</span><span class="sr-only">Case closed.</span>' : ''}
-            <button class="suspect-avatar-button" type="button" data-mugshot-lightbox data-mugshot-src="${escapeHtml(avatarSrc)}" data-mugshot-alt="${escapeHtml(avatarLabel)}" data-mugshot-caption="${escapeHtml(username)}" data-mugshot-subcaption="${escapeHtml(firstName)}"${retake} aria-label="${escapeHtml(avatarLabel)}">
+            <button class="suspect-avatar-button" type="button" ${mugAttrs} aria-label="${escapeHtml(avatarLabel)}">
               <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
             </button>
           </div>
@@ -587,11 +588,13 @@ async function loadCurrentSuspects(){
 // and - on your own card and no other - the Edit Rap Sheet action, so a
 // synthetic click is bound to produce exactly the preview a real one would.
 //
-// Returns whether it found the card, so a caller with somewhere else to go can
-// tell "opened it" from "not on this page". That is the whole of what the
-// tracker's lightbox needs: the board used to be its own page and the button
-// was a link, and now that the two sit on the Precinct together it is a scroll
-// instead - but the Case File still carries the tracker without the board.
+// Returns whether it found the card, because the first render can be the
+// signed-out roster and a name may only turn up on the next one.
+//
+// Only ?suspect= reaches this now. The Suspect Tracker used to as well, through
+// a "Go To Suspects Page" button in its preview; that button pointed at the
+// page you were already on once the corkboard moved here, and the preview it
+// would have opened is the preview you were already looking at.
 function openSuspectCard(username){
   // Usernames are stored with their own capitalisation and matched
   // case-insensitively everywhere else on the site.
@@ -606,8 +609,6 @@ function openSuspectCard(username){
   card.querySelector('.suspect-avatar-button')?.click();
   return true;
 }
-
-window.ffOpenSuspectCard = openSuspectCard;
 
 let requestedSuspectOpened = false;
 

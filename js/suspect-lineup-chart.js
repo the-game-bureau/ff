@@ -105,38 +105,11 @@
 
   // A way out of the preview and over to the suspect themselves. The card on
   // this board is a 38px thumbnail and a name in dots - it says where they
-  // stand this season, not who they are - so the preview offers the lineup,
-  // where the mugshot is full size and the placard is painted in their own
-  // colours. The suspect rides over in the query string and that page opens
-  // their card on arrival, because landing on a grid of 30 faces and hunting
-  // for the same one again would be no better than a plain nav link.
-  //
-  // Bound to the document rather than the list: the button is in the lightbox,
-  // which appends itself to the body.
-  document.addEventListener('click', (event) => {
-    const trigger = event.target.closest('[data-suspects-page]');
-    if (!trigger) return;
-
-    event.preventDefault();
-    const username = trigger.getAttribute('data-suspects-page');
-
-    // The corkboard is a section of the Precinct now, so on that page this is
-    // no longer a journey - scroll to the card and open it where it stands.
-    // js/suspects.js owns that behaviour and does exactly this for the
-    // ?suspect= deep link; calling it keeps one implementation of "open this
-    // suspect's card" rather than a second copy that drifts.
-    if (document.getElementById('suspectGrid') && window.ffOpenSuspectCard) {
-      if (window.ffOpenSuspectCard(username)) return;
-    }
-
-    // The Case File still carries the tracker without the board, so from there
-    // it stays a link. Prefix off the nav mount, the way every other module
-    // resolves a path.
-    const prefix = document.getElementById('siteNav')?.dataset.prefix || '';
-    const url = new URL(prefix + 'index.html', window.location.href);
-    if (username) url.searchParams.set('suspect', username);
-    window.location.href = url.href;
-  });
+  // A "Go To Suspects Page" action used to hang under this preview, because the
+  // full-size mugshot lived on a page of its own. It does not any more - the
+  // corkboard is a section of this page, the preview it opens is this same
+  // preview, and the button offered a trip to where you already were. Gone
+  // rather than rewired: the popup was always the destination.
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('suspectLineupChart')) return;
@@ -390,14 +363,12 @@
              inside a button is not something a browser or a screen reader can
              make sense of. -->
         <div class="lineup-booking-card" role="button" tabindex="0"
-             data-mugshot-lightbox
-             data-mugshot-src="${escapeHtml(row.avatarSrc)}"
-             data-mugshot-alt="${escapeHtml(`${row.username} mugshot`)}"
-             data-mugshot-caption="${escapeHtml(row.username)}"
-             data-mugshot-subcaption="${escapeHtml(row.firstName)}"
-             data-mugshot-action="Go To Suspects Page"
-             data-mugshot-action-flag="suspects-page"
-             data-mugshot-action-value="${escapeHtml(row.username)}"
+             ${window.ffSuspectMugshotAttrs?.({
+               username: row.username,
+               firstName: row.firstName,
+               avatarSrc: row.avatarSrc,
+               isSelf: Boolean(row.id) && row.id === viewerId
+             }) || ''}
              aria-label="${escapeHtml(`Open ${row.username} mugshot`)}">
           <span class="lineup-tracker-mugshot-button">
             <img class="lineup-tracker-mugshot" src="${escapeHtml(row.avatarSrc)}" alt="${escapeHtml(`${row.username} mugshot`)}" width="38" height="38"/>
