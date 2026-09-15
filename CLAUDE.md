@@ -239,9 +239,9 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
 - [js/victims.js](js/victims.js) — the registry grid and the pick flow.
 - [js/suspects.js](js/suspects.js) — the corkboard on the Precinct: the mugshot
   cards, the placard stripes sampled from each photo, and the order they hang
-  in. That order is five bands — being decided, closed, owes a pick, through to
-  next week, filed ahead — alphabetical inside each, and the bands must stay in
-  step with the colour of the week line under the name. It also exposes
+  in. That order is five bands — being decided, owes a pick, through to next
+  week, filed ahead, then closed cases last — alphabetical inside each, and the
+  bands must stay in step with the colour of the week line under the name. It also exposes
   `window.ffOpenSuspectCard(username)`, which is how the Suspect Tracker's
   lightbox opens somebody's card without a page change.
 - [js/join.js](js/join.js) — the join form and mugshot processing.

@@ -135,27 +135,33 @@ function addCurrentUserProfileData(suspect, user, showFirstNames){
 }
 
 // Which band of the board a suspect sits in, in the order they are drawn. The
-// numbers are the colours of the week line under the name: amber, none, yellow,
-// green, plain. Keep this in step with weekLineHtml - they are two readings of
-// the same state, and a suspect sorted into a band whose colour they are not
-// wearing is the bug this exists to prevent.
+// numbers are the colours of the week line under the name: amber, yellow,
+// green, plain, none. Keep this in step with weekLineHtml - they are two
+// readings of the same state, and a suspect sorted into a band whose colour
+// they are not wearing is the bug this exists to prevent.
 //
 // PENDING leads, because it is the only band where the answer is not yet known.
-// Everyone else on the board has had the live week settled one way or the
-// other, or has not filed for it at all; these are the cases actually being
-// decided right now, and the board should open with them. The Legal Pad has
-// sorted undecided to the top since it was built - this is the same rule on a
-// different page, and the two used to disagree.
+// These are the cases actually being decided right now, and the board should
+// open with them. The Legal Pad has sorted undecided to the top since it was
+// built - this is the same rule on a different page, and the two used to
+// disagree.
+//
+// CLOSED sits at the BOTTOM, where it used to sit second. Everything above it
+// is a live case with something still to happen; a closed one has nothing left
+// to say, and twenty of them standing between the picks being decided and the
+// suspects who still owe one pushed the whole live half of the league below the
+// fold. The stamp is the loudest mark on the board, so they are still the
+// easiest group to find - they do not need the top of it as well.
 //
 // PENDING and FILED both read "Pick is in", which is why they were one band and
 // why that was wrong: one of them means the game has not been played yet, the
 // other means the week is already survived and this is next week's homework
 // done early. Opposite ends of the board, not neighbours.
 const BAND_PENDING = 0;
-const BAND_CLOSED = 1;
-const BAND_WAITING = 2;
-const BAND_CLEARED = 3;
-const BAND_FILED = 4;
+const BAND_WAITING = 1;
+const BAND_CLEARED = 2;
+const BAND_FILED = 3;
+const BAND_CLOSED = 4;
 
 function lineupBand(suspect){
   if(isOutOfTheGame(suspect)) return BAND_CLOSED;
@@ -191,10 +197,10 @@ function normalizeSuspects(suspects, user, showFirstNames, pickWeeks = new Map()
       }, user, showFirstNames);
     })
     // The board reads top to bottom in the order the name plates are coloured:
-    // the cases still being decided, then closed cases, then anyone the clock is
-    // running on, then anyone already through to next week, then the picks filed
-    // ahead for it. Alphabetical inside a band, so the order holds still between
-    // loads rather than reshuffling on whatever came back first.
+    // the cases still being decided, then anyone the clock is running on, then
+    // anyone already through to next week, then the picks filed ahead for it,
+    // and the closed cases last. Alphabetical inside a band, so the order holds
+    // still between loads rather than reshuffling on whatever came back first.
     //
     // One pick per week is the most anyone can have, so the number that orders
     // the board is the open week's: filed or not, nothing else. It used to be a
