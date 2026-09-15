@@ -127,15 +127,28 @@
       </div>
     </section>
 
-    <!-- What the board adds up to. Every other section here states a fact about
+    <!-- ===== SERGEANT'S NOTES - TEMPORARILY OUT (2026-09-14) =====
+         What the board adds up to. Every other section here states a fact about
          one suspect or one week; this is the one place that says what those
          facts mean together. Written by js/sergeants-notes.js from the same
          data, never by hand - a typed observation is true on Sunday and quietly
-         wrong by Tuesday. -->
+         wrong by Tuesday.
+
+         TO PUT IT BACK: delete this opening line and the closing line at the
+         foot of the block, and restore the nested comment marked NOTE below to
+         a real <!== ==> comment. It has to be flattened while the block is out,
+         because an HTML comment cannot contain another one - the inner close
+         would end the outer one early and spill the rest onto the page.
+
+         js/sergeants-notes.js is deliberately still loaded: it returns at once
+         when #sergeantsNotesList is absent, so it costs nothing while this is
+         out and there is one fewer thing to remember to put back. The Case File
+         at reports/index.html still carries its own copy of this section.
+
     <section class="sergeants-notes" id="sergeantsNotes" aria-labelledby="sergeantsNotesTitle">
       <div class="sergeants-pad">
-        <!-- The wire binding. Drawn rather than imaged: a row of rings punched
-             through the board above the first line. -->
+        NOTE: The wire binding. Drawn rather than imaged: a row of rings punched
+              through the board above the first line.
         <div class="sergeants-spiral" aria-hidden="true"></div>
         <div class="sergeants-paper">
           <h2 id="sergeantsNotesTitle" class="sergeants-heading">Sergeant's Notes</h2>
@@ -145,6 +158,7 @@
         </div>
       </div>
     </section>
+         ===== end Sergeant's Notes ===== -->
 
     <!-- The board on the Precinct wall: every suspect's photo pinned up while the
          case is open. Nobody comes down until it closes. It had its own page
