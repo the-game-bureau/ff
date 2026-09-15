@@ -308,7 +308,28 @@
   // Out of the game: one "dun dun" anywhere on the row ends a suspect's season,
   // whatever they have done since.
   function isEliminatedRow(row) {
-    return [...row.picksByWeek.values()].some((pick) => resultText(pick).includes('dun dun'));
+    return closingWeek(row) !== null;
+  }
+
+  // The week the case closed: the FIRST DUN DUN, not the newest. Out stays out,
+  // so a closed suspect who keeps filing and gets one right does not un-close -
+  // and it is this week that divides their real season from the exhibition one.
+  function closingWeek(row) {
+    let closed = null;
+    for (const [week, pick] of row.picksByWeek) {
+      if (!resultText(pick).includes('dun dun')) continue;
+      if (closed === null || week < closed) closed = week;
+    }
+    return closed;
+  }
+
+  // A pick filed for a week AFTER the one that ended them. Judged and shown,
+  // never counted - see supabase/sql/ff_exhibition_picks.sql - and the only
+  // thing on this board that goes grey. Everything at or before the closing
+  // week was a real pick in a real season and keeps the colour it earned.
+  function isExhibition(row, week) {
+    const closed = closingWeek(row);
+    return closed !== null && Number(week) > closed;
   }
 
   function renderRows(rows) {
@@ -475,7 +496,12 @@
         week,
         row.username,
         isSelf && week >= openWeek(),
-        isEliminatedRow(row)
+        // Two different questions. Closed at all decides whether this links to
+        // the legal pad - it never should, because a closed case is kept off
+        // the pad in every week, not just the ones after it went. Exhibition
+        // decides whether it goes grey.
+        isEliminatedRow(row),
+        isExhibition(row, week)
       );
     }
     return pickWeekBlockHtml(row, pick, week);
@@ -491,9 +517,10 @@
     const targetId = window.PickClipboard?.anchorIdFor?.(username, week) || fallbackId;
     const team = pick.team && !isNoPickRow(pick) ? `, ${pick.team}` : '';
     const resultClass = pickResultClass(pick);
+    const exhibition = isExhibition(row, week) ? ' lineup-week-block-exhibition' : '';
 
     return `
-      <a class="lineup-week-block lineup-week-block-pick ${resultClass}"
+      <a class="lineup-week-block lineup-week-block-pick ${resultClass}${exhibition}"
          href="#${escapeHtml(targetId)}"
          data-lineup-pick-link
          data-lineup-username="${escapeHtml(username)}"
@@ -512,19 +539,27 @@
   //
   // The exception is the one case where the old behaviour was right: your own
   // blank cell in a week that is still open.
-  function emptyWeekBlockHtml(week, username, canPick, isOut) {
+  function emptyWeekBlockHtml(week, username, canPick, isOut, exhibition) {
     // An eliminated suspect is left out of the pad's "no pick yet" box on
     // purpose - a pick that is never coming is not a late one - which means
     // there is nothing down there to link to. So this is not a link. It used to
     // be, and clicking it did nothing at all, which reads as broken rather than
     // as finished.
     if (isOut) {
+      const grey = exhibition ? ' lineup-week-block-exhibition' : '';
+      // Only a week after the case closed can be described as "was out before"
+      // it. An empty week at or before the closing one is a gap in a season
+      // they were still playing.
+      const label = exhibition
+        ? `${username} was out before Week ${week}.`
+        : `${username} has no Week ${week} pick.`;
+
       return `
-      <span class="lineup-week-block lineup-week-block-empty lineup-week-block-out"
+      <span class="lineup-week-block lineup-week-block-empty lineup-week-block-out${grey}"
             data-lineup-username="${escapeHtml(username)}"
             data-lineup-week="${week}"
-            aria-label="${escapeHtml(`${username} was out before Week ${week}.`)}"
-            title="${escapeHtml('Case closed')}"></span>
+            aria-label="${escapeHtml(label)}"
+            title="${escapeHtml(exhibition ? 'Case closed' : `Week ${week}: no pick`)}"></span>
     `;
     }
 

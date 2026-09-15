@@ -4159,23 +4159,26 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   outline-offset: 2px;
 }
 
-/* ===== A CLOSED CASE GOES GREY =====
-   Once a suspect is out, everything they filed stops being live information.
-   The rows stay - the record is the record, and the board is the point - but
-   they stop competing for attention with the picks that can still go either
-   way. Greyscale rather than a colour, because the club logos are images: a
-   colour rule would leave thirty-two brands shouting inside a row that is
-   meant to have gone quiet. */
-.lineup-chart-row-out .lineup-week-block{
+/* ===== ONLY AN EXHIBITION PICK GOES GREY =====
+   A closed case keeps every colour it earned. The weeks it played were real
+   weeks - it survived some of them, and the green says so - and greying the
+   whole row wiped that record off twenty rows at once, which is most of the
+   board's history.
+   What goes grey is a pick filed for a week AFTER the one that ended them:
+   judged and shown, never counted (see supabase/sql/ff_exhibition_picks.sql).
+   Greyscale rather than a colour, because the club logos are images and a
+   colour rule would leave the brand shouting inside a cell meant to be quiet. */
+.lineup-week-block-exhibition{
   filter: grayscale(1) contrast(0.85);
   opacity: 0.72;
 }
 
-/* The verdict tint underneath the logo goes with it, or a closed row keeps a
-   green cell for the weeks it survived before the case closed. */
-.lineup-chart-row-out .lineup-week-block-survived,
-.lineup-chart-row-out .lineup-week-block-pending,
-.lineup-chart-row-out .lineup-week-block-out{
+/* The verdict tint under the logo goes with it, or an exhibition week keeps the
+   green of a result that counted for nothing. */
+.lineup-week-block-exhibition.lineup-week-block-survived,
+.lineup-week-block-exhibition.lineup-week-block-dun-dun,
+.lineup-week-block-exhibition.lineup-week-block-pending,
+.lineup-week-block-exhibition.lineup-week-block-out{
   background: var(--paper-raised);
   border-color: rgba(0, 0, 0, 0.35);
 }
