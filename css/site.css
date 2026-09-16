@@ -3050,6 +3050,18 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
      are written in --bic-blue biro. Not pure black - a sharpie on yellow paper
      never is, and a true #000 sits too hard against the pad. */
   --sharpie-black: #141414;
+  /* THE SIX DRAWN STROKES, written once here and dealt out below. Three wobbles
+     in each of the two inks: black for the rules inside a card, blue for the
+     little line under a tally. They were nine copies of three black strokes
+     spelled out in the card blocks, which is nine places to change a pen. A
+     data URI cannot take currentColor, so the colour has to be baked in and the
+     two inks are genuinely two sets. */
+  --pad-ink-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-ink-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-ink-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-biro-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-biro-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-biro-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --legal-pad-rule-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='31' viewBox='0 0 720 31'%3E%3Cpath d='M0 30 C60 29.2 120 30.8 180 30 C240 29.1 300 30.7 360 30 C420 29.2 480 30.7 540 30 C600 29.1 660 30.8 720 30' fill='none' stroke='%23004FAE' stroke-opacity='.42' stroke-width='1.35' stroke-linecap='round'/%3E%3C/svg%3E");
   --legal-pad-margin-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='720' viewBox='0 0 70 720'%3E%3Cpath d='M45 0 C44 80 46 160 45 240 C44 330 46 430 45 520 C44 610 46 670 45 720' fill='none' stroke='%23C92232' stroke-opacity='.62' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M53 0 C54 92 52 174 53 264 C54 360 52 450 53 540 C54 628 52 680 53 720' fill='none' stroke='%23C92232' stroke-opacity='.42' stroke-width='1.45' stroke-linecap='round'/%3E%3C/svg%3E");
   --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
@@ -3234,6 +3246,94 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    beside the heading. */
 .pick-clipboard-count:empty{ display: none; }
 
+/* ===== LEGAL PAD TALLY STRIP ===== */
+/* FOUR COUNTS ACROSS THE HEAD OF THE SHEET, all in blue biro: the marks, the
+   little line under them and the label. No box drawn round any of them - the
+   sheet already carries eighteen ruled boxes below, and four more at the top
+   would read as four more teams. What separates one count from the next is the
+   space between them and nothing else.
+   Equal columns rather than content-width, so the four line up as a scale you
+   can read across: a short run of marks beside a long one is the fact. */
+.pad-tallies{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+}
+
+.pad-tally-box{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: var(--bic-blue);
+  font-family: var(--font-hand);
+  text-align: center;
+}
+
+/* The marks wrap by fives inside their own box, so a count of twenty is four
+   groups over one or two lines rather than one line that shoves the column
+   beside it. The min-height holds the row level when a count is zero. */
+.pad-tally-box .pick-tally{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px 8px;
+  min-height: 34px;
+}
+
+.pick-tally-group{
+  display: block;
+  /* Width comes from the group's own viewBox, which is cut to the number of
+     strokes in it, so a partial group takes only the room it needs. */
+  width: auto;
+  height: 34px;
+  overflow: visible;
+}
+
+.pick-tally-group path{
+  fill: none;
+  stroke: var(--bic-blue);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Drawn, like every other line on this pad, and in the blue the marks above it
+   are struck in. Short - it underlines the count, it does not rule off the
+   column. */
+.pad-tally-rule{
+  width: 74%;
+  height: 8px;
+  background-image: var(--pad-biro-1);
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: 100% 8px;
+}
+
+/* A different wobble from its neighbour on either side. Four boxes and three
+   strokes, so the first and the last share one - they are at opposite ends of
+   the strip and never seen as a pair. */
+.pad-tally-box:nth-child(2) .pad-tally-rule{ background-image: var(--pad-biro-2); }
+.pad-tally-box:nth-child(3) .pad-tally-rule{ background-image: var(--pad-biro-3); }
+
+.pad-tally-label{
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0.8;
+}
+
+/* Two by two on a phone. Four columns of tally marks on a 360px screen gives
+   each one about seventy pixels, which is one group of five and a wrap after
+   every fifth mark. */
+@media (max-width: 560px){
+  .pad-tallies{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* ===== LEGAL PAD CARDS ===== */
 /* Three across, each victim ringed in its own pen box - the way someone working
    a pad actually counts: draw a box round a team, tally the names inside it,
@@ -3305,31 +3405,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   text-align: center;
 }
 
-/* The count heads the box and is ruled off from it, the way a tally sheet is
-   kept: the marks first, then what they are counting underneath. Struck as
-   tally marks rather than set as a numeral - it is the same hand that wrote the
-   heading, and on a pad you count by striking, not by writing "7". */
 /* Three strokes, dealt so a card never uses the same one twice - two identical
    wobbles stacked read as a repeat, which is the one thing a hand-drawn line
    must not do. -a heads the unfiled box, -b heads a team card, -c splits the
    blue names from the grey ones; a card draws two of the three, and which two
    depends on which kind of card it is. */
 .pad-card{
-  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-a: var(--pad-ink-1);
+  --pad-rule-b: var(--pad-ink-2);
+  --pad-rule-c: var(--pad-ink-3);
 }
 
 .pad-card:nth-child(3n+2){
-  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-a: var(--pad-ink-2);
+  --pad-rule-b: var(--pad-ink-3);
+  --pad-rule-c: var(--pad-ink-1);
 }
 
 .pad-card:nth-child(3n){
-  --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-a: var(--pad-ink-3);
+  --pad-rule-b: var(--pad-ink-1);
+  --pad-rule-c: var(--pad-ink-2);
 }
 
 /* Drawn, not ruled. A border-bottom was a perfect line under a box whose whole

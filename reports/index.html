@@ -17,9 +17,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260916t"></script>
+  <script src="../js/supabase-config.js?v=20260916w"></script>
 
-<link rel="stylesheet" href="../css/site.css?v=20260916t"/>
+<link rel="stylesheet" href="../css/site.css?v=20260916w"/>
 </head>
 
 <body>
@@ -91,6 +91,13 @@
             <span class="pick-clipboard-count" id="pickClipboardCount" aria-live="polite">Loading picks...</span>
           </h2>
         </div>
+
+        <!-- Four counts across the head of the sheet: the roster split by where
+             each suspect stands this week and whether they have filed. Struck
+             as tally marks, because on a pad you count by striking. Filled by
+             js/pick-clipboard.js; the marks are drawings, so each box carries
+             its own number for a screen reader. -->
+        <ul class="pad-tallies" id="pickClipboardTallies"></ul>
 
         <!-- Boxed rather than tabled: each victim gets its own hand-drawn pen
              box, three across, the way someone working a pad would ring each
@@ -174,28 +181,28 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260916t"></script>
-  <script src="../js/nfl-scores.js?v=20260916t"></script>
-  <script src="../js/nfl-live-scores.js?v=20260916t"></script>
-  <script src="../js/season.js?v=20260916t"></script>
-  <script src="../js/teams.js?v=20260916t"></script>
-  <script src="../js/nav.js?v=20260916t"></script>
-  <script src="../js/scoreboard.js?v=20260916t"></script>
-  <script src="../js/pick-clipboard.js?v=20260916t"></script>
-  <script src="../js/sergeants-notes.js?v=20260916t"></script>
-  <script src="../js/mugshot-lightbox.js?v=20260916t"></script>
-  <script src="../js/suspect-colors.js?v=20260916t"></script>
-  <script src="../js/suspect-lineup-chart.js?v=20260916t"></script>
-  <script src="../js/toast.js?v=20260916t"></script>
-  <script src="../js/auth-corner.js?v=20260916t"></script>
-  <script src="../js/join-form.js?v=20260916t"></script>
-  <script src="../js/join-modal.js?v=20260916t"></script>
-  <script src="../js/join.js?v=20260916t"></script>
-  <script src="../js/username-gate.js?v=20260916t"></script>
-  <script src="../js/password-reset.js?v=20260916t"></script>
-  <script src="../js/join-prefill.js?v=20260916t"></script>
-  <script src="../js/share.js?v=20260916t"></script>
-  <script src="../js/summons.js?v=20260916t"></script>
-  <script src="../js/welcome.js?v=20260916t"></script>
+  <script src="../js/nfl-schedule.js?v=20260916w"></script>
+  <script src="../js/nfl-scores.js?v=20260916w"></script>
+  <script src="../js/nfl-live-scores.js?v=20260916w"></script>
+  <script src="../js/season.js?v=20260916w"></script>
+  <script src="../js/teams.js?v=20260916w"></script>
+  <script src="../js/nav.js?v=20260916w"></script>
+  <script src="../js/scoreboard.js?v=20260916w"></script>
+  <script src="../js/pick-clipboard.js?v=20260916w"></script>
+  <script src="../js/sergeants-notes.js?v=20260916w"></script>
+  <script src="../js/mugshot-lightbox.js?v=20260916w"></script>
+  <script src="../js/suspect-colors.js?v=20260916w"></script>
+  <script src="../js/suspect-lineup-chart.js?v=20260916w"></script>
+  <script src="../js/toast.js?v=20260916w"></script>
+  <script src="../js/auth-corner.js?v=20260916w"></script>
+  <script src="../js/join-form.js?v=20260916w"></script>
+  <script src="../js/join-modal.js?v=20260916w"></script>
+  <script src="../js/join.js?v=20260916w"></script>
+  <script src="../js/username-gate.js?v=20260916w"></script>
+  <script src="../js/password-reset.js?v=20260916w"></script>
+  <script src="../js/join-prefill.js?v=20260916w"></script>
+  <script src="../js/share.js?v=20260916w"></script>
+  <script src="../js/summons.js?v=20260916w"></script>
+  <script src="../js/welcome.js?v=20260916w"></script>
 </body>
 </html>

@@ -300,6 +300,7 @@
       .sort(compareFiledOldestFirst);
 
     setCountText('');
+    renderPadTallies();
 
     // One path for every week, filled or not. A week with no picks used to
     // return early, right past the fitting pass and the focus step below - so
@@ -590,6 +591,105 @@
           exhibition.map((username) => chip(username, true))
         )}
       </li>`;
+  }
+
+  // THE ROSTER IN FOUR, for the strip across the head of the sheet. Two axes
+  // crossed: where somebody stands this week, and whether they have filed for
+  // it. Every booked suspect lands in exactly one of the four, so the marks add
+  // up to the roster and the strip can be read as a whole.
+  //
+  // A NO PICK row counts as NOT FILED. The scorer writes one when a week ends
+  // with somebody having named nobody - it is the verdict on an absent pick,
+  // not a pick - so counting it as filed would report a week as fuller than it
+  // was. Everything else on this sheet drops those rows; this is the one place
+  // that has to notice they mean something.
+  // EX-SUSPECT, not CASE CLOSED, and only here. The strip is a scale read across
+  // in one glance, so the two halves want names of the same shape - suspect and
+  // ex-suspect differ by a prefix, which is exactly the difference being drawn.
+  // CASE CLOSED stays the word everywhere else on the site.
+  const PAD_TALLY_BOXES = [
+    { key: 'liveFiled',   top: 'suspect',    bottom: 'pick is in' },
+    { key: 'liveUnfiled', top: 'suspect',    bottom: 'no pick yet' },
+    { key: 'deadFiled',   top: 'ex-suspect', bottom: 'pick is in' },
+    { key: 'deadUnfiled', top: 'ex-suspect', bottom: 'no pick yet' }
+  ];
+
+  function weekCounts() {
+    const filed = new Set(
+      activePicks
+        .filter((pick) => Number(pick.week) === Number(selectedWeek))
+        .filter((pick) => normalizeTeamName(teamName(pick)) !== normalizeTeamName(NO_PICK_TEAM))
+        .map((pick) => String(displayName(pick)).trim().toLowerCase())
+    );
+
+    const counts = { liveFiled: 0, liveUnfiled: 0, deadFiled: 0, deadUnfiled: 0 };
+
+    for (const username of roster) {
+      const closed = isExhibition(username, selectedWeek);
+      const has = filed.has(username.trim().toLowerCase());
+      counts[`${closed ? 'dead' : 'live'}${has ? 'Filed' : 'Unfiled'}`] += 1;
+    }
+
+    return counts;
+  }
+
+  function renderPadTallies() {
+    const el = document.getElementById('pickClipboardTallies');
+    if (!el) return;
+
+    const counts = weekCounts();
+
+    el.innerHTML = PAD_TALLY_BOXES.map((box) => `
+      <li class="pad-tally-box">
+        ${tallyHtml(counts[box.key])}
+        <span class="pad-tally-rule" aria-hidden="true"></span>
+        <span class="pad-tally-label">
+          <span class="sr-only">${counts[box.key]} </span>${box.top}<br/>${box.bottom}
+        </span>
+      </li>`).join('');
+  }
+
+  // Struck rather than set as a numeral: it is the same hand that wrote the
+  // heading, and on a pad you count by striking, not by writing "7". The marks
+  // are a drawing and carry aria-hidden; the number beside the label is what
+  // gets read out.
+  function tallyHtml(count) {
+    const total = Math.max(0, Number(count) || 0);
+    if (!total) return '<span class="pick-tally pick-tally-empty" aria-hidden="true"></span>';
+
+    const groups = [];
+    for (let remaining = total; remaining > 0; remaining -= 5) {
+      groups.push(tallyGroupHtml(Math.min(5, remaining)));
+    }
+
+    return `<span class="pick-tally" aria-hidden="true">${groups.join('')}</span>`;
+  }
+
+  function tallyGroupHtml(count) {
+    const marks = [
+      '<path d="M7 6 C5.8 16 7.7 27 6.8 39" />',
+      '<path d="M17 5 C15.8 17 17.6 29 16.8 40" />',
+      '<path d="M27 6 C25.8 16 27.6 28 26.8 39" />',
+      '<path d="M37 5 C35.7 17 37.7 28 36.8 40" />',
+      '<path d="M4 35 C14 25 25 16 41 7" />'
+    ];
+
+    // A partial group is only as wide as the strokes it actually holds. It used
+    // to be a full five-mark box whatever was drawn in it, so a group of one
+    // carried four marks' worth of empty paper and pushed whatever followed it
+    // away from the count. The fifth mark is the diagonal, which needs the whole
+    // box back.
+    const strokes = Math.max(1, Math.min(5, Number(count) || 0));
+    const viewWidth = strokes < 5 ? strokes * 10 + 4 : 48;
+
+    // width/height as attributes, not only a viewBox: an SVG with no intrinsic
+    // size resolves `width: auto` against its containing block, which inside a
+    // content-sized flex row settles at zero.
+    return `
+      <svg class="pick-tally-group" viewBox="0 0 ${viewWidth} 44"
+           width="${viewWidth}" height="44" focusable="false">
+        ${marks.slice(0, count).join('')}
+      </svg>`;
   }
 
   // THE NAMES IN TWO BLOCKS, BLUE THEN GREY, RULED APART. Filing order holds

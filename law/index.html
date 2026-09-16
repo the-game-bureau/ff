@@ -17,9 +17,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260916t"></script>
+  <script src="../js/supabase-config.js?v=20260916w"></script>
 
-<link rel="stylesheet" href="../css/site.css?v=20260916t"/>
+<link rel="stylesheet" href="../css/site.css?v=20260916w"/>
 </head>
 
 <body>
@@ -80,6 +80,28 @@
              is how the season ends. -->
         <li class="law-break">Our game will continue into the playoffs if necessary. All playoff teams will be available in the first week of the playoffs.</li>
         <li>If more than one team makes it through the Super Bowl or if the final teams &ldquo;go out&rdquo; in the same week then there will be co-winners.</li>
+        <!-- Exhibition picks: a closed case may keep filing, the pick is still
+             judged, and it is never counted towards the week. Enforced in
+             supabase/sql/ff_exhibition_picks.sql; the Legal Pad greys those
+             names and rules them off from the ones that count. The rule was
+             already true and already visible on the board - this is the first
+             place that says so.
+
+             THE AWARD COUNTS THE WHOLE SEASON, weeks 1 through 18, not only the
+             weeks after the case closed. So it is every SURVIVED that suspect
+             ever got - the ones that kept them alive while they were still in
+             it, plus the exhibition ones after - and the field is everybody who
+             went out. Written out here because the obvious reading of "even
+             though they've been eliminated" is the narrow one, and it is wrong.
+
+             NOT COMPUTED ANYWHERE YET. No page tallies this; the rule is stated
+             and the standing is still to be built. The data is there already:
+             count _2026_picks rows per user with result SURVIVED, over every
+             week, among users who have a DUN DUN. -->
+        <li>You may continue to make picks weekly even after elimination. The
+            <strong>Coulda, Woulda, Shoulda Award</strong> will go to the player that makes
+            the most correct picks through 18 weeks even though they've been
+            eliminated.</li>
       </ul>
     </section>
   </div>
@@ -89,19 +111,19 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260916t"></script>
-  <script src="../js/season.js?v=20260916t"></script>
-  <script src="../js/nav.js?v=20260916t"></script>
-  <script src="../js/toast.js?v=20260916t"></script>
-  <script src="../js/auth-corner.js?v=20260916t"></script>
-  <script src="../js/join-form.js?v=20260916t"></script>
-  <script src="../js/join-modal.js?v=20260916t"></script>
-  <script src="../js/join.js?v=20260916t"></script>
-  <script src="../js/username-gate.js?v=20260916t"></script>
-  <script src="../js/password-reset.js?v=20260916t"></script>
-  <script src="../js/join-prefill.js?v=20260916t"></script>
-  <script src="../js/share.js?v=20260916t"></script>
-  <script src="../js/summons.js?v=20260916t"></script>
-  <script src="../js/welcome.js?v=20260916t"></script>
+  <script src="../js/nfl-schedule.js?v=20260916w"></script>
+  <script src="../js/season.js?v=20260916w"></script>
+  <script src="../js/nav.js?v=20260916w"></script>
+  <script src="../js/toast.js?v=20260916w"></script>
+  <script src="../js/auth-corner.js?v=20260916w"></script>
+  <script src="../js/join-form.js?v=20260916w"></script>
+  <script src="../js/join-modal.js?v=20260916w"></script>
+  <script src="../js/join.js?v=20260916w"></script>
+  <script src="../js/username-gate.js?v=20260916w"></script>
+  <script src="../js/password-reset.js?v=20260916w"></script>
+  <script src="../js/join-prefill.js?v=20260916w"></script>
+  <script src="../js/share.js?v=20260916w"></script>
+  <script src="../js/summons.js?v=20260916w"></script>
+  <script src="../js/welcome.js?v=20260916w"></script>
 </body>
 </html>
