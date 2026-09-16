@@ -3229,74 +3229,29 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   transform: rotate(0.8deg) translateY(0.12em);
 }
 
-.pick-clipboard-count-text{
-  display: inline-block;
-}
-
-.pick-clipboard-count-tally{
-  display: inline-flex;
-  align-items: center;
-}
-
-.pick-tally{
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  min-height: 44px;
-}
-
-.pick-tally-group{
-  display: block;
-  /* Width comes from the group's own viewBox, which is cut to the number of
-     strokes in it, so a partial group takes only the room it needs. */
-  width: auto;
-  height: 44px;
-  overflow: visible;
-}
-
-.pick-tally-group path{
-  fill: none;
-  stroke: var(--bic-blue);
-  stroke-width: 3.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.pick-tally-empty{
-  width: 44px;
-}
-
-/* EXHIBITION PICKS ARE TALLIED APART, in pencil-grey. A closed case can keep
-   filing and is still told whether it won or lost, but none of it counts, so
-   its marks cannot sit in the same count without overstating how many suspects
-   the week has in it. The same mark greyed rather than a second colour: it
-   means the same thing about somebody who no longer counts, which is what the
-   names on the cards already do. */
-.pick-tally-exhibition{
-  display: inline-flex;
-  align-items: center;
-  filter: grayscale(1);
-  opacity: 0.55;
-}
-
-/* Hard right on a card, so it reads as a separate count rather than as more of
-   the one at the other end of the line. */
-.pad-card-head .pick-tally-exhibition{ margin-left: auto; }
-
-/* The heading's count is content-width, so there is no free space for an auto
-   margin to eat - the gap has to be stated. */
-.pick-clipboard-count-tally .pick-tally-exhibition{ margin-left: 20px; }
+/* It only ever says "Loading picks..." or why it cannot. The sheet empties it
+   on a good render, and an empty one must not sit there holding a gap open
+   beside the heading. */
+.pick-clipboard-count:empty{ display: none; }
 
 /* ===== LEGAL PAD CARDS ===== */
 /* Three across, each victim ringed in its own pen box - the way someone working
    a pad actually counts: draw a box round a team, tally the names inside it,
    mark the verdict. It replaced a four-column table whose Suspect/Victim/Result
    was the Suspect Tracker above read sideways. */
+/* COLUMNS AND NOT A GRID. A grid puts every box in a row on the row's height,
+   so one team with eleven names on it set the height of the two beside it and
+   left them with three inches of blank pad underneath. Boxes are different
+   sizes because the weeks are - that is the information - and a column lets
+   each one be its own height and the next one start where it ends. The browser
+   balances the three columns by content, so they come out level at the foot
+   without anything being measured here.
+   The cost, stated: the reading order turns column-major. Down column one, then
+   column two. That suits this sheet, where the boxes are one per team and in no
+   order anybody reads across, and it keeps the unfiled box first. */
 .pad-cards{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px 20px;
+  columns: 3;
+  column-gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -3313,6 +3268,12 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* Never split down the middle by a column break - it is a drawn box, and half
+     of one at the foot of a column with the other half at the head of the next
+     is not a thing a pen can do. The margin is the row gap the grid used to
+     give; multicol has no row gap of its own. */
+  break-inside: avoid;
+  margin-bottom: 22px;
   padding: 16px 18px 14px;
   color: var(--bic-blue);
   font-family: var(--font-hand);
@@ -3348,23 +3309,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    kept: the marks first, then what they are counting underneath. Struck as
    tally marks rather than set as a numeral - it is the same hand that wrote the
    heading, and on a pad you count by striking, not by writing "7". */
-/* Two drawn rules per box: one under the count, one under the teams. Named as
-   properties on the card so the strokes are written once, and paired so a card
-   never uses the same one twice - two identical wobbles stacked read as a
-   repeat, which is the one thing a hand-drawn line must not do. */
+/* Three strokes, dealt so a card never uses the same one twice - two identical
+   wobbles stacked read as a repeat, which is the one thing a hand-drawn line
+   must not do. -a heads the unfiled box, -b heads a team card, -c splits the
+   blue names from the grey ones; a card draws two of the three, and which two
+   depends on which kind of card it is. */
 .pad-card{
   --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 .pad-card:nth-child(3n+2){
   --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 .pad-card:nth-child(3n){
   --pad-rule-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --pad-rule-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-rule-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 /* Drawn, not ruled. A border-bottom was a perfect line under a box whose whole
@@ -3380,31 +3345,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background-size: 100% 10px;
 }
 
+/* ONLY THE UNFILED BOX HAS ONE. A team card is headed by the team, which is the
+   whole of what the box is about; this says the same thing for the box that has
+   no team - the picks that are not there. It is set and placed like a victim
+   block so the two kinds of card start at the same weight. */
 .pad-card-head{
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  margin-top: 2px;
+  text-align: center;
   background-image: var(--pad-rule-a);
 }
 
 .pad-card-victim{ background-image: var(--pad-rule-b); }
-
-.pad-card-tally{ min-width: 0; }
-
-/* Smaller than the heading's tally, which has a whole line to itself. */
-.pad-card-tally .pick-tally{
-  gap: 4px 7px;
-  min-height: 30px;
-}
-
-.pad-card-tally .pick-tally-group{ height: 30px; }
-
-.pad-card-tally .pick-tally-empty{ width: 30px; }
-
-.pick-clipboard-suspect-word{
-  font-size: 1.05rem;
-  opacity: 0.75;
-}
 
 /* One suspect per line, no separators. A wrapped run of names needed commas or
    gaps to be read apart, and both fought with the handwriting; a list down the
@@ -3423,6 +3374,21 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   font-size: 1.05rem;
   line-height: 1.5;
   opacity: 0.9;
+}
+
+/* The line between the blue names and the grey ones - the third stroke, drawn
+   the same way the other two are. Only emitted when there are names on both
+   sides of it. */
+.pad-card-names-split{
+  /* Never squeezed: it is a flex item in a column, and a rule that can shrink
+     is a rule that vanishes on a long list. */
+  flex: 0 0 auto;
+  height: 10px;
+  margin: 8px 0 6px;
+  background-image: var(--pad-rule-c);
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 100% 10px;
 }
 
 /* A name is a link target: the tracker above deep-links to one suspect inside
@@ -3528,7 +3494,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .pad-card-unfiled .pick-clipboard-suspect-names{ margin-top: 8px; }
 
 .pick-clipboard-empty{
-  grid-column: 1 / -1;
+  column-span: all;
   color: var(--bic-blue);
   font-family: var(--font-hand);
   font-size: 1.25rem;
@@ -3540,13 +3506,15 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    floor and the name being cut. Nothing scrolls in these boxes any more, so a
    box too small for its contents clips them rather than offering a bar. */
 @media (max-width: 1040px){
-  .pad-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pad-cards{ columns: 2; }
 }
 
 @media (max-width: 600px){
   /* One across, and the boxes stop leaning: a column of tilted cards reads as
-     a mistake where a row of them reads as a hand. */
-  .pad-cards{ grid-template-columns: minmax(0, 1fr); }
+     a mistake where a row of them reads as a hand. One column also puts the
+     order back to the order the sheet is built in, since there is nowhere
+     for it to go sideways. */
+  .pad-cards{ columns: 1; }
   .pad-card{ transform: none; }
 }
 
@@ -4555,15 +4523,6 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 
   .pick-clipboard-count{
     padding-left: 0;
-  }
-
-  .pick-tally{
-    gap: 4px 7px;
-  }
-
-  .pick-tally-group{
-    width: 42px;
-    height: 38px;
   }
 
   .suspect-lineup-chart{

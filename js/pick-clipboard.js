@@ -172,9 +172,9 @@
     handles = people.handles || new Map();
     focusFromHash();
     activePicks = activePicksFromHistory(picks);
-    // The set of closed cases is derived from these, so it has to go stale with
-    // them - otherwise a suspect who went out between loads keeps their colour.
-    eliminatedCache = null;
+    // The weeks cases closed are derived from these, so they have to go stale
+    // with them - otherwise a suspect who went out between loads keeps their
+    // colour.
     closingWeekCache = null;
     renderWeekOptions();
     renderClipboard();
@@ -299,14 +299,7 @@
       .filter((pick) => normalizeTeamName(teamName(pick)) !== normalizeTeamName(NO_PICK_TEAM))
       .sort(compareFiledOldestFirst);
 
-    // THE WEEK'S PICKS, AND THE ONES THAT DO NOT COUNT. A closed case may keep
-    // filing and is still told whether it won or lost, but none of it counts
-    // towards the week - so putting it in the same tally would report the week
-    // as having more suspects in it than it has. Counted apart and in grey.
-    const counted = weekPicks.filter((pick) => !isExhibition(displayName(pick), selectedWeek));
-    const exhibition = weekPicks.length - counted.length;
-
-    renderPickTally(counted.length, exhibition);
+    setCountText('');
 
     // One path for every week, filled or not. A week with no picks used to
     // return early, right past the fitting pass and the focus step below - so
@@ -316,28 +309,22 @@
     const missing = unfiledSuspects();
 
     body.innerHTML = unfiledCardHtml(missing) + groupPicksByTeam(weekPicks).map((group) => {
-      // Split the same way the heading is, per team. A block can hold both -
-      // three live suspects on the Jets and one closed case along for the ride.
-      const live = group.picks.filter((pick) => !isExhibition(displayName(pick), selectedWeek)).length;
-      const dead = group.picks.length - live;
+      // A block can hold both - three live suspects on the Jets and one closed
+      // case along for the ride - and the two are listed apart, not counted
+      // apart: nothing on the sheet prints a count any more.
+      const live = group.picks.filter((pick) => !isExhibition(displayName(pick), selectedWeek));
+      const dead = group.picks.filter((pick) => isExhibition(displayName(pick), selectedWeek));
 
       return `
       <li class="pad-card">
-        <span class="pad-card-head">
-          <span class="pad-card-tally">${tallyHtml(live)}</span>
-          <span class="pick-clipboard-suspect-word">${escapeHtml(suspectLabel(live))}</span>
-          <span class="sr-only">${live}${dead ? `, plus ${dead} not counted` : ''}</span>
-          ${exhibitionTallyHtml(dead)}
-        </span>
-
         <span class="pad-card-victim">${victimBlockHtml(group.pick)}</span>
 
-        <span class="pick-clipboard-suspect-names">${group.picks.map(suspectChipHtml).join('')}</span>
+        ${namesBlockHtml(live.map(suspectChipHtml), dead.map(suspectChipHtml))}
 
         <span class="pad-card-verdict pick-clipboard-verdict">${verdictMark(group.pick)}</span>
       </li>
     `;
-    }).join('') + (weekPicks.length || missing.length
+    }).join('') + (weekPicks.length || missing.live.length || missing.exhibition.length
       ? ''
       // Only when there is genuinely nothing: no picks and nobody left to make
       // one. Printed alongside a full "no pick yet" box it was saying the same
@@ -508,17 +495,9 @@
     }</span>`;
   }
 
-  // Everyone still in the game who has not filed for the week being viewed.
-  //
-  // Eliminated suspects are left out: their season is over, so listing them as
-  // "no pick yet" would be reporting a pick that is never coming as if it were
-  // late. Same rule the tracker's tally and the APB both follow.
-  // Everyone whose case is closed, by handle. One pass over the picks, cached
-  // for the render: nameChipHtml asks this once per chip and the sheet can hold
+  // handle -> the week their case closed. One pass over the picks, cached for
+  // the render: isExhibition() asks this once per chip and the sheet can hold
   // forty of them.
-  let eliminatedCache = null;
-  // handle -> the week their case closed. Cached with the set above and thrown
-  // away with it.
   let closingWeekCache = null;
 
   // THE WEEK THE CASE CLOSED: the FIRST DUN DUN, not the newest. Out stays out,
@@ -543,7 +522,7 @@
 
   // A pick filed for a week AFTER the one that ended them - judged and shown,
   // never counted, see supabase/sql/ff_exhibition_picks.sql. It is the only
-  // thing on this sheet that greys, and the only thing kept out of the tally.
+  // thing on this sheet that greys, and the only thing ruled off from the rest.
   //
   // WEEK BY WEEK AND NOT "IS OUT AT ALL", which is what this used to ask.
   // Somebody eliminated in Week 9 had a real Week 3, and greying their name on
@@ -554,17 +533,15 @@
     return closed != null && Number(week) > closed;
   }
 
-  function eliminatedNames() {
-    if (eliminatedCache) return eliminatedCache;
-
-    eliminatedCache = new Set(
-      activePicks
-        .filter((pick) => String(pick?.result || '').trim().toLowerCase().includes('dun dun'))
-        .map((pick) => String(displayName(pick)).trim().toLowerCase())
-    );
-    return eliminatedCache;
-  }
-
+  // WHO HAS NOT FILED, split the way every filed box is split. A closed case is
+  // not late - nothing is owed once the case is shut - so it cannot go in the
+  // same count as a suspect who still has to name somebody. It used to be left
+  // off the sheet entirely, which made this the one box where a name simply
+  // vanished: a closed case that kept filing was greyed in its team's box, and
+  // the same closed case that filed nothing was nowhere at all.
+  //
+  // Week by week, not "is out at all" - somebody eliminated in Week 9 was live
+  // for Week 3 and belongs in blue on that sheet. Same rule as isExhibition().
   function unfiledSuspects() {
     const filed = new Set(
       activePicks
@@ -572,12 +549,15 @@
         .map((pick) => String(displayName(pick)).trim().toLowerCase())
     );
 
-    const out = eliminatedNames();
+    const live = [];
+    const exhibition = [];
 
-    return roster.filter((username) => {
-      const key = username.trim().toLowerCase();
-      return !filed.has(key) && !out.has(key);
-    });
+    for (const username of roster) {
+      if (filed.has(username.trim().toLowerCase())) continue;
+      (isExhibition(username, selectedWeek) ? exhibition : live).push(username);
+    }
+
+    return { live, exhibition };
   }
 
   // The first box, whenever there is one. It is the one thing the sheet cannot
@@ -586,33 +566,53 @@
   // A box reading "no pick yet: everyone has filed" was a heading contradicted
   // by its own contents.
   function unfiledCardHtml(missing) {
-    if (!missing.length) return '';
+    const { live, exhibition } = missing;
+    if (!live.length && !exhibition.length) return '';
+
+    // Addressable, because the tracker's blank cells link here now rather than
+    // to the victims page. A suspect is filed or unfiled for a week, never
+    // both, so one id scheme covers both boxes without collision.
+    const chip = (username, out) => nameChipHtml(username, {
+      id: pickAnchorId(username, selectedWeek),
+      title: out
+        ? 'Case already closed. Nothing owed, nothing counted.'
+        : 'Click to find them on the tracker.',
+      linked: true,
+      out
+    });
 
     return `
       <li class="pad-card pad-card-unfiled">
-        <span class="pad-card-head">
-          <span class="pad-card-tally">${tallyHtml(missing.length)}</span>
-          <span class="pick-clipboard-suspect-word">no pick yet</span>
-          <span class="sr-only">${missing.length}</span>
-        </span>
+        <span class="pad-card-head">no pick yet</span>
 
-        <span class="pick-clipboard-suspect-names">${
-          missing.map((username) => nameChipHtml(username, {
-            // Addressable, because the tracker's blank cells link here now
-            // rather than to the victims page. A suspect is filed or unfiled
-            // for a week, never both, so one id scheme covers both boxes
-            // without collision.
-            id: pickAnchorId(username, selectedWeek),
-            title: 'Click to find them on the tracker.',
-            linked: true
-          })).join('')
-        }</span>
+        ${namesBlockHtml(
+          live.map((username) => chip(username, false)),
+          exhibition.map((username) => chip(username, true))
+        )}
       </li>`;
   }
 
-  // Trails off into the team named below it: "7 suspects pick... New York Jets".
-  function suspectLabel(count) {
-    return count === 1 ? 'suspect picks...' : 'suspects pick...';
+  // THE NAMES IN TWO BLOCKS, BLUE THEN GREY, RULED APART. Filing order holds
+  // inside each block, so the first name in the blue run is still whoever
+  // called it first. One run in pure filing order scattered the closed cases
+  // through the live ones, which made grey read as a colour some names happen
+  // to be rather than as the separate thing it is. Now that no count is printed
+  // anywhere on the sheet, the rule is the only thing saying so.
+  function namesBlockHtml(live, dead) {
+    if (!dead.length) {
+      return `<span class="pick-clipboard-suspect-names">${live.join('')}</span>`;
+    }
+
+    // The rule is only drawn when there is something on both sides of it: a
+    // line under the last name, or above the first, separates nothing. The
+    // sentence carries what the rule and the grey say to anyone who can see
+    // them, since nothing else on the card states it any more.
+    const split = (live.length
+      ? '<span class="pad-card-names-split" aria-hidden="true"></span>'
+      : '')
+      + `<span class="sr-only">Plus ${dead.length} from closed cases, which do not count:</span>`;
+
+    return `<span class="pick-clipboard-suspect-names">${live.join('')}${split}${dead.join('')}</span>`;
   }
 
   function maxWeek() {
@@ -890,15 +890,6 @@
     return /(?:z|[+-]\d{2}:?\d{2})$/i.test(text) ? text : `${text}Z`;
   }
 
-  function countLabel(count, exhibition) {
-    const aside = exhibition
-      ? ` Plus ${exhibition} from closed cases, which do not count.`
-      : '';
-
-    if (!count) return `No Week ${selectedWeek} picks on file.${aside}`;
-    return `${count} Week ${selectedWeek} ${count === 1 ? 'pick' : 'picks'} on file.${aside}`;
-  }
-
   function pickAnchorId(username, week) {
     return `pick-clipboard-w${Number(week)}-${anchorSlug(username)}`;
   }
@@ -984,70 +975,13 @@
     }
   });
 
-  function renderPickTally(count, exhibition) {
-    const el = document.getElementById('pickClipboardCount');
-    if (!el) return;
-
-    el.classList.remove('pick-clipboard-count-text');
-    el.classList.add('pick-clipboard-count-tally');
-    el.innerHTML = `<span class="sr-only">${escapeHtml(countLabel(count, exhibition))}</span>`
-      + tallyHtml(count)
-      + exhibitionTallyHtml(exhibition);
-  }
-
-  // The same marks, apart and in grey. Nothing at all when there are none: an
-  // empty second tally would read as a count of zero rather than as a question
-  // the week never raised, and most weeks never raise it.
-  function exhibitionTallyHtml(count) {
-    if (!count) return '';
-    return `<span class="pick-tally-exhibition" title="${count} from closed cases - shown, not counted">${tallyHtml(count)}</span>`;
-  }
-
-  function tallyHtml(count) {
-    const total = Math.max(0, Number(count) || 0);
-    if (!total) return '<span class="pick-tally pick-tally-empty" aria-hidden="true"></span>';
-
-    const groups = [];
-    for (let remaining = total; remaining > 0; remaining -= 5) {
-      groups.push(tallyGroupHtml(Math.min(5, remaining)));
-    }
-
-    return `<span class="pick-tally" aria-hidden="true">${groups.join('')}</span>`;
-  }
-
-  function tallyGroupHtml(count) {
-    const marks = [
-      '<path d="M7 6 C5.8 16 7.7 27 6.8 39" />',
-      '<path d="M17 5 C15.8 17 17.6 29 16.8 40" />',
-      '<path d="M27 6 C25.8 16 27.6 28 26.8 39" />',
-      '<path d="M37 5 C35.7 17 37.7 28 36.8 40" />',
-      '<path d="M4 35 C14 25 25 16 41 7" />'
-    ];
-
-    // A partial group is only as wide as the strokes it actually holds. It used
-    // to be a full five-mark box whatever was drawn in it, so a group of one
-    // carried four marks' worth of empty paper and pushed whatever followed it
-    // away from the count. The fifth mark is the diagonal, which needs the whole
-    // box back.
-    const strokes = Math.max(1, Math.min(5, Number(count) || 0));
-    const viewWidth = strokes < 5 ? strokes * 10 + 4 : 48;
-
-    // width/height as attributes, not only a viewBox: an SVG with no intrinsic
-    // size resolves `width: auto` against its containing block, which inside a
-    // content-sized flex row settles at zero.
-    return `
-      <svg class="pick-tally-group" viewBox="0 0 ${viewWidth} 44"
-           width="${viewWidth}" height="44" focusable="false">
-        ${marks.slice(0, count).join('')}
-      </svg>`;
-  }
-
+  // The one line beside the heading, and it only ever says the sheet is coming
+  // or why it is not. Emptied on a good render, and the stylesheet hides it
+  // empty, so a loaded pad carries no status at all.
   function setCountText(message) {
     const el = document.getElementById('pickClipboardCount');
     if (!el) return;
 
-    el.classList.remove('pick-clipboard-count-tally');
-    el.classList.add('pick-clipboard-count-text');
     el.textContent = message;
   }
 
