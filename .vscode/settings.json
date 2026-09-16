@@ -1,4 +1,12 @@
 {
+  // A PORT OF OUR OWN. 127.0.0.1:5500 is Live Server's default, so every
+  // project served from this machine lands on the same origin and inherits
+  // whatever the last one left in the browser's cache and localStorage. That
+  // is not hypothetical: C:\Code\footballroulette\index.html is a redirect
+  // stub to app/matchups.html, and a cached copy of it at :5500/index.html
+  // sent the Precinct button to another project's page.
+  "liveServer.settings.port": 5510,
+
   // The SQL in supabase/sql/ is PostgreSQL, run in the Supabase SQL editor.
   // The mssql extension parses .sql files as SQL Server by default and reports
   // valid Postgres as syntax errors: schema-qualified names (public.ff_picks),

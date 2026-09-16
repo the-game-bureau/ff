@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260915b"></script>
+  <script src="../js/supabase-config.js?v=20260916m"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260915b"/>
+  <link rel="stylesheet" href="../css/site.css?v=20260916m"/>
 </head>
 
 <body>
@@ -65,15 +65,20 @@
         <summary id="adminWeeksTitle">Week Results</summary>
 
         <p class="gate-help">
-          The season, a row per week. <strong>Picks</strong> reads
-          <em>pick in/no pick/% in</em> - victims named, weeks scored as never
-          having been filed, and the share of the suspects still in that week who
-          named somebody. <em>42/0/100%</em> is a full house.
-          <strong>In Play</strong> counts, <strong>for the open week only</strong>,
-          the picks whose game is still being played; it is zero everywhere else,
-          because a week nobody has reached has nothing in play however much has
-          been filed ahead for it. Every figure is counted from the picks, so
-          nothing here can disagree with the board.
+          The season, a row per week. All three cells read <em>in/out/in%</em>,
+          each against its own column. <strong>Wk Picks</strong> is the filing: of
+          the suspects still in that week, how many have named a victim, how many
+          have not, and the share that is - <em>42/0/100%</em> is a full house.
+          <strong>Wk Start Status</strong> and <strong>Wk End Status</strong> are
+          the league at either end of the week: still a suspect, case closed, and
+          the share of the roster that is. Read the row across and the gap between
+          them is what the week cost; read down and a week's End is the next
+          week's Start. Both are standings and not verdicts.
+          A week nobody has reached is dashed, because who walks into it is not
+          knowable yet, and <strong>the open week's End stays dashed until the
+          week settles</strong> - a running total under a heading that says the
+          week ended would be claiming more than it knows. Every figure is
+          counted from the picks, so nothing here can disagree with the board.
         </p>
 
         <div class="table-wrap">
@@ -82,14 +87,13 @@
               <tr>
                 <th scope="col">Week</th>
                 <th scope="col">State</th>
-                <th scope="col" title="Victims named for this week, then weeks scored as never having been filed">Picks<span class="admin-weeks-sub">Pick In/No Pick/% In</span></th>
-                <th scope="col" title="Named, and the game has not said yet">In Play</th>
-                <th scope="col">Survived</th>
-                <th scope="col">Dun Dun</th>
+                <th scope="col" title="Of the suspects still in this week: victims named, not named yet, and the share named">Wk Picks<span class="admin-weeks-sub">In/Out/In%</span></th>
+                <th scope="col" title="The league as this week opened: still a suspect, case closed, and the share of the roster that walked into it">Wk Start Status<span class="admin-weeks-sub">In/Out/In%</span></th>
+                <th scope="col" title="The same three, after this week's verdicts landed. Dashed until the week has settled">Wk End Status<span class="admin-weeks-sub">In/Out/In%</span></th>
               </tr>
             </thead>
             <tbody id="adminWeeksBody">
-              <tr><td colspan="6" class="table-empty">Not loaded yet.</td></tr>
+              <tr><td colspan="5" class="table-empty">Not loaded yet.</td></tr>
             </tbody>
           </table>
         </div>
@@ -401,24 +405,24 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260915b"></script>
-  <script src="../js/toast.js?v=20260915b"></script>
-  <script src="../js/nfl-scores.js?v=20260915b"></script>
-  <script src="../js/season.js?v=20260915b"></script>
-  <script src="../js/teams.js?v=20260915b"></script>
-  <script src="../js/nav.js?v=20260915b"></script>
-  <script src="../js/auth-corner.js?v=20260915b"></script>
-  <script src="../js/nfl-live-scores.js?v=20260915b"></script>
-  <script src="../js/admin-score.js?v=20260915b"></script>
-  <script src="../js/admin-todo.js?v=20260915b"></script>
-  <script src="../js/admin-weeks.js?v=20260915b"></script>
-  <script src="../js/admin.js?v=20260915b"></script>
-  <script src="../js/join-form.js?v=20260915b"></script>
-  <script src="../js/join-modal.js?v=20260915b"></script>
-  <script src="../js/join.js?v=20260915b"></script>
-  <script src="../js/username-gate.js?v=20260915b"></script>
-  <script src="../js/password-reset.js?v=20260915b"></script>
-  <script src="../js/share.js?v=20260915b"></script>
-  <script src="../js/summons.js?v=20260915b"></script>
+  <script src="../js/nfl-schedule.js?v=20260916m"></script>
+  <script src="../js/toast.js?v=20260916m"></script>
+  <script src="../js/nfl-scores.js?v=20260916m"></script>
+  <script src="../js/season.js?v=20260916m"></script>
+  <script src="../js/teams.js?v=20260916m"></script>
+  <script src="../js/nav.js?v=20260916m"></script>
+  <script src="../js/auth-corner.js?v=20260916m"></script>
+  <script src="../js/nfl-live-scores.js?v=20260916m"></script>
+  <script src="../js/admin-score.js?v=20260916m"></script>
+  <script src="../js/admin-todo.js?v=20260916m"></script>
+  <script src="../js/admin-weeks.js?v=20260916m"></script>
+  <script src="../js/admin.js?v=20260916m"></script>
+  <script src="../js/join-form.js?v=20260916m"></script>
+  <script src="../js/join-modal.js?v=20260916m"></script>
+  <script src="../js/join.js?v=20260916m"></script>
+  <script src="../js/username-gate.js?v=20260916m"></script>
+  <script src="../js/password-reset.js?v=20260916m"></script>
+  <script src="../js/share.js?v=20260916m"></script>
+  <script src="../js/summons.js?v=20260916m"></script>
 </body>
 </html>

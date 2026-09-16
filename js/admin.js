@@ -1438,9 +1438,15 @@
       "week if you'd like. All of the rules: " +
       apbLink('https://thegamebureau.com/ff/law/index.html') + ".");
 
+    // THE FRONT PAGE, NOT THE CASE FILE. Every module that used to justify a
+    // trip to /reports/ - the Scoreboard, the corkboard, the Legal Pad, the
+    // Suspect Tracker - is on the Precinct now, and that page is no longer in
+    // the nav. A bulletin still pointing at it was sending thirty people to a
+    // page nothing else on the site links to.
     paragraphs.push(
-      "Live league info, the board and every verdict so far: " +
-      apbLink('https://thegamebureau.com/ff/reports/index.html'));
+      "Every stat is on the Precinct now - the scoreboard, the board of mugshots " +
+      "and every verdict so far, all on the front page: " +
+      apbLink('https://thegamebureau.com/ff'));
 
     return {
       // A bare ampersand: this goes into a plain-text input and then into

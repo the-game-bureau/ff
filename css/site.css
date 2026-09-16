@@ -2879,6 +2879,115 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-weeks th[scope="col"]{ text-align: right; }
 .admin-weeks th[scope="col"]:first-child,
 .admin-weeks th[scope="col"]:nth-child(2){ text-align: left; }
+
+/* THE THREE NUMBER COLUMNS ARE ONE WIDTH, and the two label columns are pinned,
+   so the table cannot re-proportion itself as the digits change. Under plain
+   auto layout the surplus of a width:100% table is shared out by content, and
+   the same three-number cell came out a different width in each of the three
+   columns holding it. table-layout:fixed divides what is left after the two
+   pinned columns equally, which is exactly what these three want - they hold
+   the same shape and should be read across as well as down.
+   The min-width keeps that honest on a narrow window: fixed layout squeezes
+   rather than overflowing, so without it the headings would collide. Below it
+   .table-wrap scrolls, which is what it is there for. */
+.admin-weeks{ table-layout: fixed; min-width: 680px; }
+.admin-weeks th[scope="col"]:first-child{ width: 5.5rem; }
+.admin-weeks th[scope="col"]:nth-child(2){ width: 7.5rem; }
+
+/* NO PADDING BETWEEN THE THREE NUMBERS. They were each given a fixed ch-width
+   slot so the digits would line up as three sub-columns down the table, and it
+   worked, but the cost was printed in every cell: a single-digit count left a
+   character of daylight after the slash, so 42/0/100% read as "42/ 0/100%" -
+   three numbers held apart rather than one figure. The cell is right aligned,
+   which already lands every row's last digit on the same edge; that is the
+   alignment worth having, and it costs nothing to look at. */
+
+/* An itty bitty pie after each share - green the In, red the Out. It breaks two
+   house rules on purpose, being round and gradient-filled, and there is no way
+   to draw a pie that is neither. What keeps it in the family is the hard black
+   ring and the two flat colours: a conic gradient with no midpoint is a hard
+   stop, not a blend, so nothing in it is soft. --pie is the green sweep in
+   percent, set per pie by paint() in js/admin-weeks.js.
+   content-box so the 11px is the pie and the ring sits outside it, rather than
+   eating most of a circle this small. */
+.admin-weeks .admin-weeks-pie{
+  display: inline-block;
+  box-sizing: content-box;
+  width: 11px;
+  height: 11px;
+  margin-left: 7px;
+  vertical-align: -2px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: conic-gradient(var(--success) 0 calc(var(--pie, 0) * 1%), var(--error) 0);
+}
+/* All of one colour is a flat fill, not a gradient wound all the way round. A
+   conic gradient still lays a hairline of its second colour along the seam where
+   its two ends meet, so a full house came out as a green circle with a red line
+   through it - which, in a table about who is still in, reads as somebody being
+   out. These follow the rule above so they win on source order. */
+.admin-weeks .admin-weeks-pie-all-in{ background: var(--success); }
+.admin-weeks .admin-weeks-pie-all-out{ background: var(--error); }
+
+/* It is a button, so it resets like one and says so on hover. A hard ring set
+   off the edge rather than the usual press-into-the-page: an 11px circle has
+   nowhere to press to, and filling it red would overwrite the thing it is
+   drawing. */
+.admin-weeks .admin-weeks-pie{ padding: 0; cursor: pointer; }
+.admin-weeks .admin-weeks-pie:hover,
+.admin-weeks .admin-weeks-pie:focus-visible{
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The same split, opened. The slices carry the counts and the key underneath
+   carries what they mean, so neither repeats the other. */
+.admin-weeks-pie-card{ max-width: 380px; }
+.admin-weeks-pie-big{ display: block; width: 100%; height: auto; }
+.admin-weeks-pie-big .admin-weeks-pie-in{ fill: var(--success); }
+.admin-weeks-pie-big .admin-weeks-pie-out{ fill: var(--error); }
+.admin-weeks-pie-big path,
+.admin-weeks-pie-big circle{ stroke: var(--ink); stroke-width: 4; }
+/* White on both fills: #007A33 and #E10600 are dark enough to carry it, and
+   dark type on that red is the 3.80:1 the house rules already refuse. */
+.admin-weeks-pie-big .admin-weeks-pie-label{
+  fill: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+}
+/* A slice too thin to hold its label puts it outside the pie, on paper. */
+.admin-weeks-pie-big .admin-weeks-pie-label-outside{
+  fill: var(--ink);
+  font-size: 13px;
+}
+
+.admin-weeks-pie-key{
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  justify-content: center;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.admin-weeks-pie-key li{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.admin-weeks-pie-key li::before{
+  content: '';
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--ink);
+}
+.admin-weeks-pie-key-in::before{ background: var(--success); }
+.admin-weeks-pie-key-out::before{ background: var(--error); }
 /* nowrap so "this week" stays on one line and the open week's row is the same
    height as every other one. */
 .admin-weeks .admin-weeks-state{
@@ -2905,17 +3014,17 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-weeks-row-upcoming td{ color: var(--text-secondary); }
 
 /* A zero that answers a question, and a question that cannot be asked yet. The
-   second must not read as "none" - see cell() in js/admin-weeks.js. */
+   second must not read as "none" - see statusCell() in js/admin-weeks.js. */
 .admin-weeks .admin-weeks-zero{ color: var(--text-secondary); }
 
-/* The missed count rides in the Picks cell. Both halves are muted so the named
-   count keeps the cell - it is the number being read, and the one beside it is
-   almost always zero. */
+/* Both cells in this table are three numbers on one slash rule, and only the
+   first is being read - the picks that are in, the suspects that are. The two
+   Outs and the share are muted so the leading figure keeps the cell. */
 .admin-weeks .admin-weeks-slash,
-.admin-weeks .admin-weeks-nopick{ color: var(--text-secondary); }
+.admin-weeks .admin-weeks-out{ color: var(--text-secondary); }
 .admin-weeks .admin-weeks-slash{ padding: 0 1px; }
 
-/* The legend for the two numbers in the cell below, under the column's name.
+/* The legend for the three numbers in the cell below, under the column's name.
    Its own line, because the header is the only place there is room to say which
    number is which. */
 .admin-weeks th .admin-weeks-sub{
@@ -2932,6 +3041,7 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    cell - it is the figure being read, the other two qualify it. */
 .admin-weeks .admin-weeks-share{ color: var(--text-secondary); }
 .admin-weeks .admin-weeks-na{ color: var(--text-secondary); opacity: 0.45; }
+
 
 /* ===== PICK CLIPBOARD ===== */
 .pick-clipboard{
@@ -3156,6 +3266,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .pick-tally-empty{
   width: 44px;
 }
+
+/* EXHIBITION PICKS ARE TALLIED APART, in pencil-grey. A closed case can keep
+   filing and is still told whether it won or lost, but none of it counts, so
+   its marks cannot sit in the same count without overstating how many suspects
+   the week has in it. The same mark greyed rather than a second colour: it
+   means the same thing about somebody who no longer counts, which is what the
+   names on the cards already do. */
+.pick-tally-exhibition{
+  display: inline-flex;
+  align-items: center;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* Hard right on a card, so it reads as a separate count rather than as more of
+   the one at the other end of the line. */
+.pad-card-head .pick-tally-exhibition{ margin-left: auto; }
+
+/* The heading's count is content-width, so there is no free space for an auto
+   margin to eat - the gap has to be stated. */
+.pick-clipboard-count-tally .pick-tally-exhibition{ margin-left: 20px; }
 
 /* ===== LEGAL PAD CARDS ===== */
 /* Three across, each victim ringed in its own pen box - the way someone working

@@ -306,7 +306,7 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   headings and otherwise arrived as 36 Week 18 finals.
 - [js/admin-weeks.js](js/admin-weeks.js) — **Week Results**, the season as one
   row per week: who was still a suspect going into it, who had already closed,
-  what is filed, and what was decided. Three kinds of row — settled, this week,
+  and what was filed. Three kinds of row — settled, this week,
   upcoming — labelled by where the week sits, with the numbers left to say how
   far scoring actually got, so a past week with picks still pending shows it
   rather than being hidden behind a label reading SCORED. Every figure is
@@ -314,19 +314,77 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   the public pages read, so it cannot disagree with the board. Exhibition picks
   (a closed case still filing) are skipped entirely and not reported — counting
   them anywhere would make a dead suspect look live.
-  `Picks` reads `42/0/100%` — victims named, weeks scored as never having been
-  filed, and the share of the suspects still in that week who named somebody.
-  The missed count rides in the same cell because it is almost always zero and a
-  column of zeros earns less than its width; the share is out of who could still
-  file that week rather than the whole roster, so an upcoming week reads against
-  the people it is actually waiting on. A `NO PICK` row is the opposite of a pick
-  and stays out of the first number — it already carries a `DUN DUN` verdict that
-  would otherwise count somebody twice.
-  **`In Play` is the open week only** — picks whose game is still being played,
-  which takes the scoreboard and not just the absence of a verdict, so a game
-  that has ended and has not been scored yet is not in play. Zero on every other
-  row by definition: a week nobody has reached has nothing in play, however much
-  has been filed ahead for it.
+  **The first two cells read `In/Out/In%`**, each against its own column — in and
+  out of the *pick*, then in and out of the *game*. `Wk Picks` is the filing: of the
+  suspects still in that week, how many have named a victim, how many have not,
+  and the first as a share of them. `42/0/100%` is a full house. `Out` is counted
+  as everybody still in minus everybody who filed, because not filing leaves no
+  row to count; after scoring it is exactly the `NO PICK` rows, and before it, it
+  is simply who is late. A `NO PICK` row is the opposite of a pick and never
+  counts as one. Every row can answer this, upcoming ones included — they read
+  against the people who could file for that week *right now*, which is a fact
+  about today rather than a guess about the week.
+  `Wk Start Status` reads `18/2/90%` — **the league as the week opened**: still a
+  suspect, case closed, and the share of the roster that walked into it. `WK
+  START` and `WK END` are spelled out in the headings rather than left to a
+  tooltip because three `Out`s sit in a row and the first is a different thing:
+  an unfiled pick, then a closed case, then a closed case a few hours later.
+  It is a **standing and not a verdict**, so the two axes stay apart: a week's own
+  casualties are not a number here, they are the drop to the next row. It replaced
+  three columns — `In Play`, `Survived`, `Dun Dun` — of which `Survived` counted
+  `SURVIVED` verdicts under a heading sitting over a count of people, so week 1
+  read *20 survived, 2 dun dun* out of twenty. An upcoming week is dashed rather
+  than carrying today's standing forward: who walks into week 9 is not knowable
+  until week 8 has been judged. Nothing here reads the scoreboard any more —
+  `In Play` was the only thing that needed it.
+  `Wk End Status` is the same three numbers after that week's verdicts have
+  landed — **one `statusCell()` called twice**, because the only difference is
+  whether the week's own casualties have moved across yet, and a second copy
+  would have been a second place to get that wrong. **The table is meant to be
+  read both ways**: across a row, the gap between Start and End is what the week
+  cost; down the page, a week's End is the next week's Start, which makes the
+  whole thing check itself.
+  **The two ends are known at different times, and the gap between the two flags
+  in `paint()` is the open week.** Who walks *in* is settled as soon as the week
+  before is judged, so `startKnown` is `week <= thisWeek`. Who walks *out* is not
+  settled until the week is, so `endKnown` is `week < thisWeek` and the open week
+  stays dashed. That is a deliberate exception to this table's habit of showing
+  how far scoring got: a running total is honest under `Wk Picks`, but under a
+  heading reading `WK END` it would be claiming the week had ended on that number.
+  **Column widths are `table-layout: fixed`** with the `Week` and `State` columns
+  pinned and the three number columns splitting the rest equally — they hold the
+  same shape and must line up across the row, which auto layout would not give
+  them. Inside a cell the three numbers are **not** padded to fixed widths — they
+  were, so the digits would line up as sub-columns, and it printed a space after
+  the slash in every cell with a single-digit count (`42/ 0/100%`). The cell is
+  right-aligned, which lands every row's last digit on one edge for free.
+  **Each share carries a tiny two-colour pie** after it — green the `In`, red the
+  `Out`, drawn at the same percentage the text states. It breaks the round-and-no-
+  gradients house rules knowingly, since a pie can be neither; the hard black ring
+  and the two flat colours keep it in the family, and a conic gradient with no
+  midpoint is a hard stop rather than a blend. The wedge rides in on `data-pie`
+  and is moved to a custom property by `paint()`, because the pages carry no
+  inline `style=` attributes. Red-against-green, so it is never the only place a
+  fact lives — the number is beside it.
+  **Clicking a pie opens it large**, in the site's usual `.modal-backdrop` shell,
+  with each count written on its own slice as `## (##%)` and a key underneath
+  saying what the two colours mean — the slices carry the numbers, the key
+  carries the names, so neither repeats the other. That is why the small pie is a
+  `<button>` and not a `<span>`: it is clickable, so it has to be keyboard
+  reachable and has to say what it is. It carries its own counts and its own two
+  labels on data attributes, so the popup never has to read them back out of the
+  row — the cell that drew the wedge is the one that knows whether its colours
+  mean *named/not named* or *still a suspect/case closed*. The large one is SVG
+  rather than the small one's conic gradient, because a label has to sit at the
+  middle of a wedge and only a path knows where that is. **Two traps in the
+  geometry**, both already sprung once: a slice under 15% cannot hold its label,
+  so the label goes outside the circle and is anchored *away* from it (centred,
+  a label at three o'clock lies across the pie it is labelling); and the viewBox
+  is wider than the pie is round to leave room for that, sized for the worst case
+  on every pie so the circle is not a different size from one week to the next. The
+  `min-width` on the table is what makes `.table-wrap`
+  scroll on a narrow window instead of the headings colliding, since fixed layout
+  squeezes rather than overflows.
 
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).

@@ -32,7 +32,13 @@
   // answers, and empty forever if it does not - in which case the sheet falls
   // back to the generated file, which is where it was before.
   let liveGames = [];
+  // The week the sheet is showing. Seeded from the schedule's guess so the
+  // first paint has something, then replaced with the league's own open week in
+  // loadPicks() - see the note there before trusting this line.
   let selectedWeek = Number(window.CURRENT_WEEK || 1);
+  // Whether that replacement has happened. Set once, so a later reload cannot
+  // move a reader who has since paged somewhere else.
+  let weekDefaulted = false;
   let pendingFocus = null;
   // username (lower-cased) -> first name. Empty for a signed-out visitor, who
   // is never told anyone's real name.
@@ -123,6 +129,21 @@
     // The league's open week, not the schedule's. See js/season.js.
     await window.ffOpenWeekReady;
 
+    // TAKEN AGAIN HERE, ON THE FAR SIDE OF THE AWAIT. The declaration up top
+    // runs while the page is still parsing, when CURRENT_WEEK is only the
+    // schedule's guess - js/season.js corrects it once the database answers,
+    // and the league's week can sit behind the schedule's whenever a game has
+    // not been scored yet. The sheet opened on that guess and so could show a
+    // different week from everything else on the page.
+    //
+    // FIRST LOAD ONLY, the same rule the hash follows below: loadPicks() runs
+    // again on every auth change, and resetting the week then would drag a
+    // reader who had paged back to Week 3 forward to today, mid-read.
+    if (!weekDefaulted) {
+      weekDefaulted = true;
+      selectedWeek = clampWeek(Number(window.CURRENT_WEEK) || 1);
+    }
+
     if (!pickboardDb) {
       setCountText('Clipboard is unavailable.');
       return;
@@ -154,6 +175,7 @@
     // The set of closed cases is derived from these, so it has to go stale with
     // them - otherwise a suspect who went out between loads keeps their colour.
     eliminatedCache = null;
+    closingWeekCache = null;
     renderWeekOptions();
     renderClipboard();
 
@@ -277,7 +299,14 @@
       .filter((pick) => normalizeTeamName(teamName(pick)) !== normalizeTeamName(NO_PICK_TEAM))
       .sort(compareFiledOldestFirst);
 
-    renderPickTally(weekPicks.length);
+    // THE WEEK'S PICKS, AND THE ONES THAT DO NOT COUNT. A closed case may keep
+    // filing and is still told whether it won or lost, but none of it counts
+    // towards the week - so putting it in the same tally would report the week
+    // as having more suspects in it than it has. Counted apart and in grey.
+    const counted = weekPicks.filter((pick) => !isExhibition(displayName(pick), selectedWeek));
+    const exhibition = weekPicks.length - counted.length;
+
+    renderPickTally(counted.length, exhibition);
 
     // One path for every week, filled or not. A week with no picks used to
     // return early, right past the fitting pass and the focus step below - so
@@ -286,12 +315,19 @@
     // exactly like a broken link.
     const missing = unfiledSuspects();
 
-    body.innerHTML = unfiledCardHtml(missing) + groupPicksByTeam(weekPicks).map((group) => `
+    body.innerHTML = unfiledCardHtml(missing) + groupPicksByTeam(weekPicks).map((group) => {
+      // Split the same way the heading is, per team. A block can hold both -
+      // three live suspects on the Jets and one closed case along for the ride.
+      const live = group.picks.filter((pick) => !isExhibition(displayName(pick), selectedWeek)).length;
+      const dead = group.picks.length - live;
+
+      return `
       <li class="pad-card">
         <span class="pad-card-head">
-          <span class="pad-card-tally">${tallyHtml(group.picks.length)}</span>
-          <span class="pick-clipboard-suspect-word">${escapeHtml(suspectLabel(group.picks.length))}</span>
-          <span class="sr-only">${group.picks.length}</span>
+          <span class="pad-card-tally">${tallyHtml(live)}</span>
+          <span class="pick-clipboard-suspect-word">${escapeHtml(suspectLabel(live))}</span>
+          <span class="sr-only">${live}${dead ? `, plus ${dead} not counted` : ''}</span>
+          ${exhibitionTallyHtml(dead)}
         </span>
 
         <span class="pad-card-victim">${victimBlockHtml(group.pick)}</span>
@@ -300,7 +336,8 @@
 
         <span class="pad-card-verdict pick-clipboard-verdict">${verdictMark(group.pick)}</span>
       </li>
-    `).join('') + (weekPicks.length || missing.length
+    `;
+    }).join('') + (weekPicks.length || missing.length
       ? ''
       // Only when there is genuinely nothing: no picks and nobody left to make
       // one. Printed alongside a full "no pick yet" box it was saying the same
@@ -440,10 +477,15 @@
   // earn a quarter of the table's width.
   function suspectChipHtml(pick) {
     const username = displayName(pick);
+    const exhibition = isExhibition(username, selectedWeek);
+
     return nameChipHtml(username, {
       id: pickAnchorId(username, selectedWeek),
-      title: `Filed ${stamp(pick)}. Click to find them on the tracker.`,
-      linked: true
+      title: exhibition
+        ? `Case already closed. Filed ${stamp(pick)}, does not count.`
+        : `Filed ${stamp(pick)}. Click to find them on the tracker.`,
+      linked: true,
+      out: exhibition
     });
   }
 
@@ -452,11 +494,11 @@
   // an empty cell up there goes to the victims page instead.
   function nameChipHtml(username, options = {}) {
     const first = firstNames.get(String(username).trim().toLowerCase()) || '';
-    // A closed case still owns the picks it filed before the case closed. They
-    // stay on the sheet - the record is the record - but they stop competing
-    // for attention with the picks that can still go either way.
-    const out = eliminatedNames().has(String(username).trim().toLowerCase())
-      ? ' pick-clipboard-suspect-out' : '';
+    // Whether this greys is the caller's to say, not this function's. A closed
+    // case still owns every pick it filed while it was playing and those keep
+    // the weight they earned; what greys is an exhibition pick, filed for a week
+    // after the case closed. Only the caller knows which week it is looking at.
+    const out = options.out ? ' pick-clipboard-suspect-out' : '';
 
     return `<span class="pick-clipboard-suspect${out}${options.linked ? ' pick-clipboard-suspect-linked' : ''}"
                   ${options.linked ? `role="button" tabindex="0" data-tracker-username="${escapeHtml(username)}"` : ''}
@@ -475,6 +517,42 @@
   // for the render: nameChipHtml asks this once per chip and the sheet can hold
   // forty of them.
   let eliminatedCache = null;
+  // handle -> the week their case closed. Cached with the set above and thrown
+  // away with it.
+  let closingWeekCache = null;
+
+  // THE WEEK THE CASE CLOSED: the FIRST DUN DUN, not the newest. Out stays out,
+  // so a closed suspect who keeps filing and gets one right does not un-close,
+  // and it is this week that divides their real season from the exhibition one.
+  // Same rule as _2026_is_out and closingWeek() in js/suspect-lineup-chart.js.
+  function closingWeeks() {
+    if (closingWeekCache) return closingWeekCache;
+
+    closingWeekCache = new Map();
+    for (const pick of activePicks) {
+      if (!String(pick?.result || '').trim().toLowerCase().includes('dun dun')) continue;
+
+      const name = String(displayName(pick)).trim().toLowerCase();
+      const week = Number(pick.week);
+      const seen = closingWeekCache.get(name);
+      if (seen == null || week < seen) closingWeekCache.set(name, week);
+    }
+
+    return closingWeekCache;
+  }
+
+  // A pick filed for a week AFTER the one that ended them - judged and shown,
+  // never counted, see supabase/sql/ff_exhibition_picks.sql. It is the only
+  // thing on this sheet that greys, and the only thing kept out of the tally.
+  //
+  // WEEK BY WEEK AND NOT "IS OUT AT ALL", which is what this used to ask.
+  // Somebody eliminated in Week 9 had a real Week 3, and greying their name on
+  // the Week 3 sheet wiped out most of the board's history - the same fault the
+  // Suspect Tracker had until 166fdf3, fixed there and missed here.
+  function isExhibition(username, week) {
+    const closed = closingWeeks().get(String(username).trim().toLowerCase());
+    return closed != null && Number(week) > closed;
+  }
 
   function eliminatedNames() {
     if (eliminatedCache) return eliminatedCache;
@@ -812,9 +890,13 @@
     return /(?:z|[+-]\d{2}:?\d{2})$/i.test(text) ? text : `${text}Z`;
   }
 
-  function countLabel(count) {
-    if (!count) return `No Week ${selectedWeek} picks on file.`;
-    return `${count} Week ${selectedWeek} ${count === 1 ? 'pick' : 'picks'} on file.`;
+  function countLabel(count, exhibition) {
+    const aside = exhibition
+      ? ` Plus ${exhibition} from closed cases, which do not count.`
+      : '';
+
+    if (!count) return `No Week ${selectedWeek} picks on file.${aside}`;
+    return `${count} Week ${selectedWeek} ${count === 1 ? 'pick' : 'picks'} on file.${aside}`;
   }
 
   function pickAnchorId(username, week) {
@@ -902,13 +984,23 @@
     }
   });
 
-  function renderPickTally(count) {
+  function renderPickTally(count, exhibition) {
     const el = document.getElementById('pickClipboardCount');
     if (!el) return;
 
     el.classList.remove('pick-clipboard-count-text');
     el.classList.add('pick-clipboard-count-tally');
-    el.innerHTML = `<span class="sr-only">${escapeHtml(countLabel(count))}</span>${tallyHtml(count)}`;
+    el.innerHTML = `<span class="sr-only">${escapeHtml(countLabel(count, exhibition))}</span>`
+      + tallyHtml(count)
+      + exhibitionTallyHtml(exhibition);
+  }
+
+  // The same marks, apart and in grey. Nothing at all when there are none: an
+  // empty second tally would read as a count of zero rather than as a question
+  // the week never raised, and most weeks never raise it.
+  function exhibitionTallyHtml(count) {
+    if (!count) return '';
+    return `<span class="pick-tally-exhibition" title="${count} from closed cases - shown, not counted">${tallyHtml(count)}</span>`;
   }
 
   function tallyHtml(count) {
