@@ -607,11 +607,20 @@
   // in one glance, so the two halves want names of the same shape - suspect and
   // ex-suspect differ by a prefix, which is exactly the difference being drawn.
   // CASE CLOSED stays the word everywhere else on the site.
-  const PAD_TALLY_BOXES = [
-    { key: 'liveFiled',   top: 'suspect',    bottom: 'pick is in' },
-    { key: 'liveUnfiled', top: 'suspect',    bottom: 'no pick yet' },
-    { key: 'deadFiled',   top: 'ex-suspect', bottom: 'pick is in' },
-    { key: 'deadUnfiled', top: 'ex-suspect', bottom: 'no pick yet' }
+  //
+  // TWO RINGS OF TWO, not four counts in a row. The split that matters is where
+  // somebody stands; filed-or-not is the question asked inside each standing.
+  // Four abreast made those two cuts look like one cut made three times, so the
+  // standing is drawn as a ring and the filing is what sits inside it.
+  const PAD_TALLY_GROUPS = [
+    [
+      { key: 'liveFiled',   top: 'suspect',    bottom: 'pick is in' },
+      { key: 'liveUnfiled', top: 'suspect',    bottom: 'no pick yet' }
+    ],
+    [
+      { key: 'deadFiled',   top: 'ex-suspect', bottom: 'pick is in' },
+      { key: 'deadUnfiled', top: 'ex-suspect', bottom: 'no pick yet' }
+    ]
   ];
 
   function weekCounts() {
@@ -639,13 +648,16 @@
 
     const counts = weekCounts();
 
-    el.innerHTML = PAD_TALLY_BOXES.map((box) => `
-      <li class="pad-tally-box">
-        ${tallyHtml(counts[box.key])}
-        <span class="pad-tally-rule" aria-hidden="true"></span>
-        <span class="pad-tally-label">
-          <span class="sr-only">${counts[box.key]} </span>${box.top}<br/>${box.bottom}
-        </span>
+    el.innerHTML = PAD_TALLY_GROUPS.map((group) => `
+      <li class="pad-tally-pair">
+        ${group.map((box) => `
+        <span class="pad-tally-box">
+          ${tallyHtml(counts[box.key])}
+          <span class="pad-tally-rule" aria-hidden="true"></span>
+          <span class="pad-tally-label">
+            <span class="sr-only">${counts[box.key]} </span>${box.top}<br/>${box.bottom}
+          </span>
+        </span>`).join('')}
       </li>`).join('');
   }
 

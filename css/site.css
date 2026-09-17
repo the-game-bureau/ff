@@ -3062,6 +3062,13 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   --pad-biro-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7 C58 4 112 9 168 6 C214 4 258 8 296 5' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --pad-biro-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C52 9 108 4 164 8 C220 11 256 5 297 8' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --pad-biro-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8 C64 5 118 10 172 5 C222 2 262 7 296 6' fill='none' stroke='%230047AB' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* The same stroke turned on its side: viewBox 12 by 300 instead of 300 by 12,
+     so preserveAspectRatio:none stretches its length down the page and the
+     wobble keeps its width. Black only - the one place a line runs vertically
+     is between two counts, and that divider is Sharpie like every other rule
+     round them. */
+  --pad-ink-v1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 300' preserveAspectRatio='none'%3E%3Cpath d='M6 4 C4 60 9 116 6 172 C4 220 8 262 6 296' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pad-ink-v2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 300' preserveAspectRatio='none'%3E%3Cpath d='M6 4 C8 58 4 114 7 170 C9 222 5 264 6 296' fill='none' stroke='%23141414' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
   --legal-pad-rule-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='31' viewBox='0 0 720 31'%3E%3Cpath d='M0 30 C60 29.2 120 30.8 180 30 C240 29.1 300 30.7 360 30 C420 29.2 480 30.7 540 30 C600 29.1 660 30.8 720 30' fill='none' stroke='%23004FAE' stroke-opacity='.42' stroke-width='1.35' stroke-linecap='round'/%3E%3C/svg%3E");
   --legal-pad-margin-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='720' viewBox='0 0 70 720'%3E%3Cpath d='M45 0 C44 80 46 160 45 240 C44 330 46 430 45 520 C44 610 46 670 45 720' fill='none' stroke='%23C92232' stroke-opacity='.62' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M53 0 C54 92 52 174 53 264 C54 360 52 450 53 540 C54 628 52 680 53 720' fill='none' stroke='%23C92232' stroke-opacity='.42' stroke-width='1.45' stroke-linecap='round'/%3E%3C/svg%3E");
   --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
@@ -3144,12 +3151,16 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   border-bottom: 0;
 }
 
+/* Black Sharpie, not biro. It is the one thing written on this sheet before any
+   of it was filled in - the week's heading goes on with the same pen that rules
+   the boxes, and the biro is what gets added afterwards. The status line inside
+   it keeps its blue for that reason: it is a note, not a heading. */
 .pick-clipboard-head h2{
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  color: var(--bic-blue);
+  color: var(--sharpie-black);
   font-family: var(--font-hand);
   font-size: clamp(2rem, 4vw, 2.6rem);
   line-height: 1.12;
@@ -3247,26 +3258,65 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .pick-clipboard-count:empty{ display: none; }
 
 /* ===== LEGAL PAD TALLY STRIP ===== */
-/* FOUR COUNTS ACROSS THE HEAD OF THE SHEET, all in blue biro: the marks, the
-   little line under them and the label. No box drawn round any of them - the
-   sheet already carries eighteen ruled boxes below, and four more at the top
-   would read as four more teams. What separates one count from the next is the
-   space between them and nothing else.
+/* FOUR COUNTS ACROSS THE HEAD OF THE SHEET. The marks, the little line under
+   them and the label are blue biro; the ring round each pair is black Sharpie,
+   the same pen every box on the sheet below is ruled with.
    Equal columns rather than content-width, so the four line up as a scale you
    can read across: a short run of marks beside a long one is the fact. */
 .pad-tallies{
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
   margin: 0 0 26px;
   padding: 0;
   list-style: none;
 }
 
+/* THE RING IS THE STANDING. Two counts inside it, and what they are is the same
+   question asked twice - filed, not filed - so the ring says which half of the
+   league is being asked.
+   The same box as a pick card, exactly: same black Sharpie, same 5px, same two
+   sets of wildly lopsided radii bowing each side out instead of meeting at a
+   corner, same lean on the second one. One pen drew the whole sheet, so a ring
+   at the top of it is not a lighter or a different kind of mark than a box
+   halfway down - it is the same hand doing the same thing. Keep these in step
+   with .pad-card if that box ever changes. */
+.pad-tally-pair{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  padding: 16px 16px 12px;
+  border: 5px solid var(--sharpie-black);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  /* The divider, struck down the gap between the two counts. It is a background
+     on the ring and not a border on a box, because the line belongs to neither
+     count - it is the cut between them. background-origin keeps it inside the
+     padding, so it stops short of the ring at both ends the way a stroke drawn
+     between two things does, rather than running into it. */
+  background-image: var(--pad-ink-v1);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-origin: content-box;
+  background-size: 10px 100%;
+}
+
+.pad-tally-pair:nth-child(2){
+  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  transform: rotate(-0.35deg);
+  background-image: var(--pad-ink-v2);
+}
+
+/* The two boxes in a ring are the same height, being grid items, so the spare
+   room goes somewhere. It goes above the marks: they sit on the bottom and grow
+   up, which puts the little line and the label of one box level with the other's
+   however many marks are struck in each. Left at the top instead, a count that
+   wrapped to two rows of marks pushed its own label a row below its neighbour's,
+   and two labels at two heights read as two different kinds of thing. */
 .pad-tally-box{
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
   color: var(--bic-blue);
   font-family: var(--font-hand);
@@ -3314,11 +3364,13 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   background-size: 100% 8px;
 }
 
-/* A different wobble from its neighbour on either side. Four boxes and three
-   strokes, so the first and the last share one - they are at opposite ends of
-   the strip and never seen as a pair. */
-.pad-tally-box:nth-child(2) .pad-tally-rule{ background-image: var(--pad-biro-2); }
-.pad-tally-box:nth-child(3) .pad-tally-rule{ background-image: var(--pad-biro-3); }
+/* A different wobble from its neighbour. Four boxes and three strokes, so one
+   pairing has to repeat; it is put at the two ends of the strip, which are
+   never seen side by side. Spelled out box by box rather than left to
+   nth-child alone, because the boxes restart their count inside each ring. */
+.pad-tally-pair:nth-child(1) .pad-tally-box:nth-child(2) .pad-tally-rule{ background-image: var(--pad-biro-2); }
+.pad-tally-pair:nth-child(2) .pad-tally-box:nth-child(1) .pad-tally-rule{ background-image: var(--pad-biro-3); }
+.pad-tally-pair:nth-child(2) .pad-tally-box:nth-child(2) .pad-tally-rule{ background-image: var(--pad-biro-1); }
 
 .pad-tally-label{
   font-size: 0.9rem;
@@ -3327,11 +3379,13 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   opacity: 0.8;
 }
 
-/* Two by two on a phone. Four columns of tally marks on a 360px screen gives
-   each one about seventy pixels, which is one group of five and a wrap after
-   every fifth mark. */
+/* One ring per row on a phone, which still leaves the two counts inside it side
+   by side - the comparison the ring exists to draw. Four columns of tally marks
+   on a 360px screen gives each one about seventy pixels, which is one group of
+   five and a wrap after every fifth mark. */
 @media (max-width: 560px){
-  .pad-tallies{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pad-tallies{ grid-template-columns: minmax(0, 1fr); }
+  .pad-tally-pair:nth-child(2){ transform: none; }
 }
 
 /* ===== LEGAL PAD CARDS ===== */
