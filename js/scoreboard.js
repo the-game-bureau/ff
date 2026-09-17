@@ -18,6 +18,25 @@
   // results are free text entered out of band, the same way the badge colours
   // on the lineup are matched.
   const ELIMINATED = 'dun dun';
+  // THE COUNT RUNS DOWN ON ARRIVAL. The scoreboard opens on week zero - the
+  // whole roster, nobody out yet - and falls to where the season actually
+  // stands. A survivor pool's headline number only means anything against the
+  // number it started from, and a board that simply prints "18" cannot say
+  // whether that is most of the league or what is left of it.
+  //
+  // One counter drives both halves: closed goes up, still-a-suspect is the
+  // roster minus closed. So the two always add to the roster, on every frame
+  // and not only at the end - two counters run separately would disagree in
+  // the middle, which is the one thing this pair must never do.
+  const SCORE_RUN_HOLD_MS = 280;
+  const SCORE_RUN_MIN_MS = 450;
+  const SCORE_RUN_MAX_MS = 1200;
+  const SCORE_RUN_MS_EACH = 110;
+  const MOTION_OK = !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  // Once a page, not once a load. loadDocket() runs again whenever somebody
+  // signs in or out, and replaying the drop each time would make an ordinary
+  // sign-in look like a week had just been scored.
+  let scoreHasRun = false;
   const DOT_SVG_NS = 'http://www.w3.org/2000/svg';
   const DOT_ROWS = 7;
   const DOT_PITCH = 4;
@@ -150,13 +169,70 @@
 
     const rows = data || [];
     const out = rows.filter((row) => isEliminated(row.game_status)).length;
-    setScore(String(rows.length - out), String(out));
+    runScore(countEl, outEl, rows.length, out);
     // The two standings, in the site's only words for them. DUN DUN is the
     // verdict on one week's pick and is not a standing - counting people
     // under it here is what made the Case File and the wire disagree about
     // the same twenty suspects.
     setLabel(labelEl, 'Still A Suspect');
     setLabel(outLabelEl, 'Case Closed');
+  }
+
+  function runScore(countEl, outEl, total, out) {
+    const settle = () => {
+      renderDotText(countEl, String(total - out));
+      if (outEl) renderDotText(outEl, String(out));
+    };
+
+    // Nothing to run when nobody is out yet - the start and the finish are the
+    // same number, and a held pause on it would read as the page hanging.
+    if (scoreHasRun || !out || !MOTION_OK) {
+      scoreHasRun = true;
+      settle();
+      return;
+    }
+    scoreHasRun = true;
+
+    const duration = Math.min(
+      SCORE_RUN_MAX_MS,
+      Math.max(SCORE_RUN_MIN_MS, out * SCORE_RUN_MS_EACH)
+    );
+
+    // Held at week zero for a beat first. The easing below is fastest at the
+    // very start, so without the hold the opening number is gone before it can
+    // be read and the whole thing reads as a number that arrived wrong.
+    const begin = performance.now() + SCORE_RUN_HOLD_MS;
+    let shown = 0;
+
+    const paint = (closed, silent) => {
+      renderDotText(countEl, String(total - closed), silent);
+      if (outEl) renderDotText(outEl, String(closed), silent);
+    };
+
+    const frame = (now) => {
+      const progress = Math.min(1, Math.max(0, (now - begin) / duration));
+      // Ease out: it drops hardest the moment it starts and settles onto the
+      // answer rather than stopping dead on it.
+      const closed = Math.round(out * (1 - Math.pow(1 - progress, 3)));
+
+      if (closed !== shown) {
+        shown = closed;
+        paint(closed, true);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+        return;
+      }
+
+      // The last paint is the loud one: it puts the screen-reader text back, so
+      // the aria-live region announces the number it landed on and none of the
+      // couple of dozen it passed through.
+      settle();
+    };
+
+    paint(0, true);
+    requestAnimationFrame(frame);
   }
 
   function renderDocketText() {
@@ -166,7 +242,11 @@
       .forEach((el) => renderDotText(el, el.textContent));
   }
 
-  function renderDotText(el, value) {
+  // `silent` drops the screen-reader span, and with it everything in this
+  // element a screen reader can see. The count is an aria-live region, so a
+  // frame that carried its own text would be read out - twenty of them would
+  // announce the whole countdown one number at a time.
+  function renderDotText(el, value, silent) {
     const text = normalizeDotText(value);
     const minColumns = el.classList.contains('scoreboard-count')
       ? DOT_TWO_DIGIT_WIDTH
@@ -179,10 +259,6 @@
 
     el.textContent = '';
     el.dataset.dotText = text;
-
-    const screenReaderText = document.createElement('span');
-    screenReaderText.className = 'sr-only';
-    screenReaderText.textContent = text;
 
     const svg = document.createElementNS(DOT_SVG_NS, 'svg');
     svg.setAttribute('class', 'scoreboard-dot-svg');
@@ -205,6 +281,15 @@
     });
 
     svg.append(offDots, onDots);
+
+    if (silent) {
+      el.append(svg);
+      return;
+    }
+
+    const screenReaderText = document.createElement('span');
+    screenReaderText.className = 'sr-only';
+    screenReaderText.textContent = text;
     el.append(screenReaderText, svg);
   }
 
