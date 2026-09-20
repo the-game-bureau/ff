@@ -2,27 +2,23 @@
 // apart. Mark the current page with:
 //   <div id="siteNav" data-current="victims"></div>
 
-// Law, then the Precinct, then Victims. Not the order a returning player uses
-// them in - see the note on Law below for why it leads anyway. Suspects is not
-// in the list any more: the board of mugshots is a section of the Precinct now,
-// so the button pointed at a page that no longer exists.
+// The Precinct, then Law, then Victims. Suspects is not in the list any more:
+// the board of mugshots is a section of the Precinct now, so the button pointed
+// at a page that no longer exists.
 //
 // `corner: true` moves an item out of the button bar and into the header
 // cluster instead - see renderCornerNav below. It still lives in this list,
 // because this is still the only place a destination is written down; the flag
 // says where it is drawn, not what it is.
 const NAV_ITEMS = [
-  // FIRST, though it is not the landing page and the Precinct is. Deliberate:
-  // the rules are what somebody arriving needs before anything else on this
-  // site makes sense - you pick a team to LOSE - and the one question a new
-  // suspect asks is how it works, not where the home page is. Everybody else
-  // already knows, and the logo above goes home from every page.
+  // FIRST, because it is the landing page. Law led for a while on the argument
+  // that a new arrival has to be told they are picking a team to LOSE before
+  // any of this reads as anything but backwards - but that is an argument about
+  // one visit, and the bar is walked past on every visit by everybody who
+  // already knows. Home goes first in a menu; that is what a menu is.
   // Sublabel instead of a title: the gloss shows without needing a hover.
+  { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'Home' },
   { label: 'Law',        key: 'law',     href: 'law/index.html', sublabel: 'Rules' },
-  // "League Status" rather than "Home": the logo above already goes home from
-  // every page, so the gloss is better spent saying what is on the other end -
-  // the scoreboard, the board of faces, and where the week stands.
-  { label: 'Precinct',   key: 'home',    href: 'index.html', sublabel: 'League Status' },
   // Land on the open week so the page and the header badge agree.
   { label: 'Victims',    key: 'victims',
     href: () => `victims/index.html?week=${window.CURRENT_WEEK || 1}`,

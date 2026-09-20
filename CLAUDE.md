@@ -147,10 +147,11 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   second click.
 - [victims/index.html](victims/index.html) — the Victims page: all 32 teams, and where a
   pick is made. Takes `?week=N`.
-- [law/index.html](law/index.html) — **Law**, the rules. First in the nav
-  although it is not the landing page: picking a team to *lose* is the one
-  thing a new arrival has to be told before the rest of the site reads as
-  anything but backwards.
+- [law/index.html](law/index.html) — **Law**, the rules. Second in the nav,
+  behind the Precinct. It led for a while, on the argument that picking a team
+  to *lose* is the one thing a new arrival has to be told before the rest of
+  the site reads as anything but backwards — but that is an argument about one
+  visit, against a bar everybody else walks past on every visit.
 - [reports/index.html](reports/index.html) — the **Case File**: the Scoreboard
   (`STILL A SUSPECT` against `CASE CLOSED`), the Sergeant's Notes, the Legal Pad
   and the Suspect Tracker. All four are repeated on the Precinct, which is where
@@ -192,7 +193,8 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   helpers that derive the open week, kickoff locks and matchups from it.
 - [js/teams.js](js/teams.js) — `NFL_TEAMS`: name, NFL `abbr`, and colours.
 - [js/nav.js](js/nav.js) — the header menu. **The only place nav items are
-  defined** — edit here, not in the HTML. Order is Law, Precinct, Victims. An item marked `corner: true` renders
+  defined** — edit here, not in the HTML. Order is Precinct, Law, Victims; the
+  Precinct's sublabel is **Home**. An item marked `corner: true` renders
   as a cell of the top-right header cluster instead of a button in the bar;
   **Cold Cases** is the one, because the archive is a closed season and standing
   it beside the four live pages made it look like a fifth place to go and play.
