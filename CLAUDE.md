@@ -798,10 +798,12 @@ Two things to know before touching this:
 
 - Anything new that reads picks must drop skipped rows, or a released week comes
   back as a real pick. The raw `ff_active_picks` view does **not** filter them.
-- Releasing a week can leave a gap in the middle of a season, which the
-  fill-in-order rule (`firstMissingWeekBefore()`) then reports on the weeks after
-  it. That is the honest state of things: the week really does need a victim
-  again.
+- Releasing a week can leave a gap in the middle of a season. Weeks are **not**
+  filed in order any more — a gap never shuts the board for later weeks. A
+  missed week is its own verdict (`NO PICK`), and blocking the weeks after it as
+  well was a second penalty for the same thing. `openEarlierWeekWithoutPick()`
+  in [js/victims.js](js/victims.js) only *reminds*, and only while the gap can
+  still be filled, i.e. some game that week has not locked yet.
 
 ## Conventions
 

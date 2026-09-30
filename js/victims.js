@@ -332,16 +332,29 @@ function spentInOtherWeek(teamName){
   return reclaimableLaterPick(teamName) ? null : usedPick;
 }
 
-// Weeks are filled in order: you cannot name a Week 5 victim without having
-// named one in Week 4. Returns the earliest unfilled week before the one being
-// viewed, or 0 if there is no gap. Week 1 has nothing before it, so it is
-// always open.
-function firstMissingWeekBefore(){
+// An earlier week with no victim that can still be given one. This used to be
+// a gate - weeks were filed in order, and a gap shut every card on the board -
+// but a missed week is its own verdict (NO PICK closes the case) and should not
+// also stop anybody naming victims for the weeks after it. What is left is a
+// reminder, and only while the gap can still be filled: once a week's last game
+// has locked there is nothing left to name, so there is nothing to point at.
+// Returns 0 when there is nothing to remind about.
+function openEarlierWeekWithoutPick(){
+  const helpers = window.NFL_SCHEDULE_HELPERS;
+  if(!helpers?.getWeekGames || !helpers?.getPickLockAtUtc) return 0;
+
   const target = Number(viewWeek());
+  const now = Date.now();
 
   for(let week = 1; week < target; week++){
     const filled = victimState.activePicks.some(pick => Number(pick.week) === week);
-    if(!filled) return week;
+    if(filled) continue;
+
+    const stillOpen = helpers.getWeekGames(week).some(game => {
+      const lockAt = helpers.getPickLockAtUtc(game);
+      return lockAt && new Date(lockAt).getTime() > now;
+    });
+    if(stillOpen) return week;
   }
 
   return 0;
@@ -453,11 +466,11 @@ async function refreshVictimState(){
     setVictimStatus('Profile missing. Return to the Precinct and choose a username.', 'bad');
   } else {
     const activePick = currentWeekPick();
-    const missingWeek = firstMissingWeekBefore();
+    const missingWeek = openEarlierWeekWithoutPick();
 
     if(missingWeek && !activePick){
-      // Say which week and how to get there, rather than leaving a grid of
-      // dead cards with no explanation.
+      // A reminder, not a blocker: the board below stays live. Say which week
+      // and how to get there.
       // Built as nodes: toasts set strings as text, so markup would print.
       const message = document.createDocumentFragment();
       const link = document.createElement('a');
@@ -465,11 +478,11 @@ async function refreshVictimState(){
       link.href = `?week=${missingWeek}`;
       link.textContent = `name a Week ${missingWeek} victim`;
       message.append(
-        `Week ${missingWeek} has no victim yet. Weeks are filed in order, so `,
+        `Week ${missingWeek} still has no victim - `,
         link,
-        ` before Week ${viewWeek()}.`
+        ` before it locks, or that case closes on you.`
       );
-      setVictimStatus(message, 'bad');
+      setVictimStatus(message, 'note');
     } else {
       // The intro line above the grid now carries both the instruction and the
       // current pick, so there is nothing left for this line to say. It stays
@@ -482,7 +495,7 @@ async function refreshVictimState(){
 }
 
 // Only the two states about this player's own picks get a colour. The rest -
-// bye, kickoff passed, earlier week first - are facts about the schedule and
+// bye, kickoff passed - are facts about the schedule and
 // stay neutral, so the colour means "you did this", not "blocked".
 function statusModifier(status){
   if(status === 'Your Current Selection') return ' victim-status-current';
@@ -505,11 +518,6 @@ function cardStatus(teamName, info){
   // badge has to name the reason you cannot click. A team parked in Week 12 and
   // on a bye in Week 8 is not takeable in Week 8, and reading "Future Selection"
   // on a dead card just looks broken. The tooltip still says where it is parked.
-  //
-  // An unfilled earlier week closes the whole board, so it outranks the
-  // per-team reasons: the gap is why you cannot pick, not the schedule.
-  const missingWeek = firstMissingWeekBefore();
-  if(missingWeek) return `Week ${missingWeek} First`;
   if(info.isBye) return 'Not Playing';
   // Not "Past Kickoff": the card closes PICK_LOCK_MINUTES before the game
   // starts, so for those last minutes that label would be a lie. "Locked Up" is
@@ -586,7 +594,6 @@ function cardHint(teamName){
 
 function isCardDisabled(teamName, info){
   return Boolean(
-    firstMissingWeekBefore() ||
     currentPickLocked() ||
     // Not usedInOtherWeek(): a later week that has not kicked off yet is still
     // reclaimable, so those cards stay live.
@@ -843,15 +850,6 @@ async function runVictimPick(teamName){
       laterPick
         ? `${teamName} is locked into Week ${laterPick.week} - that game has already started.`
         : `${teamName} was already named in Week ${spentPick.week}.`,
-      'bad'
-    );
-    return;
-  }
-
-  const missingWeek = firstMissingWeekBefore();
-  if(missingWeek){
-    setVictimStatus(
-      `Name a Week ${missingWeek} victim first. Weeks are filed in order.`,
       'bad'
     );
     return;
