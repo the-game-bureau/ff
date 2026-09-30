@@ -347,11 +347,24 @@
   // instead of another migration to run.
   let eliminations = new Map();
   let survivals = new Map();
+  // week -> { survived, dunDun, noShow }, counting live suspects only. The
+  // APB's recap of the week just judged reads it.
+  let weekTallies = new Map();
 
+  // Built into locals and swapped in at the end, never filled in place. The
+  // admin gate runs more than once on sign-in, so two or three of these can be
+  // in flight together; filling the shared maps meant every run landed its rows
+  // in the same map and Week 3's twelve casualties went out as thirty-six.
   async function loadEliminations() {
-    eliminations = new Map();
-    survivals = new Map();
-    if (!adminDb) return;
+    if (!adminDb) {
+      eliminations = new Map();
+      survivals = new Map();
+      weekTallies = new Map();
+      return;
+    }
+    const nextEliminations = new Map();
+    const nextSurvivals = new Map();
+    const nextTallies = new Map();
 
     const { data, error } = await adminDb
       .from(ADMIN_CONFIG.views?.activePicks || '_2026_active_picks')
@@ -371,16 +384,34 @@
       const result = String(row.result || '');
       const entry = { team: String(row.team || '').trim(), week: Number(row.week) || 0 };
 
+      // Exhibition picks - a closed case still filing for fun - are not the
+      // league's news, so they stay out of the tally. Rows arrive oldest week
+      // first, so a case closed earlier is already in nextEliminations here.
+      const closedBefore = nextEliminations.has(id) && nextEliminations.get(id).week < entry.week;
+      if (!closedBefore && entry.week) {
+        const tally = nextTallies.get(entry.week) || { survived: 0, dunDun: 0, noShow: 0 };
+        if (/survived/i.test(result)) tally.survived++;
+        else if (/dun\s*dun/i.test(result)) {
+          if (!entry.team || entry.team.toUpperCase() === 'NO PICK') tally.noShow++;
+          else tally.dunDun++;
+        }
+        nextTallies.set(entry.week, tally);
+      }
+
       if (/dun\s*dun/i.test(result)) {
         // The first one is the one that did it. A season ends once.
-        if (!eliminations.has(id)) eliminations.set(id, entry);
+        if (!nextEliminations.has(id)) nextEliminations.set(id, entry);
         continue;
       }
 
       // The rows arrive oldest first, so the last one to land is the latest week
       // they came through.
-      if (/survived/i.test(result)) survivals.set(id, entry);
+      if (/survived/i.test(result)) nextSurvivals.set(id, entry);
     }
+
+    eliminations = nextEliminations;
+    survivals = nextSurvivals;
+    weekTallies = nextTallies;
   }
 
   // The week a bulletin is about, which is not always the week the league is on.
@@ -413,17 +444,19 @@
     return 'The ' + out.team + ' won in Week ' + out.week + '.';
   }
 
-  // The same fact in the third person, for a bulletin going to more than one of
-  // them at once.
+  // The same fact in the third person, for the APB's roll of one week's
+  // casualties. The week is in the line that introduces the roll, so it is not
+  // repeated on every name. A no-show gets the corkboard's own second stamp.
   function eliminationRoll(row) {
     const out = eliminations.get(String(row.id || ''));
     const who = String(row.username || 'somebody');
     if (!out) return who;
 
     if (!out.team || out.team === 'NO PICK') {
-      return who + ', who never named one in Week ' + out.week;
+      return who + ' (FAILED TO APPEAR - no victim named)';
     }
-    return who + ', by the ' + out.team + ' in Week ' + out.week;
+    // Not "won": a tie closes the case too, and this list cannot tell which.
+    return who + ' (the ' + out.team + ' did not lose)';
   }
 
   // The heading carries the count, so a collapsed panel still says how many
@@ -1318,6 +1351,36 @@
   // bare word with the link lost.
   const apbLink = (url) => '<a href="' + url + '">' + url + '</a>';
 
+  // When the week's clock actually runs out, read from the schedule so the
+  // bulletin names real kickoffs rather than "before the game". Central time,
+  // the same zone every kickoff on the site is printed in. Empty when the
+  // schedule has no times for the week, or the last game has already started
+  // and there is nothing left to file for.
+  function apbClockLine(week, lockMinutes) {
+    const helpers = window.NFL_SCHEDULE_HELPERS;
+    if (!helpers) return '';
+
+    const games = helpers.getWeekGames(week)
+      .filter((game) => game.kickoffUtc && !game.isTbd)
+      .sort((a, b) => new Date(a.kickoffUtc) - new Date(b.kickoffUtc));
+    if (!games.length) return '';
+
+    const now = Date.now();
+    const first = games[0];
+    const last = games[games.length - 1];
+    if (new Date(last.kickoffUtc).getTime() <= now) return '';
+
+    const when = (game) => helpers.formatKickoff(game.kickoffUtc) + ' CT';
+    const matchup = (game) => 'the ' + game.awayShort + ' at the ' + game.homeShort;
+    const opening = new Date(first.kickoffUtc).getTime() > now
+      ? "Week " + week + " kicks off " + when(first) + " with " + matchup(first) + ". "
+      : "Week " + week + " is under way. ";
+
+    return "<b>THE CLOCK</b> - " + opening + "The last game starts " + when(last) +
+      ". Every victim locks " + lockMinutes + " minutes before its own game, so a " +
+      "team playing early has to be named early.";
+  }
+
   // The bulletin each group gets, as a starting point. It lands in the fields
   // below the cards rather than going straight to Gmail, so it can be read and
   // changed first.
@@ -1368,7 +1431,10 @@
 
     paragraphs.push(
       "All units, be advised. Week " + week + " of Law &amp; Order: Special Victory Unit. " +
-      filedLine + capitalise(spellNumber(live.length)) + " of you are still suspects. " +
+      filedLine +
+      (live.length === 1
+        ? "One suspect remains. "
+        : capitalise(spellNumber(live.length)) + " of you are still suspects. ") +
       "The last suspect wins.");
 
     // Who went down, and when - the week that was last scored, not the one the
@@ -1386,9 +1452,28 @@
       return record && Number(record.week) === Number(outWeek);
     });
     const roll = justOut.map(eliminationRoll).filter(Boolean).join('; ');
-    if (roll) {
+
+    // The week just judged, as numbers, with its casualties named after them.
+    // The roll rides on the recap when they are the same week; when they are
+    // not (a Thursday game already closing somebody in the open week) it gets
+    // its own line rather than being filed under the wrong week.
+    const judged = week - 1;
+    const tally = weekTallies.get(judged);
+    const closedN = tally ? tally.dunDun + tally.noShow : 0;
+    const rollHere = roll && Number(outWeek) === judged;
+    if (tally && (tally.survived || closedN)) {
+      paragraphs.push(
+        "Week " + judged + " is in the books: " + tally.survived + " survived, " +
+        closedN + (closedN === 1 ? " case" : " cases") + " closed" +
+        (tally.noShow ? " (" + tally.noShow + " for failing to appear)" : "") + "." +
+        (rollHere ? " Taken down: " + roll + "." : ""));
+    }
+    if (roll && !rollHere) {
       paragraphs.push("Taken down in Week " + outWeek + ": " + roll + ".");
     }
+
+    const clock = apbClockLine(week, lockMinutes);
+    if (clock) paragraphs.push(clock);
 
     // Week 1 only. The league is open until the last kickoff of the opening
     // week, and that is the one week where the most useful thing a member can
@@ -1408,7 +1493,8 @@
     paragraphs.push(
       "<b>IF YOUR VICTIM IS NAMED</b> - you are on the record for Week " + week + ". " +
       "You can change your choice up to " + lockMinutes + " minutes before your current " +
-      "victim's game kicks off, and only to a team that has not kicked off yet.");
+      "victim's game kicks off, and only to a team that has not kicked off yet. " +
+      "If they lose, you survive. If they win or tie, your case closes. DUN DUN.");
 
     // Dropped entirely when nobody owes a pick. A paragraph of instructions
     // addressed to an empty set is the sort of thing that makes a bulletin read
@@ -1422,20 +1508,25 @@
 
       paragraphs.push(
         "<b>IF YOU HAVE NOT NAMED A VICTIM</b> - name a team you expect to lose in Week " +
-        week + ", before their game kicks off. Miss it and the case closes on you. Name " +
-        "yours here: " + apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
+        week + ", before their game kicks off. File nothing and you FAIL TO APPEAR - the " +
+        "case closes on you just the same as a wrong pick. Name yours here: " + apbLink('https://thegamebureau.com/ff/victims/index.html?week=' + week) +
         "." + chase);
     }
 
-    paragraphs.push(
-      "<b>IF YOUR CASE IS CLOSED</b> - your victim won, so you lose. So you are NOT " +
-      "GUILTY of losing. So you lost by winning. OK, even I'm confused. Your season has " +
-      "ended, but the board stays up and you are still on it - watch the rest of them go " +
-      "down one by one.");
+    // Only when somebody on the list is actually closed. The victim is the one
+    // on trial: a team that wins is found NOT GUILTY of losing, and that
+    // acquittal is what closes the case on the suspect who named it.
+    if (closed.length) {
+      paragraphs.push(
+        "<b>IF YOUR CASE IS CLOSED</b> - your victim was found NOT GUILTY of losing, or " +
+        "you failed to appear. Either way your season is over. The board stays up and " +
+        "your mugshot stays on it, and you can keep naming victims for bragging rights " +
+        "while you watch the rest of them go down.");
+    }
 
     paragraphs.push(
-      "You can make your picks for the whole season right now and change them week by " +
-      "week if you'd like. All of the rules: " +
+      "You can name victims for the whole season right now and change them week by " +
+      "week. Each team can only be used once. All of the rules: " +
       apbLink('https://thegamebureau.com/ff/law/index.html') + ".");
 
     // THE FRONT PAGE, NOT THE CASE FILE. Every module that used to justify a
@@ -1444,16 +1535,22 @@
     // the nav. A bulletin still pointing at it was sending thirty people to a
     // page nothing else on the site links to.
     paragraphs.push(
-      "Every stat is on the Precinct now - the scoreboard, the board of mugshots " +
-      "and every verdict so far, all on the front page: " +
-      apbLink('https://thegamebureau.com/ff'));
+      "The scoreboard, the corkboard of mugshots and every verdict so far are on " +
+      "the Precinct: " + apbLink('https://thegamebureau.com/ff'));
+
+    paragraphs.push("- The Squad Room");
 
     return {
       // A bare ampersand: this goes into a plain-text input and then into
       // Gmail's subject line. The paragraphs below are HTML and do use the
       // entity; the subject is the one string here that is not.
-      subject: "(Fantasy Football) Week " + week +
-        " All Points Bulletin: Law & Order: Special Victory Unit",
+      //
+      // The count goes in the subject so the news is readable from the inbox
+      // list, and "(Fantasy Football)" stays at the front for anyone filtering
+      // on it.
+      subject: "(Fantasy Football) Week " + week + " APB: " + live.length +
+        (live.length === 1 ? " suspect remains" : " suspects remain") +
+        " - Law & Order: Special Victory Unit",
       paragraphs: paragraphs,
       // Only used by the note under the draft, so the admin can see at a glance
       // that the one message really does cover everybody.
