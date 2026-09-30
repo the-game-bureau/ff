@@ -45,12 +45,16 @@
     live.delete(key);
   }
 
-  // message: the text. Empty clears whatever that source last said.
+  // message: the text, or a DOM node when it needs a link in it. Strings are
+  //          always set as text, never parsed, so a message carrying markup
+  //          prints the markup - build a node instead. Empty clears whatever
+  //          that source last said.
   // kind: 'good' | 'bad' | 'note', anything else is neutral.
   // key: what is speaking. Defaults to the message, so unkeyed calls still
   //      replace themselves rather than repeating.
   window.ffToast = function (message, kind, key) {
-    const text = String(message == null ? '' : message).trim();
+    const isNode = message instanceof Node;
+    const text = (isNode ? message.textContent : String(message == null ? '' : message)).trim();
     const id = key || text;
 
     if (!text) {
@@ -62,7 +66,8 @@
 
     const el = document.createElement('div');
     el.className = 'toast' + (kind ? ' toast-' + kind : '');
-    el.textContent = text;
+    if (isNode) el.appendChild(message);
+    else el.textContent = text;
     el.title = 'Click to dismiss';
     el.addEventListener('click', () => dismiss(id));
 

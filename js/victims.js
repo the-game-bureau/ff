@@ -458,12 +458,18 @@ async function refreshVictimState(){
     if(missingWeek && !activePick){
       // Say which week and how to get there, rather than leaving a grid of
       // dead cards with no explanation.
-      setVictimStatus(
-        `Week ${missingWeek} has no victim yet. Weeks are filed in order, so ` +
-        `<a class="status-link" href="?week=${missingWeek}">name a Week ${missingWeek} victim</a> ` +
-        `before Week ${viewWeek()}.`,
-        'bad'
+      // Built as nodes: toasts set strings as text, so markup would print.
+      const message = document.createDocumentFragment();
+      const link = document.createElement('a');
+      link.className = 'status-link';
+      link.href = `?week=${missingWeek}`;
+      link.textContent = `name a Week ${missingWeek} victim`;
+      message.append(
+        `Week ${missingWeek} has no victim yet. Weeks are filed in order, so `,
+        link,
+        ` before Week ${viewWeek()}.`
       );
+      setVictimStatus(message, 'bad');
     } else {
       // The intro line above the grid now carries both the instruction and the
       // current pick, so there is nothing left for this line to say. It stays

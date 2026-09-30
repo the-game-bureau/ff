@@ -192,6 +192,7 @@ function normalizeSuspects(suspects, user, showFirstNames, pickWeeks = new Map()
         open_week: openWeek,
         filed_open_week: filed.has(openWeek),
         cleared_this_week: clearedThisWeek,
+        no_show_week: noShows.get(String(suspect.id || '')) || 0,
         display_name: showFirstNames && suspect.first_name ? suspect.first_name : suspect.username,
         game_status: suspect.game_status || suspect.status || 'SUSPECT'
       }, user, showFirstNames);
@@ -237,6 +238,7 @@ const EMPTY_WEEKS = new Map();
 
 async function fetchPickWeeks(){
   const weeks = new Map();
+  noShows.clear();
   const throughWeek = (Number(window.CURRENT_WEEK) || 1) + 1;
   const season = String(window.SEASON || '');
 
@@ -251,20 +253,39 @@ async function fetchPickWeeks(){
     return weeks;
   }
 
+  // The week each suspect's case closed, and whether it closed on a NO PICK.
+  // The earliest DUN DUN is the one that counts: anything after it is a closed
+  // case playing on, and cannot close anything a second time.
+  const closings = new Map();
+
   for(const row of data || []){
     const id = String(row?.user_id || '');
     if(!id) continue;
     const week = Number(row.week);
     if(!week || week > throughWeek) continue;
     if(season && String(row.season || season) !== season) continue;
-    if(String(row.result || '').trim().toUpperCase() === 'SKIP') continue;
-    if(String(row.team || '').trim().toUpperCase() === 'NO PICK') continue;
+    const result = String(row.result || '').trim().toUpperCase();
+    if(result === 'SKIP') continue;
+    const noPick = String(row.team || '').trim().toUpperCase() === 'NO PICK';
+    if(result.includes('DUN DUN')){
+      const closing = closings.get(id);
+      if(!closing || week < closing.week) closings.set(id, { week, noPick });
+    }
+    if(noPick) continue;
     if(!weeks.has(id)) weeks.set(id, new Map());
-    weeks.get(id).set(week, String(row.result || '').trim().toUpperCase());
+    weeks.get(id).set(week, result);
+  }
+
+  for(const [id, closing] of closings){
+    if(closing.noPick) noShows.set(id, closing.week);
   }
 
   return weeks;
 }
+
+// Suspects whose case closed because they filed nothing, keyed by user id, to
+// the week they missed. Filled by fetchPickWeeks alongside the week map.
+const noShows = new Map();
 
 // The bottom line of the name plate: which week this suspect is on, and whether
 // they have filed for it. A closed case gets nothing - there is no pick left to
@@ -273,7 +294,13 @@ async function fetchPickWeeks(){
 // Waiting is yellow when the week is still live, because the clock is running
 // on them, and green when they have already survived it, because the wait is
 // just the schedule catching up.
+//
+// The one exception is a case closed for filing nothing. DUN DUN alone reads the
+// same as backing a team that won, so the line says which week went unfiled.
 function weekLineHtml(suspect, isOut){
+  if(isOut && suspect.no_show_week){
+    return `<span class="suspect-week suspect-week-no-show">No pick for Week ${suspect.no_show_week}</span>`;
+  }
   if(isOut) return '';
 
   const week = Number(suspect.open_week) || Number(window.CURRENT_WEEK) || 1;
@@ -326,13 +353,14 @@ function renderSuspects(suspects){
     }) || '';
 
     return `
-      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}${isOut ? ' suspect-card-out' : ''}" data-username="${escapeHtml(username)}">
+      <li class="suspect-card${suspect.is_self ? ' suspect-card-self' : ''}${isOut ? ' suspect-card-out' : ''}${isOut && suspect.no_show_week ? ' suspect-card-no-show' : ''}" data-username="${escapeHtml(username)}">
         <div class="suspect-avatar-frame">
           <!-- The photo, and only the photo. Its own box so the DUN DUN stamp
                centres on the picture rather than on the whole polaroid, and so
                nothing written below can creep back over it. -->
           <div class="suspect-photo">
             ${isOut ? '<span class="suspect-stamp" aria-hidden="true">Dun Dun</span><span class="sr-only">Case closed.</span>' : ''}
+            ${isOut && suspect.no_show_week ? '<span class="suspect-stamp suspect-stamp-no-show" aria-hidden="true">Failed to appear</span>' : ''}
             <button class="suspect-avatar-button" type="button" ${mugAttrs} aria-label="${escapeHtml(avatarLabel)}">
               <img class="suspect-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(avatarLabel)}" width="128" height="128"/>
             </button>

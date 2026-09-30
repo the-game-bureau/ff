@@ -5102,6 +5102,27 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
    not one of the faces still in the game. */
 .suspect-card-out .suspect-avatar{ filter: grayscale(0.75) contrast(0.92); }
 
+/* FAILED TO APPEAR. A case closed for filing nothing gets a second stamp under
+   the first, because DUN DUN alone reads the same as backing a team that won.
+   The verdict stays the red one and moves up to make room; this one is the
+   clerk's black ink, smaller, pressed at the opposite tilt so the two read as
+   separate stamps and not one plate. */
+.suspect-card-no-show .suspect-stamp{ top: 34%; }
+
+.suspect-card-no-show .suspect-stamp-no-show{
+  top: 74%;
+  min-width: 0;
+  font-size: clamp(0.6rem, 8cqw, 1.2rem);
+  color: var(--ink);
+  transform: translate(-50%, -50%) rotate(calc(var(--stamp-tilt, -9deg) * -1));
+}
+
+.suspect-week-no-show{
+  background: var(--ink);
+  color: var(--paper-raised);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
 .suspect-avatar-button{
   display: block;
   width: 100%;
