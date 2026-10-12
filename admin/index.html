@@ -15,9 +15,9 @@
   <meta property="og:image" content="https://thegamebureau.com/ff/src/lawandorder.jpg"/>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.112.3"></script>
-  <script src="../js/supabase-config.js?v=20260929c"></script>
+  <script src="../js/supabase-config.js?v=20261012"></script>
 
-  <link rel="stylesheet" href="../css/site.css?v=20260929c"/>
+  <link rel="stylesheet" href="../css/site.css?v=20261012"/>
 </head>
 
 <body>
@@ -100,6 +100,36 @@
 
         <div class="action-buttons">
           <button id="btnRefreshWeeks" class="btn btn-secondary" type="button">Reload Week Results</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- Every pick as filed, changes included. Everything else on the site shows
+         the newest row per week; this shows the rows. See js/admin-picks.js. -->
+    <section class="game-info admin-panel" id="adminPicksPanel" aria-labelledby="adminPicksTitle" hidden>
+      <details class="admin-collapse">
+        <summary id="adminPicksTitle">Pick History</summary>
+
+        <p class="gate-help">
+          Every row in the picks table, one suspect per line, one week per column,
+          nothing collapsed. Inside a cell the rows run oldest first: the
+          <strong>last one is the pick that stands</strong>, anything struck
+          through above it was changed. <strong>SKIP</strong> is a released week.
+          Times are when each row was filed; hover for the full timestamp.
+        </p>
+        <p class="gate-help" id="adminPicksNote"></p>
+
+        <div class="table-wrap">
+          <table id="adminPicksTable" class="admin-picks" aria-label="Every pick filed, by suspect and week">
+            <thead id="adminPicksHead"></thead>
+            <tbody id="adminPicksBody">
+              <tr><td class="table-empty">Not loaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="action-buttons">
+          <button id="btnRefreshPicks" class="btn btn-secondary" type="button">Reload Pick History</button>
         </div>
       </details>
     </section>
@@ -405,24 +435,25 @@
     <p class="credit-name">Kevin Kolb</p>
   </footer>
 
-  <script src="../js/nfl-schedule.js?v=20260929c"></script>
-  <script src="../js/toast.js?v=20260929c"></script>
-  <script src="../js/nfl-scores.js?v=20260929c"></script>
-  <script src="../js/season.js?v=20260929c"></script>
-  <script src="../js/teams.js?v=20260929c"></script>
-  <script src="../js/nav.js?v=20260929c"></script>
-  <script src="../js/auth-corner.js?v=20260929c"></script>
-  <script src="../js/nfl-live-scores.js?v=20260929c"></script>
-  <script src="../js/admin-score.js?v=20260929c"></script>
-  <script src="../js/admin-todo.js?v=20260929c"></script>
-  <script src="../js/admin-weeks.js?v=20260929c"></script>
-  <script src="../js/admin.js?v=20260929c"></script>
-  <script src="../js/join-form.js?v=20260929c"></script>
-  <script src="../js/join-modal.js?v=20260929c"></script>
-  <script src="../js/join.js?v=20260929c"></script>
-  <script src="../js/username-gate.js?v=20260929c"></script>
-  <script src="../js/password-reset.js?v=20260929c"></script>
-  <script src="../js/share.js?v=20260929c"></script>
-  <script src="../js/summons.js?v=20260929c"></script>
+  <script src="../js/nfl-schedule.js?v=20261012"></script>
+  <script src="../js/toast.js?v=20261012"></script>
+  <script src="../js/nfl-scores.js?v=20261012"></script>
+  <script src="../js/season.js?v=20261012"></script>
+  <script src="../js/teams.js?v=20261012"></script>
+  <script src="../js/nav.js?v=20261012"></script>
+  <script src="../js/auth-corner.js?v=20261012"></script>
+  <script src="../js/nfl-live-scores.js?v=20261012"></script>
+  <script src="../js/admin-score.js?v=20261012"></script>
+  <script src="../js/admin-todo.js?v=20261012"></script>
+  <script src="../js/admin-weeks.js?v=20261012"></script>
+  <script src="../js/admin-picks.js?v=20261012"></script>
+  <script src="../js/admin.js?v=20261012"></script>
+  <script src="../js/join-form.js?v=20261012"></script>
+  <script src="../js/join-modal.js?v=20261012"></script>
+  <script src="../js/join.js?v=20261012"></script>
+  <script src="../js/username-gate.js?v=20261012"></script>
+  <script src="../js/password-reset.js?v=20261012"></script>
+  <script src="../js/share.js?v=20261012"></script>
+  <script src="../js/summons.js?v=20261012"></script>
 </body>
 </html>

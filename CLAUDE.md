@@ -388,6 +388,14 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   scroll on a narrow window instead of the headings colliding, since fixed layout
   squeezes rather than overflows.
 
+- [js/admin-picks.js](js/admin-picks.js) — **Pick History**, every row of
+  `_2026_picks` laid out suspect by week with nothing collapsed, so changed
+  picks show. Oldest first in each cell; the last row stands, earlier ones are
+  struck through, `SKIP` rows show the team they released. The one reader that
+  deliberately does **not** go through `activePicksFromHistory()` — that would
+  hide exactly what it is for. Keyed on `user_id`, names from
+  `_2026_current_suspects`.
+
 - [js/admin-todo.js](js/admin-todo.js) — the Squad Room to do list, backed by
   `public._2026_admin_todos` ([supabase/sql/ff_admin_todos.sql](supabase/sql/ff_admin_todos.sql)).
   Plain table reads and writes behind four RLS policies, not an RPC: nothing in

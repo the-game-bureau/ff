@@ -7055,3 +7055,30 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
   .wire-item *{ font-size: 1.25rem; }
   .wire-item{ --wire-gap: 8px; padding: 0 18px; }
 }
+
+/* ===== ADMIN: PICK HISTORY =====
+   Every row of the picks table, suspect by week. The name column sticks so it
+   is still there when the weeks scroll sideways. A superseded row is struck
+   through and muted; the last row in a cell is the one that stands. */
+.admin-picks th, .admin-picks td{ padding: 6px 8px; vertical-align: top; }
+.admin-picks th[scope="row"]{
+  position: sticky;
+  left: 0;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-right: 2px solid var(--ink);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.admin-picks tbody tr:nth-child(even) th[scope="row"]{ background: var(--bg-secondary); }
+.admin-picks td{ white-space: nowrap; font-size: 0.75rem; }
+.admin-picks-empty{ opacity: 0.4; text-align: center; }
+.admin-picks-changes{ text-align: right; font-weight: 700; }
+.admin-picks-entry{ line-height: 1.35; }
+.admin-picks-entry + .admin-picks-entry{ border-top: 1px dashed var(--ink); padding-top: 2px; margin-top: 2px; }
+.admin-picks-superseded{ text-decoration: line-through; opacity: 0.55; }
+.admin-picks-superseded b{ font-weight: 400; }
+.admin-picks-skip b{ font-style: italic; }
+.admin-picks-result{ margin-left: 6px; font-size: 0.625rem; letter-spacing: 0.06em; }
+.admin-picks-time{ display: block; font-size: 0.625rem; opacity: 0.7; }
