@@ -299,7 +299,12 @@
       .filter((pick) => normalizeTeamName(teamName(pick)) !== normalizeTeamName(NO_PICK_TEAM))
       .sort(compareFiledOldestFirst);
 
-    setCountText('');
+    // Scrawled beside the title on the last page, in the same biro as the rest
+    // of the sheet: this is the week the case closed.
+    const winner = window.SEASON_WINNER;
+    setCountText(winner && Number(selectedWeek) === Number(winner.week)
+      ? `final week - ${winner.username} wins!`
+      : '');
     renderPadTallies();
 
     // One path for every week, filled or not. A week with no picks used to
@@ -584,7 +589,7 @@
 
     return `
       <li class="pad-card pad-card-unfiled">
-        <span class="pad-card-head">no pick yet</span>
+        <span class="pad-card-head">${PAD_UNFILED}</span>
 
         ${namesBlockHtml(
           live.map((username) => chip(username, false)),
@@ -612,14 +617,20 @@
   // somebody stands; filed-or-not is the question asked inside each standing.
   // Four abreast made those two cuts look like one cut made three times, so the
   // standing is drawn as a ring and the filing is what sits inside it.
+  // Once the season is decided (window.SEASON_WINNER in js/season.js) nothing is
+  // pending and nobody can file, so 'pick is in' and 'no pick yet' would both be
+  // describing a week still being played. The pad says what happened instead.
+  const PAD_FILED = window.SEASON_WINNER ? 'named a victim' : 'pick is in';
+  const PAD_UNFILED = window.SEASON_WINNER ? 'no pick' : 'no pick yet';
+
   const PAD_TALLY_GROUPS = [
     [
-      { key: 'liveFiled',   top: 'suspect',    bottom: 'pick is in' },
-      { key: 'liveUnfiled', top: 'suspect',    bottom: 'no pick yet' }
+      { key: 'liveFiled',   top: 'suspect',    bottom: PAD_FILED },
+      { key: 'liveUnfiled', top: 'suspect',    bottom: PAD_UNFILED }
     ],
     [
-      { key: 'deadFiled',   top: 'ex-suspect', bottom: 'pick is in' },
-      { key: 'deadUnfiled', top: 'ex-suspect', bottom: 'no pick yet' }
+      { key: 'deadFiled',   top: 'ex-suspect', bottom: PAD_FILED },
+      { key: 'deadUnfiled', top: 'ex-suspect', bottom: PAD_UNFILED }
     ]
   ];
 
@@ -728,6 +739,12 @@
   }
 
   function maxWeek() {
+    // The season is decided (window.SEASON_WINNER in js/season.js): the week
+    // it was won in is the last page on the pad. Anything filed after it is a
+    // closed case playing on, for a week the league never played.
+    const winner = window.SEASON_WINNER;
+    if (winner && Number(winner.week) > 0) return Number(winner.week);
+
     const scheduleWeeks = Array.isArray(window.NFL_SCHEDULE_GAMES)
       ? window.NFL_SCHEDULE_GAMES.map((game) => Number(game.week || 0))
       : [];
