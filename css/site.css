@@ -7082,3 +7082,107 @@ tbody tr:nth-child(even){ background: var(--bg-secondary); }
 .admin-picks-skip b{ font-style: italic; }
 .admin-picks-result{ margin-left: 6px; font-size: 0.625rem; letter-spacing: 0.06em; }
 .admin-picks-time{ display: block; font-size: 0.625rem; opacity: 0.7; }
+/* ===== CASE DISMISSED WITH HONORS =====
+   The season's winner, top of the Precinct. Filled by js/season-winner.js and
+   hidden until window.SEASON_WINNER is set. Gold is --accent-yellow, which is
+   otherwise kept for focus - used here as a flat field behind the trophy, not
+   on anything interactive, so it cannot be mistaken for a focused control. */
+.season-winner{
+  background: var(--paper-raised);
+  border: var(--rule-fat);
+  border-top: 14px solid var(--accent-yellow);
+  box-shadow: var(--shadow-lg);
+  padding: 20px 22px 22px;
+  margin: 0 0 28px;
+}
+
+.season-winner[hidden]{ display: none; }
+
+.season-winner-kicker{
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-tertiary);
+}
+
+.season-winner-title{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.season-winner-trophy{
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  background: var(--accent-yellow);
+  border: var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+
+.season-winner-line{
+  margin: 0 0 16px;
+  font-size: 1rem;
+}
+
+.season-winner-record{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 10px;
+}
+
+.season-winner-pick{
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  justify-items: start;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--success-tint);
+  border: var(--rule);
+  border-left: 8px solid var(--success);
+}
+
+.season-winner-week{
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.season-winner-logo{
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.season-winner-pick > *{ min-width: 0; max-width: 100%; }
+
+/* PHILADELPHIA is the longest word on the board and must fit the narrowest card. */
+.season-winner-team{
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.season-winner-opp{
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

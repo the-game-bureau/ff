@@ -822,6 +822,16 @@
   // standing notice that nothing can be done about is just noise on a strip
   // that is otherwise all news.
   function noticeItemHtml() {
+    // The season's result outranks everything, the roster notice included: it
+    // is the one entry on the strip that is news to every reader, in or out.
+    // Written as the 2025 marquee was, since this is the same announcement.
+    const winner = window.SEASON_WINNER;
+    if (winner) {
+      return `<span class="wire-item wire-item-notice">
+        <span class="wire-notice">CASE CLOSED ${escapeHtml(winner.username)} wins!!! 🏆</span>
+      </span>`;
+    }
+
     if (!window.ffRosterLocked?.()) return '';
     if ((Number(window.CURRENT_WEEK) || 1) >= 3) return '';
 
@@ -881,6 +891,9 @@
 
     if (list) {
       list.innerHTML =
+        (window.SEASON_WINNER
+          ? `<li>${escapeHtml(window.SEASON_WINNER.username)} wins the ${escapeHtml(String(window.SEASON || ''))} season.</li>`
+          : '') +
         snapshot.map((game) => `<li>${escapeHtml(snapshotText(game))}</li>`).join('') +
         closed.map((entry) => `<li>${escapeHtml(lineText(entry))}</li>`).join('') +
         entries.filter((entry) => !entry.isOut && (entry.pick || entry.prior))

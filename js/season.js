@@ -39,9 +39,32 @@ function adminUrl(){
   return prefix + ADMIN_PATH;
 }
 
+// THE SEASON IS DECIDED. Typed, once, by the commissioner - a ruling rather
+// than a reading, the way the 2025 winner is in js/admin.js. Everything else on
+// the site is derived, but "the season is over" is a decision somebody makes,
+// not something the picks can tell you: the league could just as well have
+// played on to see who else survives. null while the season is live.
+//
+// Setting it puts the banner on the Precinct (js/season-winner.js), leads the
+// wire with the result, and closes the Victims board. It does NOT stop the
+// auto-scorer - run supabase/sql/ff_season_over.sql for that, or the winner's
+// empty next week is scored as NO PICK and closes their case.
+var SEASON_WINNER = {
+  username: 'Honore_de_Ballsack',
+  week: 5,
+  picks: [
+    { week: 1, team: 'Cleveland Browns', opponent: 'Jacksonville Jaguars' },
+    { week: 2, team: 'Miami Dolphins', opponent: 'San Francisco 49ers' },
+    { week: 3, team: 'Arizona Cardinals', opponent: 'San Francisco 49ers' },
+    { week: 4, team: 'Tennessee Titans', opponent: 'Baltimore Ravens' },
+    { week: 5, team: 'Philadelphia Eagles', opponent: 'Jacksonville Jaguars' }
+  ]
+};
+
 window.SEASON = SEASON;
 window.CURRENT_WEEK = CURRENT_WEEK;
 window.PICK_LOCK_MINUTES = PICK_LOCK_MINUTES;
+window.SEASON_WINNER = SEASON_WINNER;
 
 // ===== THE OPEN WEEK, FROM THE LEAGUE =====
 // _2026_open_week() knows what the schedule cannot: who is still in it, what

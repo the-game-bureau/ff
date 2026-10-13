@@ -460,7 +460,11 @@ async function refreshVictimState(){
   victimState.pickHistory = user ? await fetchVictimPicks() : [];
   victimState.activePicks = activePicksFromHistory(victimState.pickHistory);
 
-  if(!user){
+  if(window.SEASON_WINNER){
+    // Said to everybody, signed in or not: the board below is dead for a reason
+    // that has nothing to do with the schedule.
+    setVictimStatus(seasonClosedMessage(), 'note');
+  } else if(!user){
     setVictimStatus('', '');
   } else if(!victimState.profile){
     setVictimStatus('Profile missing. Return to the Precinct and choose a username.', 'bad');
@@ -513,6 +517,9 @@ function cardStatus(teamName, info){
   // Burned in an earlier week: one team per season, so it is off the board.
   // isCardDisabled() covers this too, so the card is unclickable as well.
   if(usedPick && Number(usedPick.week) < Number(viewWeek())) return 'Previous Selection';
+  // The season is decided (window.SEASON_WINNER in js/season.js): nothing left
+  // to name, so every card the two lines above have not already claimed is shut.
+  if(window.SEASON_WINNER) return 'Locked Up';
 
   // Everything that closes this card comes before Future Selection, because the
   // badge has to name the reason you cannot click. A team parked in Week 12 and
@@ -592,8 +599,15 @@ function cardHint(teamName){
     : `Locked into Week ${laterPick.week} - that game has already started.`;
 }
 
+function seasonClosedMessage(){
+  const winner = window.SEASON_WINNER;
+  return `The ${SEASON} season is closed - ${winner.username} is the last suspect standing. ` +
+    'The board reopens next season.';
+}
+
 function isCardDisabled(teamName, info){
   return Boolean(
+    window.SEASON_WINNER ||
     currentPickLocked() ||
     // Not usedInOtherWeek(): a later week that has not kicked off yet is still
     // reclaimable, so those cards stay live.
@@ -820,6 +834,11 @@ async function submitVictimPick(teamName){
 }
 
 async function runVictimPick(teamName){
+  if(window.SEASON_WINNER){
+    setVictimStatus(seasonClosedMessage(), 'note');
+    return;
+  }
+
   if(!victimState.user){
     setVictimStatus('Login to name a victim.', 'bad');
     return;

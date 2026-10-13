@@ -188,7 +188,15 @@ The 2026 site is split into shared CSS and JS; only the archive is still one fil
   are relative to `css/`, so the font is `../fonts/…`. **Keep new styling here** —
   the 2026 pages carry no inline `style=` attributes and shouldn't grow any.
 - [js/season.js](js/season.js) — `SEASON` and `CURRENT_WEEK`, and the top-left badge
-  (week / season / signed-in username). Loaded first on every page.
+  (week / season / signed-in username). Loaded first on every page. Also
+  `SEASON_WINNER`, the one hand-typed ruling on the site: `null` while a season
+  is live, and once set it puts the banner on the Precinct
+  ([js/season-winner.js](js/season-winner.js)), leads the wire with the result
+  and closes the Victims board. **Setting it does not stop the auto-scorer** —
+  run [supabase/sql/ff_season_over.sql](supabase/sql/ff_season_over.sql) too, or
+  the winner's empty next week is scored `NO PICK` and closes their case.
+  2026: `Honore_de_Ballsack`, Week 5. Reset it to `null` when the next season
+  opens.
 - [js/nfl-schedule.js](js/nfl-schedule.js) — the generated schedule, plus the
   helpers that derive the open week, kickoff locks and matchups from it.
 - [js/teams.js](js/teams.js) — `NFL_TEAMS`: name, NFL `abbr`, and colours.
