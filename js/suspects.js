@@ -303,6 +303,13 @@ function weekLineHtml(suspect, isOut){
   }
   if(isOut) return '';
 
+  // The season is decided (window.SEASON_WINNER in js/season.js). The winner
+  // owes no pick - there is no next week - so the line says what they are.
+  const winner = window.SEASON_WINNER;
+  if(winner && String(suspect.username || '').toLowerCase() === winner.username.toLowerCase()){
+    return '<span class="suspect-week suspect-week-cleared">WINNER</span>';
+  }
+
   const week = Number(suspect.open_week) || Number(window.CURRENT_WEEK) || 1;
 
   // Filed, and the two ways that can be true. Amber when the week it is filed
